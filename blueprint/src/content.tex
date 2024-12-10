@@ -5,3 +5,128 @@
 % If you want to split the blueprint content into several files then
 % the current file can be a simple sequence of \input. Otherwise It
 % can start with a \section or \chapter for instance.
+
+\chapter{Preliminaries}%
+\label{cha:preliminaries}
+\section{\(C^k\) maps}%
+\label{sec:ck-maps}
+
+\section{\(C^{k+(\alpha)}\) maps}
+
+In this section,
+\begin{itemize}
+\item \(k\) is a natural number;
+\item \(\alpha\) is a real number between \(0\) and \(1\);
+\item \(E\), \(F\), and \(G\) a real normed spaces;
+\item \(f\colon E \to F\) is a function.
+\end{itemize}
+
+\begin{definition}%
+  \label{def:cdh-at}
+  We say that a map \(f\colon E\to F\) is \emph{\(C^{k+(\alpha)}\)} at a point \(a\),
+  if it is \(C^{k}\) at \(a\) and \(f^{(k)}(x) - f^{(k)}(a) = O(\|x - a\|^{\alpha})\) as \(x\to a\).
+\end{definition}
+
+Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoothness assumption.
+\begin{lemma}%
+  \label{def:contdiffholder-imp-cdh-at}
+  \uses{def:cdh-at}
+  If \(f\colon E \to F\) is \(C^{k+\alpha}\) on an open set \(U\),
+  i.e., \(f\) is \(C^{k}\) on \(U\) and \(f^{(k)}\) is \(\alpha\)-Hölder on \(U\),
+  then \(f\) is \(C^{k+(\alpha)}\) at every point \(a \in U\).
+\end{lemma}
+\begin{proof}
+  The proof follows immediately from definitions.
+\end{proof}
+
+\begin{lemma}%
+  \label{lem:cdh-at-zero}
+  \uses{def:cdh-at}
+  A map \(f\colon E\to F\) is \(C^{k+(0)}\) at \(a\) iff it is \(C^{k}\) at \(a\).
+\end{lemma}
+
+\begin{proof}
+  The forward implication follows from the definition.
+  For the backward implication,
+  we need to show that \(f^{(k)}(x) - f^{(k)}(a)=O(1)\) as \(x\to a\),
+  which immediately follows from the continuity of \(f^{(k)}\) at \(a\).
+\end{proof}
+
+\begin{lemma}%
+  \label{lem:cdh-at-mono}
+  \uses{def:cdh-at}
+  Let \(f\colon E\to F\) be a map which is \(C^{k+(\alpha)}\) at \(a\).
+  Let \(l\) be a natural number and \(\beta \in [0, 1]\) be a real number.
+  If \((l, \beta) \le (k, \alpha)\) in the lexicographic order,
+  then \(f\) is \(C^{l+(\beta)}\) at \(a\).
+\end{lemma}
+
+\begin{proof}
+  Note that \(l\le k\), hence \(f\) is \(C^{l}\) at \(a\).
+  In order to show \(f^{(l)}(x) - f^{(l)}(a) = O(\|x - a\|^{\beta})\) as \(x\to a\),
+  consider the cases \(l = k\), \(\beta \le \alpha\) and \(l < k\).
+
+  In the former case, we have \(f^{(k)}(x) - f^{(k)}(a) = O\left(\|x - a\|^{\alpha}\right)=O\left(\|x - a\|^{\beta}\right)\) as \(x\to a\).
+
+  In the latter case, \(f^{(l)}\) is differentiable at \(a\), hence \(f^{(l)}(x)-f^{(l)}(a)=O(x - a)=O(\|x - a\|^{\beta})\),
+  where the latter estimate holds since \(\beta \le 1\).
+\end{proof}
+
+\begin{lemma}%
+  \label{lem:cdh-at-comp}
+  \uses{def:cdh-at}
+  Consider \(g\colon F \to G\), \(f\colon E \to F\), and \(a \in E\)
+  such that \(g\) is \(C^{k+(\alpha)}\) at \(f(a)\) and \(f\) is \(C^{k+(\alpha)}\) at \(a\), where \(k > 0\).
+  Then \(g\circ f\) is \(C^{k+(\alpha)}\) at \(a\).
+\end{lemma}
+
+\begin{proof}
+  Since \(g\) is \(C^{k}\) at \(f(a)\) and \(f\) is \(C^{k}\) at \(a\),
+  the composition \(g\circ f\) is \(C^{k}\) at \(a\).
+  Let us show that \({(g\circ f)}^{(k)}(x) - {(g\circ f)}^{(k)}(a) = O(\|x - a\|^{\alpha})\) as \(x\to \alpha\).
+
+  Due to the Faa Di Bruno formula, we have
+  \[
+    {(g\circ f)}^{(k)}(a) = \sum_{P}TC_{P}\left(g^{(|P|)}(a), f^{(|P_{0}|)}(a), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(a)\right),
+  \]
+  where the sum is taken over all partitions \(P\) of \(0, \dots, k - 1\) into disjoint sets,
+  and \(TC_{P}\) is a continuous multilinear map in all \(|P|+1\) variables
+  which depends only on the normed spaces and the partition \(P\).
+
+  Subtracting these expressions, we see that it suffices to show that for each partition \(P\),
+  we have
+  \begin{align*}
+    TC_{P}&\left(g^{(|P|)}(x), f^{(|P_{0}|)}(x), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(x)\right) -\\
+          &TC_{P}\left(g^{(|P|)}(a), f^{(|P_{0}|)}(a), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(a)\right) =\\
+          &O(\|x - a\|^{\alpha}).
+  \end{align*}
+\end{proof}
+
+\begin{definition}%
+  \label{def:cdh-near}
+  \uses{def:cdh-at}
+  We say that a map \(f\colon E\to F\) is \emph{\(C^{k+(\alpha)}\)} near a set \(s\),
+  if it is \(C^{k+(\alpha)}\)-smooth at all points of \(s\).
+  Note that this definition depends on the values of \(f\) near \(s\), not only on \(s\).
+\end{definition}
+
+\begin{lemma}%
+  \label{lem:cdh-on-nhds-iff-open}
+  \uses{def:cdh-near}
+  A map \(f\colon E\to F\) is \(C^{k+(\alpha)}\) near \(s\)
+  if and only if there exits an open superset \(U\supset s\)
+  such that \(f\) is \(C^{k}\) on \(U\)
+  and for any \(a \in s\) we have \(f^{(k)}(x) - f^{(k)}(a) = o(\|x - a\|^{\alpha})\) as \(x\to a\).
+\end{lemma}
+
+\begin{remark}
+  In the original paper, the definition of a \(C^{k+(\alpha)}\) map
+  involves an open set \(U\) and its subset \(K\subset U\).
+  However, we use a definition that does not fix \(U\) instead
+  and prove equivalence of two definitions in \autoref{lem:cdn-on-nhds-iff-open}.
+\end{remark}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "print.tex"
+%%% End:
