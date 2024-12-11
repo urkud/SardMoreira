@@ -11,7 +11,7 @@
 \section{\(C^k\) maps}%
 \label{sec:ck-maps}
 
-\section{\(C^{k+(\alpha)}\) maps}
+\section{\(C^{k}\) maps with locally Hölder derivatives}
 
 In this section,
 \begin{itemize}
@@ -87,7 +87,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 
   Due to the Faa Di Bruno formula, we have
   \[
-    {(g\circ f)}^{(k)}(a) = \sum_{P}TC_{P}\left(g^{(|P|)}(a), f^{(|P_{0}|)}(a), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(a)\right),
+    {(g\circ f)}^{(k)}(a) = \sum_{P}TC_{P}\left(g^{(|P|)}(f(a)), f^{(|P_{0}|)}(a), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(a)\right),
   \]
   where the sum is taken over all partitions \(P\) of \(0, \dots, k - 1\) into disjoint sets,
   and \(TC_{P}\) is a continuous multilinear map in all \(|P|+1\) variables
@@ -96,10 +96,13 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
   Subtracting these expressions, we see that it suffices to show that for each partition \(P\),
   we have
   \begin{align*}
-    TC_{P}&\left(g^{(|P|)}(x), f^{(|P_{0}|)}(x), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(x)\right) -\\
-          &TC_{P}\left(g^{(|P|)}(a), f^{(|P_{0}|)}(a), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(a)\right) =\\
+    TC_{P}&\left(g^{(|P|)}(f(x)), f^{(|P_{0}|)}(x), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(x)\right) -\\
+          &TC_{P}\left(g^{(|P|)}(f(a)), f^{(|P_{0}|)}(a), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(a)\right) =\\
           &O(\|x - a\|^{\alpha}).
   \end{align*}
+  Since \(k > 0\), the function \(f\) is Lipschitz near \(a\),
+  thus \(f(x) - f(a) = O(x - a)\), \(g^{(|P|)}(f(x)) - g^{(|P|)}(f(a)) = O(\|x - a\|^{\alpha})\), and \(f^{(|P_{j})}(x) - f^{(|P_{j})}(a) = O(\|x - a\|^{\alpha})\).
+  Now, the goal follows from the fact that a continuous multilinear map is locally Lipschitz.
 \end{proof}
 
 \begin{definition}%
@@ -119,12 +122,46 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
   and for any \(a \in s\) we have \(f^{(k)}(x) - f^{(k)}(a) = o(\|x - a\|^{\alpha})\) as \(x\to a\).
 \end{lemma}
 
+\begin{proof}
+  The reverse implication is trivial, we just take \(U\) as the neighborhood of each \(a \in s\) required in the definition.
+  For the forward implication, choose an open neighborhood \(U_{a}\) of each \(a \in s\) such that \(f\) is \(C^{k}\) on \(U_{a}\).
+  Then \(f\) is \(C^{k}\) on \(U = \bigcup_{a \in s} U_{a}\).
+\end{proof}
+
 \begin{remark}
   In the original paper, the definition of a \(C^{k+(\alpha)}\) map
   involves an open set \(U\) and its subset \(K\subset U\).
   However, we use a definition that does not fix \(U\) instead
-  and prove equivalence of two definitions in \autoref{lem:cdn-on-nhds-iff-open}.
+  and prove equivalence of two definitions in \autoref{lem:cdh-on-nhds-iff-open}.
 \end{remark}
+
+\section{Vitali Families}%
+\label{sec:vitali-families}
+
+\section{Inverse function theorem}%
+\label{sec:inverse-funct-theor}
+
+
+In this section we prove a version of the inverse function theorem for \(C^{k+(\alpha)}\) functions,
+then deduce some corollaries.
+\chapter{Local charts}%
+\label{cha:local-charts}
+
+\section{Functions whose zeros include a given set}
+
+\begin{lemma}%
+  \label{lem:chart-one-deriv-zero}
+  \uses{def:cdh-near}
+  Consider a function \(f\colon E\to F\) between real normed spaces.
+  Let \(k\) be a positive natural number, let \(\alpha\) be a real number in \([0, 1]\).
+  Let \(s\) be a set such that
+  \begin{itemize}
+  \item \(f\) is \(C^{k+(\alpha)}\) near \(s\) in the sense of \autoref{def:cdh-near};
+  \item \(df = 0\) at all points of \(s\).
+  \end{itemize}
+  Let \(a \in s\) be a Lebesgue 
+\end{lemma}
+
 
 %%% Local Variables:
 %%% mode: latex
