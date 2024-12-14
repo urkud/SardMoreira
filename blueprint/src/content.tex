@@ -8,6 +8,46 @@
 
 \chapter{Preliminaries}%
 \label{cha:preliminaries}
+
+\section{Measure Theory}%
+\label{sec:measure-theory}
+
+Most of the lemmas in this section
+are true for measures on general measurable spaces
+with appropriate typeclass assumptions.
+\texttt{Mathlib} versions of these lemmas should be stated
+in the right generality.
+However, for this project, it's acceptable to prove the lemmas
+for Haar measures on finite dimensional real normed spaces only.
+
+\begin{lemma}%
+  \label{lem:measurable-meas-ball}
+  Let \(E\) and \(F\) be finite dimensional real normed spaces.
+  Let \(s \subset E \times F\) be a measurable set in their product.
+  Let \(\mu\) be an additive Haar measure on \(E\).
+  Then \(\varphi(x, y, r) = \mu \{z \in E\mid \|z - x\| < r \wedge (z, y) \in s\}\)
+  is a measurable function in \((x, y, r)\).
+\end{lemma}
+\begin{proof}
+  Consider the set \(t \subset E \times E \times F \times \mathbb R\)
+  given by \(t = \{(z, x, y, r) \mid \|z - x\| < r \wedge (z, y) \in s\}\).
+  Clearly, this is a measurable set.
+  Thus the measure of its sections \(t_{x, y, r}=\{z \mid (z, x, y, r) \in t\}\)
+  is a measurable function of \((x, y, r)\),
+  which is exactly what we need to prove.
+\end{proof}
+
+\begin{corollary}%
+  \label{cor:measurable-density}
+  Let \(E\), \(F\), \(s\), and \(\mu\) be as in \autoref{lem:measurable-meas-ball}.
+  Then the set of points \((x, y)\) such that \(x\) is a Lebesgue density point of \(s_{y} = \{z \mid (z, y) \in s\}\)
+  is a measurable set.
+\end{corollary}
+\begin{proof}
+  \uses{lem:measurable-meas-ball}
+
+\end{proof}
+
 \section{\(C^k\) maps}%
 \label{sec:ck-maps}
 
