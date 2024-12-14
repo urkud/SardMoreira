@@ -1,8 +1,6 @@
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.MeasureTheory.Covering.Besicovitch
 import Mathlib.MeasureTheory.Measure.Prod
-import Mathlib.Order.CompletePartialOrder
-import Mathlib.Topology.CompletelyRegular
 
 open scoped Topology ENNReal
 open MeasureTheory Filter Set Function Metric
@@ -120,6 +118,10 @@ theorem tendsto_measure_inter_closedBall_div_iff_rat
   · simp only [Rat.cast_zero, continuousWithinAt_Ioi_iff_Ici]
     exact eventually_continuousWithinAt_Ici_measure_inter_closedBall_div _ hs
 
+-- The next 2 lemmas depend on Polish spaces,
+-- because they are formulated for a measurable `f`.
+-- However, we always apply them to simple functions.
+-- We may decide to reformulate in order to reduce dependencies.
 theorem MeasurableSet.setOf_tendsto_measure_sectl_inter_closedBall_div
     {X : Type*} [PseudoMetricSpace X] [SecondCountableTopology X]
     [MeasurableSpace X] [OpensMeasurableSpace X]
