@@ -188,9 +188,16 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \section{Inverse function theorem}%
 \label{sec:inverse-funct-theor}
 
-
 In this section we prove a version of the inverse function theorem for \(C^{k+(\alpha)}\) functions,
 then deduce some corollaries.
+
+\begin{theorem}%
+  \label{thm:cdh-inverse}
+  \uses{def:cdh-at}
+  Consider a map \(f\colon E\to F\) between two finite dimensional real normed spaces.
+  Suppose that \(f\) is \(C^{k+(\alpha)}\) at \(a \in E\), \(k > 0\), and \(df(a)\) is bijective.
+  Then the inverse function \(f^{-1}\) is \(C^{k+(\alpha)}\) at \(f(a)\).
+\end{theorem}
 \chapter{Local charts}%
 \label{cha:local-charts}
 
