@@ -31,7 +31,7 @@ theorem Metric.biInter_lt_closedBall {X : Type*} [PseudoMetricSpace X] (x : X) (
   simp [forall_gt_ge_iff]
 
 theorem eventually_measure_closedBall_lt_top
-    {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
     (μ : Measure X) [IsLocallyFiniteMeasure μ] (x : X) :
     ∀ᶠ r in 𝓝 0, μ (closedBall x r) < ⊤ := by
   rcases (μ.finiteAt_nhds x).exists_mem_basis nhds_basis_closedBall with ⟨ε, ε₀, hε⟩
@@ -134,5 +134,30 @@ theorem MeasurableSet.setOf_tendsto_measure_sectl_inter_closedBall_div
     · exact measurable_const
   refine measurableSet_tendsto_fun (fun q ↦ .div ?_ (.measure_apply μ _ this)) hf
   refine .measure_apply _ _ ?_
-  simp only [mem_inter_iff, mem_closedBall, mem_preimage, setOf_and]
-  refine .inter (hs.preimage <| .prod_mk measurable_fst measurable_snd.snd) this
+  exact .inter (hs.preimage <| .prod_mk measurable_fst measurable_snd.snd) this
+
+theorem MeasurableSet.setOf_tendsto_measure_inter_closedBall_div
+    {X : Type*} [PseudoMetricSpace X] [SecondCountableTopology X]
+    [MeasurableSpace X] [OpensMeasurableSpace X]
+    (μ : Measure X) [IsLocallyFiniteMeasure μ] [SFinite μ]
+    {s : Set X} (hs : MeasurableSet s) {f : X → ℝ≥0∞} (hf : Measurable f) :
+    MeasurableSet {x : X |
+      Tendsto (fun r ↦ μ (s  ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 (f x))} := by
+  -- Another option is to apply the previous lemma to the product with `univ : Set Unit`,
+  -- but repeating the proof is shorter in this case.
+  simp only [tendsto_measure_inter_closedBall_div_iff_rat hs.nullMeasurableSet]
+  have H {q} : MeasurableSet {p : X × X | p.1 ∈ closedBall p.2 q} :=
+    measurableSet_le (measurable_fst.dist measurable_snd) measurable_const
+  refine measurableSet_tendsto_fun (fun q ↦ .div (.measure_apply μ _ ?_) (.measure_apply μ _ H)) hf
+  exact .inter (hs.preimage measurable_fst) H
+
+theorem MeasureTheory.ae_tendsto_measure_sectl_inter_closedBall_div
+    {X : Type*} [PseudoMetricSpace X] [SecondCountableTopology X]
+    [MeasurableSpace X] [OpensMeasurableSpace X]
+    {α : Type*} [MeasurableSpace α]
+    (μ : Measure X) [IsLocallyFiniteMeasure μ] [SFinite μ] (ν : Measure α) [SFinite ν]
+    {s : Set (X × α)} (hs : MeasurableSet s) :
+    ∀ᵐ p ∂μ.prod ν, Tendsto (fun r ↦ μ ((·, p.2) ⁻¹' s  ∩ closedBall p.1 r) / μ (closedBall p.1 r))
+      (𝓝[>] 0) (𝓝 (s.indicator 1 p)) := by
+  have := hs.setOf_tendsto_measure_inter_closedBall_div <| measurable_const.indicator hs
+  rw [Measure.ae_prod_iff_ae_ae]
