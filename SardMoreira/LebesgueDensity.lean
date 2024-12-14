@@ -151,13 +151,17 @@ theorem MeasurableSet.setOf_tendsto_measure_inter_closedBall_div
   refine measurableSet_tendsto_fun (fun q ↦ .div (.measure_apply μ _ ?_) (.measure_apply μ _ H)) hf
   exact .inter (hs.preimage measurable_fst) H
 
-theorem MeasureTheory.ae_tendsto_measure_sectl_inter_closedBall_div
-    {X : Type*} [PseudoMetricSpace X] [SecondCountableTopology X]
-    [MeasurableSpace X] [OpensMeasurableSpace X]
+/-- Parametrized version of `ae_tendsto_measure_inter_div_of_measurableSet`. -/
+theorem Besicovitch.ae_tendsto_measure_sectl_inter_closedBall_div
+    {X : Type*} [MetricSpace X] [SecondCountableTopology X] [HasBesicovitchCovering X]
+    [MeasurableSpace X] [BorelSpace X]
     {α : Type*} [MeasurableSpace α]
     (μ : Measure X) [IsLocallyFiniteMeasure μ] [SFinite μ] (ν : Measure α) [SFinite ν]
     {s : Set (X × α)} (hs : MeasurableSet s) :
     ∀ᵐ p ∂μ.prod ν, Tendsto (fun r ↦ μ ((·, p.2) ⁻¹' s  ∩ closedBall p.1 r) / μ (closedBall p.1 r))
       (𝓝[>] 0) (𝓝 (s.indicator 1 p)) := by
-  have := hs.setOf_tendsto_measure_inter_closedBall_div <| measurable_const.indicator hs
-  rw [Measure.ae_prod_iff_ae_ae]
+  have H := hs.setOf_tendsto_measure_sectl_inter_closedBall_div μ <|
+    (measurable_const (a := 1)).indicator hs
+  rw [Measure.ae_prod_iff_ae_ae, Measure.ae_ae_comm] <;> try exact H
+  refine .of_forall fun y ↦ ae_tendsto_measure_inter_div_of_measurableSet μ <| hs.preimage ?_
+  measurability
