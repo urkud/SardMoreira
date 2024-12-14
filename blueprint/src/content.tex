@@ -22,6 +22,7 @@ for Haar measures on finite dimensional real normed spaces only.
 
 \begin{lemma}%
   \label{lem:measurable-meas-ball}
+  \lean{Measurable.measure_apply}
   Let \(E\) and \(F\) be finite dimensional real normed spaces.
   Let \(s \subset E \times F\) be a measurable set in their product.
   Let \(\mu\) be an additive Haar measure on \(E\).
@@ -29,6 +30,7 @@ for Haar measures on finite dimensional real normed spaces only.
   is a measurable function in \((x, y, r)\).
 \end{lemma}
 \begin{proof}
+  \leanok%
   Consider the set \(t \subset E \times E \times F \times \mathbb R\)
   given by \(t = \{(z, x, y, r) \mid \|z - x\| < r \wedge (z, y) \in s\}\).
   Clearly, this is a measurable set.
@@ -39,13 +41,17 @@ for Haar measures on finite dimensional real normed spaces only.
 
 \begin{corollary}%
   \label{cor:measurable-density}
+  \lean{Besicovitch.ae_tendsto_measure_sectl_inter_closedBall_div}
+  \leanok%
   Let \(E\), \(F\), \(s\), and \(\mu\) be as in \autoref{lem:measurable-meas-ball}.
   Then the set of points \((x, y)\) such that \(x\) is a Lebesgue density point of \(s_{y} = \{z \mid (z, y) \in s\}\)
   is a measurable set.
 \end{corollary}
 \begin{proof}
   \uses{lem:measurable-meas-ball}
-
+  \leanok%
+  The theorem immediately follows from the non-parametrized version
+  and measurability of the set of fiberwise density points of a measurable set.
 \end{proof}
 
 \section{\(C^k\) maps}%
