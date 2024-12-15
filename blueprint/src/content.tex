@@ -6,6 +6,16 @@
 % the current file can be a simple sequence of \input. Otherwise It
 % can start with a \section or \chapter for instance.
 
+\chapter{Introduction}%
+\label{cha:introduction}
+
+The goal of this project is to formalize Moreira's version of Sard's Theorem,
+see \url{http://dmle.icmat.es/pdf/PUBLICACIONSMATEMATIQUES_2001_45_01_06.pdf}.
+
+In this chapter, we describe some differences
+between the original paper and the formalization,
+as well as some minor inaccuracies found during formalization.
+
 \chapter{Preliminaries}%
 \label{cha:preliminaries}
 
@@ -71,7 +81,7 @@ In this section,
 \begin{definition}%
   \label{def:cdh-at}
   \lean{ContDiffHolderAt}
-  \leanok
+  \leanok%
   We say that a map \(f\colon E\to F\) is \emph{\(C^{k+(\alpha)}\)} at a point \(a\),
   if it is \(C^{k}\) at \(a\) and \(D^{k}f(x) - D^{k}f(a) = O(\|x - a\|^{\alpha})\) as \(x\to a\).
 \end{definition}
@@ -208,14 +218,13 @@ Here \(Df(a)(x - a)\) means differential of \(f\) at \(a\) applied to \(x - a\).
 \begin{corollary}%
   \label{cor:cdh-at-sub-isBigO}
   \uses{def:cdh-at}
-  If \(f\colon E \times F \to G\) is \(C^{1+(\alpha)}\) at \((a, b)\) and \(D_{1}f(a, b) = 0\),
-  then \(f(x, b) - f(a, b) = O\left(\|x - a\|^{1 + \alpha}\right)\) as \(x \to a\).
+  If \(f\colon E \to F\) is \(C^{1+(\alpha)}\) at \(a\) and \(Df(a) = 0\),
+  then \(f(x) - f(a) = O\left(\|x - a\|^{1 + \alpha}\right)\) as \(x \to a\).
 \end{corollary}
-Here and below \(D_{1}\) is the derivative of \(f\) with respect to the first coordinate.
 
 \begin{proof}
   \uses{lem:cdh-at-sub-affine-isBigO}
-  Immediately follows from \autoref{lem:cdh-at-sub-affine-isBigO} and \(Df(a, b)(x - a, 0) = 0\).
+  Immediately follows from \autoref{lem:cdh-at-sub-affine-isBigO} and \(Df(a) = 0\).
 \end{proof}
 
 \begin{definition}%
