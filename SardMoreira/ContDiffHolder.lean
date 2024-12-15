@@ -1,4 +1,5 @@
-import Mathlib
+import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 open scoped unitInterval Topology
 open Asymptotics Filter
@@ -14,3 +15,4 @@ variable (𝕜) in
 structure ContDiffHolderAt (k : ℕ) (α : I) (f : E → F) (a : E) : Prop where
   contDiffAt : ContDiffAt 𝕜 k f a
   isBigO : (iteratedFDeriv 𝕜 k f · - iteratedFDeriv 𝕜 k f a) =O[𝓝 a] fun x ↦ ‖x - a‖ ^ (α : ℝ)
+
