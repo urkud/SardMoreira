@@ -190,9 +190,31 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
   \label{lem:cdh-at-sub-affine-isBigO}
   \uses{def:cdh-at}
   If \(f\colon E \to F\) is \(C^{1+(\alpha)}\) at \(a\),
-  then \(f(x) - f(a) - Df(a)(x - a) = O\left(\|x - a\|^{\alpha}\right)\) as \(x \to a\).
+  then \(f(x) - f(a) - Df(a)(x - a) = O\left(\|x - a\|^{1 + \alpha}\right)\) as \(x \to a\).
 \end{lemma}
 Here \(Df(a)(x - a)\) means differential of \(f\) at \(a\) applied to \(x - a\).
+
+\begin{proof}
+  We have
+  \begin{align*}
+    f(x) - f(a) - Df(a)(x - a) &= \int_{0}^{1}\left(Df(a + t(x - a)) - Df(a)\right)(x - a)\,dt\\
+                               &= O\left(\int_{0}^{1}t^{\alpha}\|x - a\|^{1+\alpha}\,dt\right)\\
+                               &= O\left(\|x - a\|^{1 + \alpha}\right).
+  \end{align*}
+\end{proof}
+
+\begin{corollary}%
+  \label{cor:cdh-at-sub-isBigO}
+  \uses{def:cdh-at}
+  If \(f\colon E \times F \to G\) is \(C^{1+(\alpha)}\) at \((a, b)\) and \(D_{1}f(a, b) = 0\),
+  then \(f(x, b) - f(a, b) = O\left(\|x - a\|^{1 + \alpha}\right)\) as \(x \to a\).
+\end{corollary}
+Here and below \(D_{1}\) is the derivative of \(f\) with respect to the first coordinate.
+
+\begin{proof}
+  \uses{lem:cdh-at-sub-affine-isBigO}
+  Immediately follows from \autoref{lem:cdh-at-sub-affine-isBigO} and \(Df(a, b)(x - a, 0) = 0\).
+\end{proof}
 
 \begin{definition}%
   \label{def:cdh-near}
