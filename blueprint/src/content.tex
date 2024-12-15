@@ -71,7 +71,7 @@ In this section,
 \begin{definition}%
   \label{def:cdh-at}
   We say that a map \(f\colon E\to F\) is \emph{\(C^{k+(\alpha)}\)} at a point \(a\),
-  if it is \(C^{k}\) at \(a\) and \(f^{(k)}(x) - f^{(k)}(a) = O(\|x - a\|^{\alpha})\) as \(x\to a\).
+  if it is \(C^{k}\) at \(a\) and \(D^{k}f(x) - D^{k}f(a) = O(\|x - a\|^{\alpha})\) as \(x\to a\).
 \end{definition}
 
 Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoothness assumption.
@@ -79,7 +79,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
   \label{def:contdiffholder-imp-cdh-at}
   \uses{def:cdh-at}
   If \(f\colon E \to F\) is \(C^{k+\alpha}\) on an open set \(U\),
-  i.e., \(f\) is \(C^{k}\) on \(U\) and \(f^{(k)}\) is \(\alpha\)-Hölder on \(U\),
+  i.e., \(f\) is \(C^{k}\) on \(U\) and \(D^{k}f\) is \(\alpha\)-Hölder on \(U\),
   then \(f\) is \(C^{k+(\alpha)}\) at every point \(a \in U\).
 \end{lemma}
 \begin{proof}
@@ -95,8 +95,8 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{proof}
   The forward implication follows from the definition.
   For the backward implication,
-  we need to show that \(f^{(k)}(x) - f^{(k)}(a)=O(1)\) as \(x\to a\),
-  which immediately follows from the continuity of \(f^{(k)}\) at \(a\).
+  we need to show that \(D^{k}f(x) - D^{k}f(a)=O(1)\) as \(x\to a\),
+  which immediately follows from the continuity of \(D^{k}f\) at \(a\).
 \end{proof}
 
 \begin{lemma}%
@@ -110,13 +110,25 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 
 \begin{proof}
   Note that \(l\le k\), hence \(f\) is \(C^{l}\) at \(a\).
-  In order to show \(f^{(l)}(x) - f^{(l)}(a) = O(\|x - a\|^{\beta})\) as \(x\to a\),
+  In order to show \(D^{l}f(x) - D^{l}f(a) = O(\|x - a\|^{\beta})\) as \(x\to a\),
   consider the cases \(l = k\), \(\beta \le \alpha\) and \(l < k\).
 
-  In the former case, we have \(f^{(k)}(x) - f^{(k)}(a) = O\left(\|x - a\|^{\alpha}\right)=O\left(\|x - a\|^{\beta}\right)\) as \(x\to a\).
+  In the former case, we have \(D^{k}f(x) - D^{k}f(a) = O\left(\|x - a\|^{\alpha}\right)=O\left(\|x - a\|^{\beta}\right)\) as \(x\to a\).
 
-  In the latter case, \(f^{(l)}\) is differentiable at \(a\), hence \(f^{(l)}(x)-f^{(l)}(a)=O(x - a)=O(\|x - a\|^{\beta})\),
+  In the latter case, \(D^{l}f\) is differentiable at \(a\), hence \(D^{l}f(x)-D^{l}f(a)=O(x - a)=O(\|x - a\|^{\beta})\),
   where the latter estimate holds since \(\beta \le 1\).
+\end{proof}
+
+\begin{lemma}%
+  \label{lem:cdh-at-of-contDiffAt}
+  \uses{def:cdh-at}
+  If \(f\colon E\to F\) is \(C^{l}\) at \(a\) with \(l > k\),
+  then it is \(C^{k+(\alpha)}\) at \(a\).
+\end{lemma}
+\begin{proof}
+  \uses{lem:cdh-at-mono, lem:cdh-at-zero}
+  This lemma immediately follows
+  from \autoref{lem:cdh-at-mono} and \autoref{lem:cdh-at-zero}.
 \end{proof}
 
 \begin{lemma}%
@@ -130,11 +142,11 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{proof}
   Since \(g\) is \(C^{k}\) at \(f(a)\) and \(f\) is \(C^{k}\) at \(a\),
   the composition \(g\circ f\) is \(C^{k}\) at \(a\).
-  Let us show that \({(g\circ f)}^{(k)}(x) - {(g\circ f)}^{(k)}(a) = O(\|x - a\|^{\alpha})\) as \(x\to \alpha\).
+  Let us show that \(D^{k}(g\circ f)(x) - D^{k}(g\circ f)(a) = O(\|x - a\|^{\alpha})\) as \(x\to \alpha\).
 
   Due to the Faa Di Bruno formula, we have
   \[
-    {(g\circ f)}^{(k)}(a) = \sum_{P}TC_{P}\left(g^{(|P|)}(f(a)), f^{(|P_{0}|)}(a), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(a)\right),
+    D^k(g\circ f)(a) = \sum_{P}TC_{P}\left(D^{|P|}g(f(a)), D^{|P_{0}|}f(a), \dots, D^{\left|P_{|P|-1}\right|}f(a)\right),
   \]
   where the sum is taken over all partitions \(P\) of \(0, \dots, k - 1\) into disjoint sets,
   and \(TC_{P}\) is a continuous multilinear map in all \(|P|+1\) variables
@@ -143,14 +155,44 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
   Subtracting these expressions, we see that it suffices to show that for each partition \(P\),
   we have
   \begin{align*}
-    TC_{P}&\left(g^{(|P|)}(f(x)), f^{(|P_{0}|)}(x), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(x)\right) -\\
-          &TC_{P}\left(g^{(|P|)}(f(a)), f^{(|P_{0}|)}(a), \dots, f^{\left(\left|P_{|P|-1}\right|\right)}(a)\right) =\\
+    TC_{P}&\left(D^{|P|}g(f(x)), D^{|P_{0}|}f(x), \dots, D^{\left|P_{|P|-1}\right|}f(x)\right) -\\
+          &TC_{P}\left(D^{|P|}g(f(a)), D^{|P_{0}|}f(a), \dots, D^{\left|P_{|P|-1}\right|}f(a)\right) =\\
           &O(\|x - a\|^{\alpha}).
   \end{align*}
   Since \(k > 0\), the function \(f\) is Lipschitz near \(a\),
-  thus \(f(x) - f(a) = O(x - a)\), \(g^{(|P|)}(f(x)) - g^{(|P|)}(f(a)) = O(\|x - a\|^{\alpha})\), and \(f^{(|P_{j})}(x) - f^{(|P_{j})}(a) = O(\|x - a\|^{\alpha})\).
+  thus \(f(x) - f(a) = O(x - a)\), \(D^{|P|}g(f(x)) - D^{|P|}g(f(a)) = O(\|x - a\|^{\alpha})\), and \(D^{|P_{j}|}f(x) - D^{|P_{j}|}f(a) = O(\|x - a\|^{\alpha})\).
   Now, the goal follows from the fact that a continuous multilinear map is locally Lipschitz.
 \end{proof}
+
+\begin{corollary}%
+  \label{cor:cdh-at-arith}
+  \uses{def:cdh-at}
+  Arithmetic operations (addition, subtraction, scalar multiplication, multiplication)
+  of \(C^{k+(\alpha)}\) functions is a \(C^{k+(\alpha)}\) function.
+\end{corollary}
+
+\begin{proof}
+  \uses{lem:cdh-at-comp,lem:cdh-at-of-contDiffAt}
+  This fact immediately follows
+  from \autoref{lem:cdh-at-comp} and \autoref{lem:cdh-at-of-contDiffAt}.
+\end{proof}
+
+\begin{remark}
+  It would be nice to formalize the proofs of \autoref{lem:cdh-at-comp} above
+  and \autoref{thm:cdh-at-inverse} below
+  so that most parts of the proofs
+  can be reused in the proofs about a more common class \(C^{k+\alpha}\).
+  This can be achieved by writing most of the estimates
+  in terms of formal Taylor series satisfying the Faa Di Bruno formula.
+\end{remark}
+
+\begin{lemma}%
+  \label{lem:cdh-at-sub-affine-isBigO}
+  \uses{def:cdh-at}
+  If \(f\colon E \to F\) is \(C^{1+(\alpha)}\) at \(a\),
+  then \(f(x) - f(a) - Df(a)(x - a) = O\left(\|x - a\|^{\alpha}\right)\) as \(x \to a\).
+\end{lemma}
+Here \(Df(a)(x - a)\) means differential of \(f\) at \(a\) applied to \(x - a\).
 
 \begin{definition}%
   \label{def:cdh-near}
@@ -166,7 +208,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
   A map \(f\colon E\to F\) is \(C^{k+(\alpha)}\) near \(s\)
   if and only if there exits an open superset \(U\supset s\)
   such that \(f\) is \(C^{k}\) on \(U\)
-  and for any \(a \in s\) we have \(f^{(k)}(x) - f^{(k)}(a) = o(\|x - a\|^{\alpha})\) as \(x\to a\).
+  and for any \(a \in s\) we have \(D^{k}f(x) - D^{k}f(a) = o(\|x - a\|^{\alpha})\) as \(x\to a\).
 \end{lemma}
 
 \begin{proof}
@@ -192,28 +234,49 @@ In this section we prove a version of the inverse function theorem for \(C^{k+(\
 then deduce some corollaries.
 
 \begin{theorem}%
-  \label{thm:cdh-inverse}
+  \label{thm:cdh-at-inverse}
   \uses{def:cdh-at}
   Consider a map \(f\colon E\to F\) between two finite dimensional real normed spaces.
   Suppose that \(f\) is \(C^{k+(\alpha)}\) at \(a \in E\), \(k > 0\), and \(df(a)\) is bijective.
   Then the inverse function \(f^{-1}\) is \(C^{k+(\alpha)}\) at \(f(a)\).
 \end{theorem}
+\begin{proof}
+  From the usual inverse function theorem for \(C^{k}\) maps,
+  we know that \(g=f^{-1}\) is \(C^{k}\) in a neighborhood of \(f(a)\).
+  Thus we only need to show that \(D^{k}g(y)-D^{k}g(f(a)) = O\left(\|y - f(a)\|^{\alpha}\right)\) as \(y \to f(a)\).
+  Equivalently, we need to show that \(D^{k}g(f(x)) - D^{k}g(f(a)) = O\left(\|x - a\|^{\alpha}\right)\) as \(x\to a\).
+
+  Consider the cases \(k = 1\) and \(k > 1\).
+
+  \textbf{Case I:\@\(k = 1\)}. In this case we need to show that
+  \(g'(f(x)) - g'(f(a)) = O\left(\|x - a\|^{\alpha}\right)\) as \(x\to a\).
+  This immediately follows from \(g'(f(x)) = {f'(x)}^{-1}\),
+  a similar estimate on \(f'(x) - f'(a)\),
+  and differentiability of the inversion of a continuous linear equivalence.
+
+  \textbf{Case II:\@\(k > 1\)}.
+  Apply the Faa Di Bruno formula to find \(D^{k}(g \circ f) = D^{k} id =0\).
+  Note that the only term in the RHS of the Faa Di Bruno formula
+  that depends on \(D^{k}g\) is \(D^{k}g\circ_{k} f'\),
+  where \(\circ_{k}\) means composition of a continuous multilinear map \(D^{k}g\)
+  and a continuous linear map \(f'\).
+  Similarly, the only term that depends on \(D^{k}f(x)\) is \(g'(f(x))\circ D^{k}f(x)\).
+  All other derivatives of \(f\) and \(g\) are differentiable,
+  hence Lipschitz continuous near \(a\) and \(f(a)\), respectively.
+  Therefore, \(D^{k}g(f(x))\circ_{k}f'(x) - D^{k}g(f(a))\circ_{k}f'(a)=O\left(\|x - a\|^{\alpha}\right)\) as \(x\to a\).
+  This immediately implies the required estimate.
+\end{proof}
+
 \chapter{Local charts}%
 \label{cha:local-charts}
 
 \section{Functions whose zeros include a given set}
 
 \begin{lemma}%
-  \label{lem:chart-one-deriv-zero}
+  \label{lem:chart-one-deriv-zero-bdd}
   \uses{def:cdh-near}
-  Consider a function \(f\colon E\to F\) between real normed spaces.
-  Let \(k\) be a positive natural number, let \(\alpha\) be a real number in \([0, 1]\).
-  Let \(s\) be a set such that
-  \begin{itemize}
-  \item \(f\) is \(C^{k+(\alpha)}\) near \(s\) in the sense of \autoref{def:cdh-near};
-  \item \(df = 0\) at all points of \(s\).
-  \end{itemize}
-  Let \(a \in s\) be a Lebesgue 
+  Consider finite dimensional real normed spaces \(E\) and \(F\).
+  Consider \(K \subset E \times F\).
 \end{lemma}
 
 
