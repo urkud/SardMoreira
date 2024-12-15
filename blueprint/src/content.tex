@@ -198,35 +198,6 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
   in terms of formal Taylor series satisfying the Faa Di Bruno formula.
 \end{remark}
 
-\begin{lemma}%
-  \label{lem:cdh-at-sub-affine-isBigO}
-  \uses{def:cdh-at}
-  If \(f\colon E \to F\) is \(C^{1+(\alpha)}\) at \(a\),
-  then \(f(x) - f(a) - Df(a)(x - a) = O\left(\|x - a\|^{1 + \alpha}\right)\) as \(x \to a\).
-\end{lemma}
-Here \(Df(a)(x - a)\) means differential of \(f\) at \(a\) applied to \(x - a\).
-
-\begin{proof}
-  We have
-  \begin{align*}
-    f(x) - f(a) - Df(a)(x - a) &= \int_{0}^{1}\left(Df(a + t(x - a)) - Df(a)\right)(x - a)\,dt\\
-                               &= O\left(\int_{0}^{1}t^{\alpha}\|x - a\|^{1+\alpha}\,dt\right)\\
-                               &= O\left(\|x - a\|^{1 + \alpha}\right).
-  \end{align*}
-\end{proof}
-
-\begin{corollary}%
-  \label{cor:cdh-at-sub-isBigO}
-  \uses{def:cdh-at}
-  If \(f\colon E \to F\) is \(C^{1+(\alpha)}\) at \(a\) and \(Df(a) = 0\),
-  then \(f(x) - f(a) = O\left(\|x - a\|^{1 + \alpha}\right)\) as \(x \to a\).
-\end{corollary}
-
-\begin{proof}
-  \uses{lem:cdh-at-sub-affine-isBigO}
-  Immediately follows from \autoref{lem:cdh-at-sub-affine-isBigO} and \(Df(a) = 0\).
-\end{proof}
-
 \begin{definition}%
   \label{def:cdh-near}
   \uses{def:cdh-at}
@@ -300,10 +271,55 @@ then deduce some corollaries.
   This immediately implies the required estimate.
 \end{proof}
 
-\chapter{Local charts}%
-\label{cha:local-charts}
+\chapter{Local estimates}%
+\label{cha:local-estimates}
 
 \section{Functions whose zeros include a given set}
+
+\begin{lemma}%
+  \label{lem:cdh-at-sub-affine-le-of-meas}
+  Let \(E\) be a finite dimensional real normed space.
+  Let \(F\) be a real normed space.
+  Consider a function \(f\colon E\to F\), points \(a, b \in E\),
+  and numbers \(C\ge 0\), \(\delta\ge 0\), \(\alpha\in [0, 1]\) such that
+  \begin{itemize}
+  \item \(f\) is differentiable on \([a, b]\);
+  \item \(\|D_{b - a}f(a + t(b - a))\| \le Ct^{\alpha}{\|b - a\|}^{1+\alpha}\);
+  \item the set of \(t\) such that \(D_{b - a}f(a + t(b - a)) = 0\)
+    has measure at least \(1 - \delta\).
+  \end{itemize}
+  Then \(\|f(b) - f(a)\| \le C\delta{\|b - a\|}^{1+\alpha}\).
+\end{lemma}
+
+\begin{lemma}%
+  \label{lem:cdh-at-sub-affine-isBigO}
+  \uses{def:cdh-at}
+  If \(f\colon E \to F\) is \(C^{1+(\alpha)}\) at \(a\),
+  then \(f(x) - f(a) - Df(a)(x - a) = O\left(\|x - a\|^{1 + \alpha}\right)\) as \(x \to a\).
+\end{lemma}
+Here \(Df(a)(x - a)\) means differential of \(f\) at \(a\) applied to \(x - a\).
+
+\begin{proof}
+  We have
+  \begin{align*}
+    f(x) - f(a) - Df(a)(x - a) &= \int_{0}^{1}\left(Df(a + t(x - a)) - Df(a)\right)(x - a)\,dt\\
+                               &= O\left(\int_{0}^{1}t^{\alpha}\|x - a\|^{1+\alpha}\,dt\right)\\
+                               &= O\left(\|x - a\|^{1 + \alpha}\right).
+  \end{align*}
+\end{proof}
+
+\begin{corollary}%
+  \label{cor:cdh-at-sub-isBigO}
+  \uses{def:cdh-at}
+  If \(f\colon E \to F\) is \(C^{1+(\alpha)}\) at \(a\) and \(Df(a) = 0\),
+  then \(f(x) - f(a) = O\left(\|x - a\|^{1 + \alpha}\right)\) as \(x \to a\).
+\end{corollary}
+
+\begin{proof}
+  \uses{lem:cdh-at-sub-affine-isBigO}
+  Immediately follows from \autoref{lem:cdh-at-sub-affine-isBigO} and \(Df(a) = 0\).
+\end{proof}
+
 
 \begin{lemma}%
   \label{lem:chart-one-deriv-zero-bdd}
