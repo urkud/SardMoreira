@@ -281,15 +281,36 @@ then deduce some corollaries.
   Let \(E\) be a finite dimensional real normed space.
   Let \(F\) be a real normed space.
   Consider a function \(f\colon E\to F\), points \(a, b \in E\),
-  and numbers \(C\ge 0\), \(\delta\ge 0\), \(\alpha\ge 0\) such that
+  and numbers \(C\ge 0\), \(\delta\ge 0\), \(r \ge 0\) such that
   \begin{itemize}
   \item \(f\) is differentiable on \([a, b]\);
-  \item \(\|D_{b - a}f(a + t(b - a))\| \le Ct^{\alpha}{\|b - a\|}^{1+\alpha}\);
+  \item \(\|D_{b - a}f(a + t(b - a))\| \le Ct^{r}{\|b - a\|}^{1+r}\);
   \item the set of \(t\) such that \(D_{b - a}f(a + t(b - a)) = 0\)
     has measure at least \(1 - \delta\).
   \end{itemize}
-  Then \(\|f(b) - f(a)\| \le C\delta{\|b - a\|}^{1+\alpha}\).
+  Then \(\|f(b) - f(a)\| \le C\delta{\|b - a\|}^{1+r}\).
 \end{lemma}
+
+\begin{proof}
+  Let \(s\) be the set of \(t \in [0, 1]\) such that \(D_{b - a}f(a + t(b - a)) \ne 0\).
+  We have
+  \begin{align*}
+    \|f(b) - f(a)\| &= \left|\int_{0}^{1} D_{b - a}f(a + t(b - a))\,dt\right| \\
+                    &= \left|\int_{t\in s} D_{b - a}f(a + t(b - a))\,dt\right| \\
+                    &\le \int_{t \in s} Ct^{r}{\|b - a\|}^{1+r}\,dt \\
+                    &= C{\|b - a\|}^{1+r} \int_{t \in s}t^{r}\,dt \\
+                    &\le C{\|b - a\|}^{1+r} \lambda(s) \\
+                    &\le C\delta {\|b - a\|}^{1+r}
+  \end{align*}
+\end{proof}
+
+\begin{remark}
+  The constant can be improved, but probably we don't need this.
+  In order to do this, we need to show that
+  \[
+    \int_{t \in s}t^{r}\,dt \le \int_{1 - \delta}^{1} t^{r}\,dt = \frac{1 - {(1 - \delta)}^{r + 1}}{r + 1}.
+  \]
+\end{remark}
 
 \begin{lemma}%
   \label{lem:cdh-at-sub-affine-isBigO}
