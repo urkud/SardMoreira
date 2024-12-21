@@ -21,14 +21,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 -- lemma aux_hmeas {a b : ℝ} (h : a ≤ b) : volume (Set.Icc a b) = b - a := sorry
 
 -- XXX: is this in mathlib already?
-lemma measure_finite_of_subset {α : Type*} [MeasureSpace α] {μ : Measure α} {s t : Set α}
-    (ht : μ t < ⊤) (hst : s ⊆ t) : μ s < ⊤ := by
-  trans (μ t + 1); swap; simpa
-  suffices hyp: μ s ≤ μ t by calc
-    _ ≤ μ t := hyp
-    _ < μ t + 1 := by sorry
-  apply μ.mono hst
-
+lemma measure_finite_of_subset {α : Type*} [MeasurableSpace α] {μ : Measure α} {s t : Set α}
+    (ht : μ t < ⊤) (hst : s ⊆ t) : μ s < ⊤ :=
+  (measure_mono hst).trans_lt ht
 
 -- Lemma 8 in the blueprint: the statement might be slightly off, check carefully!
 lemma cdh_at_sub_affine_le_of_meas {f : E → F} {a b : E} {C r : NNReal} {δ : ℝ} (hδ : δ ∈ (Set.Ioo (0 : ℝ) 1))
