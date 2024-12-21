@@ -11,10 +11,10 @@ autoImplicit = false
 name = "mathlib"
 scope = "leanprover-community"
 
-
 [[require]]
 name = "checkdecls"
-git = "https://github.com/PatrickMassot/checkdecls.git"
+git = "https://github.com/urkud/checkdecls.git"
+rev = "YK-fix-superscript"
 
 [[require]]
 name = "«doc-gen4»"
