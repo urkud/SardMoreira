@@ -1,4 +1,4 @@
-import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 open scoped unitInterval Topology
@@ -18,26 +18,38 @@ theorem ContDiffOn.continuousAt_iteratedFDerivWithin {f : E → F} {s : Set E} {
 
 theorem ContDiffWithinAt.continuousWithinAt_iteratedFDerivWithin
     {f : E → F} {s : Set E} {n : WithTop ℕ∞} {k : ℕ} {a : E} (hf : ContDiffWithinAt 𝕜 n f s a)
-    (hs : UniqueDiffOn 𝕜 (insert a s)) (hk : k ≤ n) :
-    ContinuousWithinAt (iteratedFDerivWithin 𝕜 k f s) s a := by
-  rcases hf.contDiffOn' hk (by simp) with ⟨U, hUo, haU, hfU⟩
-  have H := hfU.continuousOn_iteratedFDerivWithin le_rfl (hs.inter hUo) a ⟨mem_insert _ _, haU⟩
-  rw [← continuousWithinAt_insert_self]
-  have {b t} (hb : b ∈ U) : (t ∩ U : Set E) =ᶠ[𝓝 b] t :=
-    inter_eventuallyEq_left.2 <| mem_nhds_iff.mpr ⟨U, fun _ h _ ↦ h, hUo, hb⟩
-  refine (H.congr_of_mem (fun y hy ↦ ?_) (by simpa)).congr_set (this haU)
-  rw [← iteratedFDerivWithin_insert, iteratedFDerivWithin_congr_set (this hy.2)]
+    (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) (hk : k ≤ n) :
+    ContinuousWithinAt (iteratedFDerivWithin 𝕜 k f s) s a :=
+  (hf.iteratedFderivWithin_right hs (by rwa [zero_add]) ha).continuousWithinAt
 
 theorem ContDiffAt.continuousAt_iteratedFDeriv
     {f : E → F} {n : WithTop ℕ∞} {k : ℕ} {a : E} (hf : ContDiffAt 𝕜 n f a) (hk : k ≤ n) :
     ContinuousAt (iteratedFDeriv 𝕜 k f) a := by
   simp only [← continuousWithinAt_univ, ← iteratedFDerivWithin_univ]
-  exact hf.contDiffWithinAt.continuousWithinAt_iteratedFDerivWithin (by simp [uniqueDiffOn_univ]) hk
+  exact hf.contDiffWithinAt.continuousWithinAt_iteratedFDerivWithin uniqueDiffOn_univ trivial hk
+
+theorem ContDiffAt.differentiableAt_iteratedFDeriv
+    {f : E → F} {a : E} {n : WithTop ℕ∞} {m : ℕ} (hf : ContDiffAt 𝕜 n f a) (hm : m < n) :
+    DifferentiableAt 𝕜 (iteratedFDeriv 𝕜 m f) a := by
+  simp only [← differentiableWithinAt_univ, ← iteratedFDerivWithin_univ]
+  exact hf.differentiableWithinAt_iteratedFDerivWithin hm (by simp [uniqueDiffOn_univ])
 
 variable (𝕜) in
 structure ContDiffHolderAt (k : ℕ) (α : I) (f : E → F) (a : E) : Prop where
   contDiffAt : ContDiffAt 𝕜 k f a
-  isBigO : (iteratedFDeriv 𝕜 k f · - iteratedFDeriv 𝕜 k f a) =O[𝓝 a] fun x ↦ ‖x - a‖ ^ (α : ℝ)
+  isBigO : (iteratedFDeriv 𝕜 k f · - iteratedFDeriv 𝕜 k f a) =O[𝓝 a] (‖· - a‖ ^ (α : ℝ))
+
+theorem ContDiffAt.contDiffHolderAt {n : WithTop ℕ∞} {k : ℕ} {f : E → F} {a : E}
+    (h : ContDiffAt 𝕜 n f a) (hk : k < n) (α : I) : ContDiffHolderAt 𝕜 k α f a where
+  contDiffAt := h.of_le hk.le
+  isBigO := calc
+    (iteratedFDeriv 𝕜 k f · - iteratedFDeriv 𝕜 k f a) =O[𝓝 a] (· - a) :=
+      (h.differentiableAt_iteratedFDeriv hk).isBigO_sub
+    _ =O[𝓝 a] (‖· - a‖ ^ (α : ℝ)) := by
+      have : Tendsto (‖· - a‖) (𝓝 a) (𝓝[≥] 0) := by
+        refine tendsto_nhdsWithin_iff.mpr ?_
+        sorry
+      refine .comp_tendsto ?_ this
 
 namespace ContDiffHolderAt
 
