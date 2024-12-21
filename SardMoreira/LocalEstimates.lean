@@ -1,13 +1,7 @@
-import Mathlib.Analysis.Calculus.ContDiff.Defs
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
-
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
-import Mathlib.MeasureTheory.Integral.Bochner
-import Mathlib.MeasureTheory.Measure.Haar.OfBasis
-import Mathlib.Order.CompletePartialOrder
 import Mathlib.MeasureTheory.Integral.SetIntegral
-
-import Mathlib
+import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Order.CompletePartialOrder
 
 open scoped unitInterval Topology
 open Asymptotics Filter MeasureTheory
