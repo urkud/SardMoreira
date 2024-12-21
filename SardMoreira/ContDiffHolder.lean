@@ -4,6 +4,12 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 open scoped unitInterval Topology
 open Asymptotics Filter Set
 
+theorem Asymptotics.IsBigO.id_rpow_of_le_one {a : ℝ} (ha : a ≤ 1) :
+    (id : ℝ → ℝ) =O[𝓝[≥] 0] (· ^ a) :=
+  .of_bound' <| mem_of_superset (Icc_mem_nhdsWithin_Ici' one_pos) fun x hx ↦ by
+    simpa [Real.abs_rpow_of_nonneg hx.1, abs_of_nonneg hx.1]
+      using Real.self_le_rpow_of_le_one hx.1 hx.2 ha
+
 section NormedField
 
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
@@ -46,10 +52,9 @@ theorem ContDiffAt.contDiffHolderAt {n : WithTop ℕ∞} {k : ℕ} {f : E → F}
     (iteratedFDeriv 𝕜 k f · - iteratedFDeriv 𝕜 k f a) =O[𝓝 a] (· - a) :=
       (h.differentiableAt_iteratedFDeriv hk).isBigO_sub
     _ =O[𝓝 a] (‖· - a‖ ^ (α : ℝ)) := by
-      have : Tendsto (‖· - a‖) (𝓝 a) (𝓝[≥] 0) := by
-        refine tendsto_nhdsWithin_iff.mpr ?_
-        sorry
-      refine .comp_tendsto ?_ this
+      refine .of_norm_left <| .comp_tendsto (.id_rpow_of_le_one α.2.2) ?_
+      refine tendsto_nhdsWithin_iff.mpr ⟨?_, by simp⟩
+      exact Continuous.tendsto' (by fun_prop) _ _ (by simp)
 
 namespace ContDiffHolderAt
 

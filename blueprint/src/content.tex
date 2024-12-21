@@ -101,7 +101,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-zero}
   \lean{ContDiffHolderAt.zero_exponent_iff}
-  \leanok
+  \leanok%
   \uses{def:cdh-at}
   A map \(f\colon E\to F\) is \(C^{k+(0)}\) at \(a\) iff it is \(C^{k}\) at \(a\).
 \end{lemma}
@@ -114,6 +114,19 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \end{proof}
 
 \begin{lemma}%
+  \label{lem:cdh-at-of-contDiffAt}
+  \uses{def:cdh-at}
+  \lean{ContDiffAt.contDiffHolderAt}
+  \leanok%
+  If \(f\colon E\to F\) is \(C^{l}\) at \(a\) with \(l > k\),
+  then it is \(C^{k+(\alpha)}\) at \(a\).
+\end{lemma}
+\begin{proof}
+  Since \(D^{k}f\) is differentiable at \(a\), we have \(D^{k}f(x)-D^{k}f(a)=O(x - a)=O(\|x - a\|^{\alpha})\),
+  where the latter estimate holds since \(\alpha \le 1\).
+\end{proof}
+
+\begin{lemma}%
   \label{lem:cdh-at-mono}
   \uses{def:cdh-at}
   Let \(f\colon E\to F\) be a map which is \(C^{k+(\alpha)}\) at \(a\).
@@ -123,26 +136,14 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:cdh-at-of-contDiffAt}
   Note that \(l\le k\), hence \(f\) is \(C^{l}\) at \(a\).
   In order to show \(D^{l}f(x) - D^{l}f(a) = O(\|x - a\|^{\beta})\) as \(x\to a\),
   consider the cases \(l = k\), \(\beta \le \alpha\) and \(l < k\).
 
   In the former case, we have \(D^{k}f(x) - D^{k}f(a) = O\left(\|x - a\|^{\alpha}\right)=O\left(\|x - a\|^{\beta}\right)\) as \(x\to a\).
 
-  In the latter case, \(D^{l}f\) is differentiable at \(a\), hence \(D^{l}f(x)-D^{l}f(a)=O(x - a)=O(\|x - a\|^{\beta})\),
-  where the latter estimate holds since \(\beta \le 1\).
-\end{proof}
-
-\begin{lemma}%
-  \label{lem:cdh-at-of-contDiffAt}
-  \uses{def:cdh-at}
-  If \(f\colon E\to F\) is \(C^{l}\) at \(a\) with \(l > k\),
-  then it is \(C^{k+(\alpha)}\) at \(a\).
-\end{lemma}
-\begin{proof}
-  \uses{lem:cdh-at-mono, lem:cdh-at-zero}
-  This lemma immediately follows
-  from \autoref{lem:cdh-at-mono} and \autoref{lem:cdh-at-zero}.
+  In the latter case, we apply \autoref{lem:cdh-at-of-contDiffAt}.
 \end{proof}
 
 \begin{lemma}%
