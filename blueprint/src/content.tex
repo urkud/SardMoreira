@@ -89,12 +89,15 @@ In this section,
 Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoothness assumption.
 \begin{lemma}%
   \label{def:contdiffholder-imp-cdh-at}
+  \lean{ContDiffHolderAt.of_contDiffOn_holderWith}
+  \leanok%
   \uses{def:cdh-at}
   If \(f\colon E \to F\) is \(C^{k+\alpha}\) on an open set \(U\),
   i.e., \(f\) is \(C^{k}\) on \(U\) and \(D^{k}f\) is \(\alpha\)-Hölder on \(U\),
   then \(f\) is \(C^{k+(\alpha)}\) at every point \(a \in U\).
 \end{lemma}
 \begin{proof}
+  \leanok%
   The proof follows immediately from definitions.
 \end{proof}
 
@@ -107,6 +110,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \end{lemma}
 
 \begin{proof}
+  \leanok%
   The forward implication follows from the definition.
   For the backward implication,
   we need to show that \(D^{k}f(x) - D^{k}f(a)=O(1)\) as \(x\to a\),
@@ -122,6 +126,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
   then it is \(C^{k+(\alpha)}\) at \(a\).
 \end{lemma}
 \begin{proof}
+  \leanok%
   Since \(D^{k}f\) is differentiable at \(a\), we have \(D^{k}f(x)-D^{k}f(a)=O(x - a)=O(\|x - a\|^{\alpha})\),
   where the latter estimate holds since \(\alpha \le 1\).
 \end{proof}
@@ -129,6 +134,8 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-mono}
   \uses{def:cdh-at}
+  \lean{ContDiffHolderAt.of_exponent_le, ContDiffHolderAt.of_lt, ContDiffHolderAt.of_toLex_le}
+  \leanok%
   Let \(f\colon E\to F\) be a map which is \(C^{k+(\alpha)}\) at \(a\).
   Let \(l\) be a natural number and \(\beta \in [0, 1]\) be a real number.
   If \((l, \beta) \le (k, \alpha)\) in the lexicographic order,
@@ -137,6 +144,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 
 \begin{proof}
   \uses{lem:cdh-at-of-contDiffAt}
+  \leanok%
   Note that \(l\le k\), hence \(f\) is \(C^{l}\) at \(a\).
   In order to show \(D^{l}f(x) - D^{l}f(a) = O(\|x - a\|^{\beta})\) as \(x\to a\),
   consider the cases \(l = k\), \(\beta \le \alpha\) and \(l < k\).

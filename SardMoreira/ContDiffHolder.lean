@@ -1,14 +1,57 @@
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Topology.MetricSpace.Holder
 
-open scoped unitInterval Topology
+open scoped unitInterval Topology NNReal
 open Asymptotics Filter Set
 
-theorem Asymptotics.IsBigO.id_rpow_of_le_one {a : ℝ} (ha : a ≤ 1) :
-    (id : ℝ → ℝ) =O[𝓝[≥] 0] (· ^ a) :=
+@[simp]
+theorem Subtype.edist_mk_mk {X : Type*} [PseudoEMetricSpace X]
+    {p : X → Prop} {x y : X} (hx : p x) (hy : p y) :
+    edist (⟨x, hx⟩ : Subtype p) ⟨y, hy⟩ = edist x y :=
+  rfl
+
+namespace HolderWith
+
+theorem restrict_iff {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    {C r : ℝ≥0} {f : X → Y} {s : Set X} :
+    HolderWith C r (s.restrict f) ↔ HolderOnWith C r f s := by
+  simp [HolderWith, HolderOnWith]
+
+protected alias ⟨_, _root_.HolderOnWith.holderWith⟩ := restrict_iff
+
+end HolderWith
+
+namespace HolderOnWith
+
+-- TODO: In Mathlib, we should prove results about `HolderOnWith` first,
+-- then apply to `s = univ`.
+theorem dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] {C r : ℝ≥0} {f : X → Y}
+    {s : Set X} {x y : X} (h : HolderOnWith C r f s) (hx : x ∈ s) (hy : y ∈ s) :
+    dist (f x) (f y) ≤ C * dist x y ^ (r : ℝ) :=
+  h.holderWith.dist_le ⟨x, hx⟩ ⟨y, hy⟩
+
+end HolderOnWith
+
+namespace Asymptotics
+
+/-- If `a ≤ b`, then `x^b = O(x^a)` as `x → 0`, `x ≥ 0`, unless `b = 0` and `a ≠ 0`. -/
+theorem IsBigO.rpow_rpow_nhdsWithin_Ici_zero_of_le {a b : ℝ} (h : a ≤ b) (himp : b = 0 → a = 0) :
+    (· ^ b : ℝ → ℝ) =O[𝓝[≥] 0] (· ^ a) :=
   .of_bound' <| mem_of_superset (Icc_mem_nhdsWithin_Ici' one_pos) fun x hx ↦ by
     simpa [Real.abs_rpow_of_nonneg hx.1, abs_of_nonneg hx.1]
-      using Real.self_le_rpow_of_le_one hx.1 hx.2 ha
+     using Real.rpow_le_rpow_of_exponent_ge_of_imp hx.1 hx.2 h fun _ ↦ himp
+
+theorem IsBigO.id_rpow_of_le_one {a : ℝ} (ha : a ≤ 1) :
+    (id : ℝ → ℝ) =O[𝓝[≥] 0] (· ^ a) := by
+  simpa using rpow_rpow_nhdsWithin_Ici_zero_of_le ha (by simp)
+
+end Asymptotics
+
+@[to_additive]
+theorem tendsto_norm_div_self_nhdsLE {E : Type*} [SeminormedGroup E] (a : E) :
+    Tendsto (‖· / a‖) (𝓝 a) (𝓝[≥] 0) :=
+  tendsto_nhdsWithin_iff.mpr ⟨tendsto_norm_div_self a, by simp⟩
 
 section NormedField
 
@@ -51,10 +94,8 @@ theorem ContDiffAt.contDiffHolderAt {n : WithTop ℕ∞} {k : ℕ} {f : E → F}
   isBigO := calc
     (iteratedFDeriv 𝕜 k f · - iteratedFDeriv 𝕜 k f a) =O[𝓝 a] (· - a) :=
       (h.differentiableAt_iteratedFDeriv hk).isBigO_sub
-    _ =O[𝓝 a] (‖· - a‖ ^ (α : ℝ)) := by
-      refine .of_norm_left <| .comp_tendsto (.id_rpow_of_le_one α.2.2) ?_
-      refine tendsto_nhdsWithin_iff.mpr ⟨?_, by simp⟩
-      exact Continuous.tendsto' (by fun_prop) _ _ (by simp)
+    _ =O[𝓝 a] (‖· - a‖ ^ (α : ℝ)) :=
+      .of_norm_left <| .comp_tendsto (.id_rpow_of_le_one α.2.2) <| tendsto_norm_sub_self_nhdsLE a
 
 namespace ContDiffHolderAt
 
@@ -63,5 +104,30 @@ theorem zero_exponent_iff {k : ℕ} {f : E → F} {a : E} :
     ContDiffHolderAt 𝕜 k 0 f a ↔ ContDiffAt 𝕜 k f a := by
   refine ⟨contDiffAt, fun h ↦ ⟨h, ?_⟩⟩
   simpa using ((h.continuousAt_iteratedFDeriv le_rfl).sub_const _).norm.isBoundedUnder_le
+
+theorem of_exponent_le {k : ℕ} {f : E → F} {a : E} {α β : I} (hf : ContDiffHolderAt 𝕜 k α f a)
+    (hle : β ≤ α) : ContDiffHolderAt 𝕜 k β f a where
+  contDiffAt := hf.contDiffAt
+  isBigO := hf.isBigO.trans <| by
+    refine .comp_tendsto (.rpow_rpow_nhdsWithin_Ici_zero_of_le hle fun hα ↦ ?_) ?_
+    · exact le_antisymm (le_trans (mod_cast hle) hα.le) β.2.1
+    · exact tendsto_norm_sub_self_nhdsLE a
+
+theorem of_lt {k l : ℕ} {f : E → F} {a : E} {α β : I} (hf : ContDiffHolderAt 𝕜 k α f a)
+    (hlt : l < k) : ContDiffHolderAt 𝕜 l β f a :=
+  hf.contDiffAt.contDiffHolderAt (mod_cast hlt) _
+
+theorem of_toLex_le {k l : ℕ} {f : E → F} {a : E} {α β : I} (hf : ContDiffHolderAt 𝕜 k α f a)
+    (hle : toLex (l, β) ≤ toLex (k, α)) : ContDiffHolderAt 𝕜 l β f a :=
+  ((Prod.Lex.le_iff _ _).mp hle).elim hf.of_lt <| by rintro ⟨rfl, hle⟩; exact hf.of_exponent_le hle
+
+theorem of_contDiffOn_holderWith {f : E → F} {s : Set E} {k : ℕ} {α : I} {a : E} {C : ℝ≥0}
+    (hf : ContDiffOn 𝕜 k f s) (hs : s ∈ 𝓝 a)
+    (hd : HolderOnWith C ⟨α, α.2.1⟩ (iteratedFDeriv 𝕜 k f) s) :
+    ContDiffHolderAt 𝕜 k α f a where
+  contDiffAt := hf.contDiffAt hs
+  isBigO := .of_bound C <| mem_of_superset hs fun x hx ↦ by
+    simpa [Real.abs_rpow_of_nonneg, ← dist_eq_norm, dist_nonneg]
+      using hd.dist_le hx (mem_of_mem_nhds hs)
 
 end ContDiffHolderAt
