@@ -22,7 +22,7 @@ title: Formalizing Moreira's version of Sard Theorem
 #email: your-email@example.com
 description: by Yury G. Kudryashov
 baseurl: "/SardMoreira" # the subpath of your site, e.g. /blog
-url: "https://urkud.github.io/" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://urkud.github.io/SardMoreira" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: "yury_kudryashov"
 github_username: "urkud"
 repository: urkud/SardMoreira
