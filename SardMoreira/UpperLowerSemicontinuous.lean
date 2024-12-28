@@ -14,6 +14,11 @@ variable {α : Type*} [Preorder α] {a b : α}
 @[simp] theorem toLower_le_toLower : toLower a ≤ toLower b ↔ a ≤ b := .rfl
 @[simp] theorem toLower_lt_toLower : toLower a < toLower b ↔ a < b := .rfl
 
+@[fun_prop]
+theorem continuous_toLower [TopologicalSpace α] [ClosedIciTopology α] :
+    Continuous (toLower : α → WithLower α) :=
+  continuous_generateFrom_iff.mpr <| by rintro _ ⟨a, rfl⟩; exact isClosed_Ici.isOpen_compl
+
 end Preorder
 
 instance {α} [PartialOrder α] : PartialOrder (WithLower α) := ‹_›
@@ -29,6 +34,11 @@ variable {α : Type*} [Preorder α] {a b : α}
 
 @[simp] theorem toUpper_le_toUpper : toUpper a ≤ toUpper b ↔ a ≤ b := .rfl
 @[simp] theorem toUpper_lt_toUpper : toUpper a < toUpper b ↔ a < b := .rfl
+
+@[fun_prop]
+theorem continuous_toUpper [TopologicalSpace α] [ClosedIicTopology α] :
+    Continuous (toUpper : α → WithUpper α) :=
+  WithLower.continuous_toLower (α := αᵒᵈ)
 
 end Preorder
 
