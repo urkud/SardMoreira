@@ -65,10 +65,44 @@ for Haar measures on finite dimensional real normed spaces only.
   and measurability of the set of fiberwise density points of a measurable set.
 \end{proof}
 
+\begin{lemma}%
+  \label{lem:}
+\end{lemma}
+
+\section{Vitali Families}%
+\label{sec:vitali-families}
+
+TODO:\@ generalize some statement about Vitali families to outer measures.
+
 \section{\(C^k\) maps}%
 \label{sec:ck-maps}
 
-\section{\(C^{k}\) maps with locally Hölder derivatives}
+\begin{lemma}%
+  \label{lem:Ck-differentiable-iteratedFDeriv}
+  \lean{ContDiffAt.differentiableAt_iteratedFDeriv}
+  \leanok%
+  If \(f \colon E \to F\) is \(C^{k}\) at \(a\) and \(l < k\),
+  then \(D^{l}f\) is differentiable at \(a\).
+\end{lemma}
+\begin{proof}
+  \leanok%
+  Since \(f\) is \(C^{k}\) at \(a\) and \(l + 1 \le k\),
+  \(D^{l}f\) is \(C^{1}\) at \(a\),
+  thus it's differentiable at \(a\).
+\end{proof}
+
+\begin{lemma}%
+  \label{lem:iteratedFDeriv-prod}
+  If \(f\colon E \to F\) and \(g\colon E \to G\) are \(C^{k}\) at \(a\),
+  then \(D^{k}(x \mapsto (f(x), g(x)))(a) = (D^{k}f(a), D^{k}g(a))\).
+\end{lemma}
+\begin{proof}
+  This lemma immediately follows from uniqueness of the iterated derivative
+  and lemmas in the library.
+\end{proof}
+
+\section{\(C^{k}\) maps with locally Hölder derivatives at a point}%
+\label{sec:cdh-at}
 
 In this section,
 \begin{itemize}
@@ -126,6 +160,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
   then it is \(C^{k+(\alpha)}\) at \(a\).
 \end{lemma}
 \begin{proof}
+  \uses{lem:Ck-differentiable-iteratedFDeriv}
   \leanok%
   Since \(D^{k}f\) is differentiable at \(a\), we have \(D^{k}f(x)-D^{k}f(a)=O(x - a)=O(\|x - a\|^{\alpha})\),
   where the latter estimate holds since \(\alpha \le 1\).
@@ -155,10 +190,56 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \end{proof}
 
 \begin{lemma}%
+  \label{lem:cdh-at-prodMk}
+  \uses{def:cdh-at}
+  If \(f \colon E \to F\) and \(g \colon E \to G\) are \(C^{k+(\alpha)}\) at \(a \in E\),
+  then \(x \mapsto (f(x), g(x))\) is \(C^{k+(\alpha)}\) at \(a\).
+\end{lemma}
+\begin{proof}
+  \uses{lem:iteratedFDeriv-prod}
+  The lemma immediately follows from \autoref{lem:iteratedFDeriv-prod}.
+\end{proof}
+
+\begin{lemma}%
+  \label{lem:cdh-at-clm-comp}
+  If \(f \colon E \to F\) is \(C^{k+(\alpha)}\) at \(a \in E\)
+  and \(g \colon F \to G\) is a continuous linear map,
+  then \(g \circ f\) is \(C^{k+(\alpha)}\) at \(a\).
+\end{lemma}
+
+\begin{proof}
+  Immediately follows from \(D^{k}(g \circ f) = g\circ D^{k}f\).
+\end{proof}
+
+\begin{remark}
+  \autoref{lem:cdh-at-clm-comp} immediately follows from a more general \autoref{lem:cdh-at-comp} below.
+\end{remark}
+
+\begin{lemma}%
+  \label{lem:cdh-at-fderiv}
+  \uses{def:cdh-at}
+  If \(f \colon E \to F\) is \(C^{k+1+(\alpha)}\) at \(a \in E\),
+  then \(Df\) is \(C^{k+(\alpha)}\) at \(a\).
+\end{lemma}
+
+\begin{corollary}%
+  \label{lem:cdh-at-iteratedFDeriv}
+  \uses{def:cdh-at}
+  If \(f \colon E \to F\) is \(C^{k+l+(\alpha)}\) at \(a \in E\),
+  then \(D^{k}f\) is \(C^{l+(\alpha)}\) at \(a\).
+\end{corollary}
+\begin{proof}
+  \uses{lem:cdh-at-fderiv, lem:cdh-at-clm-comp}
+  The proof by induction on \(k\) using \autoref{lem:cdh-at-fderiv} and \autoref{lem:cdh-at-clm-comp}.
+  The latter lemma is required, because \(D^{k+1}f\) and \(D(D^{k} f)\) have different types in Lean,
+  and are related by a continuous linear equivalence.
+\end{proof}
+
+\begin{lemma}%
   \label{lem:cdh-at-comp}
   \uses{def:cdh-at}
   Consider \(g\colon F \to G\), \(f\colon E \to F\), and \(a \in E\)
-  such that \(g\) is \(C^{k+(\alpha)}\) at \(f(a)\) and \(f\) is \(C^{k+(\alpha)}\) at \(a\), where \(k > 0\).
+  such that \(g\) is \(C^{k+(\alpha)}\) at \(f(a)\) and \(f\) is \(C^{k+(\alpha)}\) at \(a\), where \(k > 0\) and \(\alpha \in [0, 1]\).
   Then \(g\circ f\) is \(C^{k+(\alpha)}\) at \(a\).
 \end{lemma}
 
@@ -209,44 +290,55 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
   in terms of formal Taylor series satisfying the Faa Di Bruno formula.
 \end{remark}
 
+\section{\(C^{k}\) maps with Hölder continuous derivatives on sets}%
+\label{sec:chd-on}
+
 \begin{definition}%
-  \label{def:cdh-near}
-  \uses{def:cdh-at}
-  We say that a map \(f\colon E\to F\) is \emph{\(C^{k+(\alpha)}\)} near a set \(s\),
-  if it is \(C^{k+(\alpha)}\)-smooth at all points of \(s\).
-  Note that this definition depends on the values of \(f\) near \(s\), not only on \(s\).
+  \label{def:cdh-on}
+  We say that a map \(f\colon E\to F\) is \emph{\(C^{k+(\alpha)}\) on a pair of sets \(K\), \(U\)}, if
+  \begin{itemize}
+  \item \(U\) is an open set;
+  \item \(K \subset U\);
+  \item \(f\) is \(C^{k}\) on \(U\);
+  \item for each \(a \in K\), \(D^{k}f(x) - D^{k}f(a) = O(\|x - a\|^{\alpha})\) as \(x\to a\).
+  \end{itemize}
 \end{definition}
 
 \begin{lemma}%
-  \label{lem:cdh-on-nhds-iff-open}
-  \uses{def:cdh-near}
-  A map \(f\colon E\to F\) is \(C^{k+(\alpha)}\) near \(s\)
-  if and only if there exits an open superset \(U\supset s\)
-  such that \(f\) is \(C^{k}\) on \(U\)
-  and for any \(a \in s\) we have \(D^{k}f(x) - D^{k}f(a) = o(\|x - a\|^{\alpha})\) as \(x\to a\).
+  \label{lem:exists-cdh-on}
+  \uses{def:cdh-at,def:cdh-on}
+  Given a map \(f\colon E \to F\), a set \(K\), a natural number \(k\), and a real number \(\alpha \in [0, 1]\),
+  there exists \(U\) such that \(f\) is \(C^{k+(\alpha)}\) on \((K, U)\)
+  iff \(f\) is \(C^{k+(\alpha)}\) at each \(a \in K\).
+\end{lemma}
+
+\begin{lemma}%
+  \label{lem:cdh-on-comp}
+  \uses{def:cdh-on}
+  Suppose that
+  \begin{itemize}
+  \item \(k > 0\), \(\alpha \in [0, 1]\);
+  \item \(g\colon F\to G\) is \(C^{k+(\alpha)}\) on \((t, V)\);
+  \item \(f\colon E\to F\) is \(C^{k+(\alpha)}\) on \((s, U)\);
+  \item \(f\) maps \(s\) to \(t\);
+  \item \(f\) maps \(U\) to \(V\).
+  \end{itemize}
+  Then \(g\circ f\) is \(C^{k+(\alpha)}\) on \((s, U)\).
 \end{lemma}
 
 \begin{proof}
-  The reverse implication is trivial, we just take \(U\) as the neighborhood of each \(a \in s\) required in the definition.
-  For the forward implication, choose an open neighborhood \(U_{a}\) of each \(a \in s\) such that \(f\) is \(C^{k}\) on \(U_{a}\).
-  Then \(f\) is \(C^{k}\) on \(U = \bigcup_{a \in s} U_{a}\).
+  \uses{lem:cdh-at-comp}
+  This statement immediately follows from \autoref{lem:cdh-at-comp}.
 \end{proof}
-
-\begin{remark}
-  In the original paper, the definition of a \(C^{k+(\alpha)}\) map
-  involves an open set \(U\) and its subset \(K\subset U\).
-  However, we use a definition that does not fix \(U\) instead
-  and prove equivalence of two definitions in \autoref{lem:cdh-on-nhds-iff-open}.
-\end{remark}
-
-\section{Vitali Families}%
-\label{sec:vitali-families}
 
 \section{Inverse function theorem}%
 \label{sec:inverse-funct-theor}
 
 In this section we prove a version of the inverse function theorem for \(C^{k+(\alpha)}\) functions,
 then deduce some corollaries.
+For simplicity, we formulate these theorems for finite dimensional real normed spaces,
+but most of them should be true in Banach spaces,
+possibly with extra assumptions that are automatically satisfied for finite dimensional spaces.
 
 \begin{theorem}%
   \label{thm:cdh-at-inverse}
@@ -282,15 +374,127 @@ then deduce some corollaries.
   This immediately implies the required estimate.
 \end{proof}
 
+\begin{lemma}%
+  \label{thm:cdh-at-implicit-ker}
+  \uses{def:cdh-at}
+  Let \(E\), \(F\), and \(G\) be finite dimensional real normed spaces.
+  Consider a set \(s \subseteq E \times F\), a point \((a, b) \in s\), and a function \(f\colon E \times F \to G\) such that
+  \begin{itemize}
+  \item \(f\) is \(C^{k+(\alpha)}\) at every point of \(s\);
+  \item \(\left.f\right|_{s}=0\);
+  \item the derivative \(D_{2}f\) of \(y \mapsto f(a, y)\) at \(b\) is surjective.
+  \end{itemize}
+  Let \(S \subseteq F\) be the kernel of \(D_{2}f\).
+  Then there exists a map \(\psi\colon E \times S \to F\) and a set \(t \subseteq E \times S\) such that
+  \begin{itemize}
+  \item \(\psi\) is \(C^{k+(\alpha)}\) at every point of \(t\);
+  \item the derivative of \(\psi\) at \((a, 0)\) is the projection to the second coordinate;
+  \item the image of a small neighborhood of \((a, 0)\) within \(t\) under the map \((x, y)\mapsto (x, \psi(x, y))\)
+    is a small neighborhood of \((a, b)\) within \(s\).
+  \end{itemize}
+\end{lemma}
+
+\begin{remark}
+  We only need this lemma for \(G=\mathbb R\).
+  If the proof in this case is a bit easier, then it's OK to formalize this case only.
+  Also, there are some versions of the implicit function theorem in Mathlib.
+  Possibly, using one of them will be easier than using the inversion function theorem.
+\end{remark}
+
+\begin{proof}
+  \uses{thm:cdh-at-inverse}
+  Let \(\pi\colon F\to S\) be a continuous linear projection, \(\pi \circ \pi = \pi\).
+  Consider the map \(h\colon E \times F \to E \times S \times G\)
+  given by \(h(x, y) = (x, \pi(y), f(x, y))\).
+  Note that \(Dh(a, b) = \id \times \pi \times Df\) is an equivalence,
+  hence \(h\) is invertible near \((a, b)\).
+  Due to \autoref{thm:cdh-at-inverse}, the inverse function is \(C^{k+(\alpha)}\) at every point of \(h(s)\).
+  Also note that \(h\) maps \(s\) to a subset of the subspace \(E\times S\times \{0\}\).
+  Let \(\psi(x, z)\) be the second coordinate of \(h^{-1}(x, z, 0)\).
+  It is easy to see that this function satisfies all the conditions.
+\end{proof}
+
+\begin{theorem}%
+  \label{thm:cdh-at-implicit-dichotomy}
+  Let \(E\) and \(F\) be finite dimensional real normed spaces.
+  Consider a set \(s \subset E \times F\) and \((a, b) \in s\).
+  Then
+  \begin{itemize}
+  \item either \(D(y \mapsto f(a, y))(b) = 0\) for any \(f\colon E \times F\to \mathbb R\)
+    such that \(f\) is \(C^{k+(\alpha)}\) at every point of \(s\) and \(\left.f\right|_{s}=0\),
+  \item or there exists a hyperplane \(S \subset F\), a set \(t \subset S\), and a function \(\psi\colon E \times S \to F\) such that
+    \begin{itemize}
+    \item \(\psi\) is \(C^{k+(\alpha)}\) at every point of \(t\);
+    \item the derivative of \(\psi\) at \((a, b)\) is the projection to the second coordinate;
+    \item the image of a neighborhood of \((a, 0)\) within \(t\) under \((x, y) \mapsto (x, \psi(x, y))\)
+      is a neighborhood of \((a, b)\) within \(s\).
+    \end{itemize}
+  \end{itemize}
+\end{theorem}
+
 \chapter{Local estimates}%
 \label{cha:local-estimates}
 
-\section{Functions whose zeros include a given set}
+\section{Moreira charts}%
+\label{sec:moreira-chart}
+
+The following definition does not appear in the original paper.
+However, it helps reformulate Theorem 2.1 from the paper
+in a manner that separates estimates from the construction.
+
+While it's possible to generalize most of the material in this section
+to a product of any two finite dimensional spaces,
+we assume the second space to be the Euclidean space \(\mathbb R^{n}\)
+to make definitions and arguments simpler.
+
+\begin{definition}%
+  \label{def:moreira-chart}
+  \uses{def:cdh-on}
+  Consider a natural number \(k\), a real number \(\alpha\in[0, 1]\),
+  a set \(s \subset E \times \mathbb R^{n}\), and its open neighborhood \(U\).
+  A \emph{Moreira chart} of depth \(l \le k\) consists of
+  \begin{itemize}
+  \item an antitone sequence of dimensions \(n = d_{0}\ge d_{1}\ge \dots \ge d_{l}\);
+  \item for each \(i \le l\), an open ball \(B_{i} \subset E\) and an open ball \(V_{i}\subset \mathbb R^{d_{i}}\);
+  \item for each \(i \le l\), a set \(t_{i}\subset B_{i}\times V_{i}\);
+  \item for each \(i < l\), a map \(\psi_{i}\colon E\times \mathbb R^{d_{i+1}} \to \mathbb R^{d_{i}}\)
+  \end{itemize}
+  such that
+  \begin{itemize}
+  \item \(B_{0}\times V_{0}\subset U\) and \(t_{0}\subset s\);
+  \item each map \((x, y) \mapsto (x, \psi_{i}(x, y))\)
+    maps \(B_{i+1}\times V_{i+1}\) to \(B_{i}\times V_{i}\) and \(t_{i+1}\) to \(t_{i}\);
+  \item each \(\psi_{i}\) is \(C^{k-i+(\alpha)}\) on \((t_{i+1}, B_{i+1}\times V_{i+1})\);
+  \item each \(\psi_{i}(x, y)\) is expanding in \(y\) on \(V_{i+1}\) for each \(x \in B_{i + 1}\);
+  \item for any map \(f\colon E\times \mathbb R^{d_{i}} \to \mathbb R\)
+    that is \(C^{k-i+(\alpha)}\) on \((t_{i}, B_{i}\times V_{i})\) and vanishes on \(t_{i}\),
+    the differential \(D(f \circ \psi_{i})\) vanishes on \(t_{i+1}\).
+  \end{itemize}
+\end{definition}
+
+\begin{definition}%
+  \label{def:moreira-chart-map}
+  \uses{def:moreira-chart}
+  Given a Moreira chart, for each \(i \le l\) we define the map \(\Psi_{i}\colon E\times \mathbb R^{d_{i}}\to \mathbb R^{n}\)
+  by \(\Psi_{0}(x, y)=y\) and \(\Psi_{i+1}(x, y)=\Psi_{i}(x, \psi_{i}(x, y))\).
+\end{definition}
+
+\begin{lemma}%
+  \label{lem:moreira-chart-map-props}
+  \uses{def:moreira-chart-map}
+  Given a \(C^{k+(\alpha)}\) Moreira chart,
+  \begin{itemize}
+  \item each map \(\Psi_{i}\) is \(C^{k-i+(\alpha)}\) on \((t_{i+1}, B_{i+1}\times V_{i+1})\);
+  \item \((x, \Psi_{i}(x, y)) \in s\) whenever \((x, y) \in t_{i+1}\);
+  \item each \(\Psi_{i}(x, y)\) is expanding in \(y\) on \(V_{i+1}\) for each \(x\in B_{i+1}\).
+  \end{itemize}
+\end{lemma}
+
+\section{Estimates on \(C^{1+(\alpha)}\) functions}
 
 \begin{lemma}%
   \label{lem:cdh-at-sub-affine-le-of-meas}
-  Let \(E\) be a finite dimensional real normed space.
-  Let \(F\) be a real normed space.
+  Let \(E\) and \(F\) be a real normed spaces.
   Consider a function \(f\colon E\to F\), points \(a, b \in E\),
   and numbers \(C\ge 0\), \(\delta\ge 0\), \(r \ge 0\) such that
   \begin{itemize}
@@ -323,6 +527,32 @@ then deduce some corollaries.
   \]
 \end{remark}
 
+\begin{corollary}%
+  \label{cor:cdh-at-sub-affine-le-of-meas-fderiv}
+  Let \(E\) be a finite dimensional real normed space.
+  Let \(F\) be a real normed space.
+  Consider a function \(f\colon E\to F\), points \(a, b \in E\),
+  and numbers \(C\ge 0\), \(\delta\ge 0\), \(r \ge 0\) such that
+  \begin{itemize}
+  \item \(f\) is differentiable on \([a, b]\);
+  \item \(\|Df(a + t(b - a))\| \le Ct^{r}{\|b - a\|}^r\);
+  \item the set of \(t\) such that \(D_{b - a}f(a + t(b - a)) = 0\)
+    has measure at least \(1 - \delta\).
+  \end{itemize}
+  Then \(\|f(b) - f(a)\| \le C\delta{\|b - a\|}^{1+r}\).
+\end{corollary}
+
+\begin{proof}
+  \uses{lem:cdh-at-sub-affine-le-of-meas}
+  This lemma immediately follows from \autoref{lem:cdh-at-sub-affine-le-of-meas}
+  and the fact that \(\|D_{b-a}f(x)\|\le \|Df(x)\|\times\|b - a\|\).
+\end{proof}
+
+\begin{corollary}%
+  \label{cor:sub-isBigO-rpow-of-fderiv}
+  
+\end{corollary}
+
 \begin{lemma}%
   \label{lem:cdh-at-sub-affine-isBigO}
   \uses{def:cdh-at}
@@ -340,6 +570,11 @@ Here \(Df(a)(x - a)\) means differential of \(f\) at \(a\) applied to \(x - a\).
   \end{align*}
 \end{proof}
 
+\begin{remark}
+  An alternative proof of \autoref{lem:cdh-at-sub-affine-isBigO}
+  applies \autoref{lem:cdh-at-sub-affine-le-of-meas} to \(\delta=1\).
+\end{remark}
+
 \begin{corollary}%
   \label{cor:cdh-at-sub-isBigO}
   \uses{def:cdh-at}
@@ -351,14 +586,6 @@ Here \(Df(a)(x - a)\) means differential of \(f\) at \(a\) applied to \(x - a\).
   \uses{lem:cdh-at-sub-affine-isBigO}
   Immediately follows from \autoref{lem:cdh-at-sub-affine-isBigO} and \(Df(a) = 0\).
 \end{proof}
-
-
-\begin{lemma}%
-  \label{lem:chart-one-deriv-zero-bdd}
-  \uses{def:cdh-near}
-  Consider finite dimensional real normed spaces \(E\) and \(F\).
-  Consider \(K \subset E \times F\).
-\end{lemma}
 
 
 %%% Local Variables:
