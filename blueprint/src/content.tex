@@ -66,8 +66,74 @@ for Haar measures on finite dimensional real normed spaces only.
 \end{proof}
 
 \begin{lemma}%
-  \label{lem:}
+  \label{lem:meas-ball-lowersemicont}
+  Let \(X\) be a (pseudo) metric space with a measure \(\mu\).
+  Consider the measure of an open ball \(\mu(B_{r}(x))\) as a function on \(X\times\mathbb R\),
+  where \(\mathbb R\) is equipped with the upper topology.
+  Then this function is lower semicontinuous.
 \end{lemma}
+
+\begin{proof}
+  Consider a point \((x, r)\) and an extended nonnegative real number \(m < \mu(B_{r}(x))\)
+  Since the union of the balls \(B_{r'}(x)\) over \(r' < r\) is the ball \(B_{r}(x)\),
+  there exists \(r' < r\) such that \(\mu\left(B_{r'}(x)\right) > m\).
+  Take \(r'' \in (r', r)\), then \(\mu\left(B_{\rho}(y)\right) \ge \mu\left(B_{r''}(x)\right)> m\)
+  whenever \(y\in B_{r' - r''}(x)\) and \(\rho > r'\).
+\end{proof}
+
+\begin{corollary}%
+  \label{cor:meas-ball-lowersemicont}
+  Let \(X\) be a (pseudo) metric space with a measure \(\mu\).
+  Then \(\mu(B_{r}(x))\) is lower semicontinuous in \((x, r)\in X\times\mathbb R\).
+\end{corollary}
+
+\begin{proof}
+  \uses{lem:meas-ball-lowersemicont}
+  This lemma immediately follows from \autoref{lem:meas-ball-lowersemicont}
+  and the fact that the upper topology is coarser than the order topology.
+\end{proof}
+
+\begin{corollary}%
+  \label{cor:meas-ball-mesaurable}
+  The measure of an open ball in a (pseudo) metric space is measurable in \((x, r)\in X\times\mathbb R\).
+\end{corollary}
+
+\begin{proof}
+  \uses{cor:meas-ball-lowersemicont}
+  This statement immediately follows from \autoref{cor:meas-ball-lowersemicont}
+  and the fact that a lower semicontinuous function is measurable.
+\end{proof}
+
+\begin{corollary}%
+  \label{cor:meas-ball-min}
+  If \(X\) is a (pseudo) metric space with a measure \(\mu\)
+  and \(s\) is a nonempty compact set in \(X\),
+  then for each \(r\) there exists \(x \in s\) such that \(\mu(B_{r}(x)) \le \mu(B_{r}(y))\) for all \(y \in s\).
+\end{corollary}
+
+\begin{proof}
+  \uses{cor:meas-ball-lowersemicont}
+  This statement immediately follows from \autoref{cor:meas-ball-lowersemicont}
+  and the fact that a lower semicontinuous function on a nonempty compact
+  achieves its minimal value.
+\end{proof}
+
+\begin{corollary}%
+  \label{cor:meas-ball-gt-pos}
+  If \(X\) is a compact (pseudo) metric space
+  and \(\mu\) is a measure on \(X\) that is positive on nonempty open sets,
+  then for each \(r > 0\) there exists \(\epsilon>0\)
+  such that \(\mu(B_{r}(x))>\epsilon\) for all \(x\).
+\end{corollary}
+
+\begin{proof}
+  \uses{cor:meas-ball-min}
+  If \(X\) is nonempty, then we choose \(x\) as in \autoref{cor:meas-ball-min},
+  then choose \(0 < \epsilon < \mu(B_{r}(x))\).
+  Otherewise, we choose any \(\epsilon > 0\) (e.g., \(\epsilon = 1\)).
+\end{proof}
+
+\todo{Add similar statements about closed balls and upper semicontinuity.}
 
 \section{Vitali Families}%
 \label{sec:vitali-families}
