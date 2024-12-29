@@ -283,6 +283,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 
 \begin{lemma}%
   \label{lem:cdh-at-clm-comp}
+  \uses{def:cdh-at}
   If \(f \colon E \to F\) is \(C^{k+(\alpha)}\) at \(a \in E\)
   and \(g \colon F \to G\) is a continuous linear map,
   then \(g \circ f\) is \(C^{k+(\alpha)}\) at \(a\).
@@ -483,6 +484,7 @@ possibly with extra assumptions that are automatically satisfied for finite dime
 \end{remark}
 
 \begin{proof}
+  \proves{thm:cdh-at-implicit-ker}
   \uses{thm:cdh-at-inverse}
   Let \(\pi\colon F\to S\) be a continuous linear projection, \(\pi \circ \pi = \pi\).
   Consider the map \(h\colon E \times F \to E \times S \times G\)
@@ -712,7 +714,7 @@ to make definitions and arguments simpler.
 
 \begin{theorem}%
   \label{thm:moreira-chart-isBigO}
-  \uses{def:moreira-chart}
+  \uses{def:moreira-chart-map}
   Consider \(s\subset U\subset E\times\mathbb R^{n}\).
   Consider a Moreira chart of \((s, U)\) of smoothness \(C^{k+(\alpha)}\) of depth \(k\).
   Let \(f\colon E\times\mathbb R^{n}\to F\) be a function
@@ -730,7 +732,7 @@ to make definitions and arguments simpler.
 
 \begin{theorem}%
   \label{thm:moreira-chart-isLittleO}
-  \uses{def:moreira-chart}
+  \uses{def:moreira-chart-map}
   Consider \(s\subset U\subset E\times\mathbb R^{n}\).
   Consider a Moreira chart of \((s, U)\) of smoothness \(C^{k+(\alpha)}\) of depth \(k\), \(k > 0\).
   Let \(f\colon E\times\mathbb R^{n}\to F\) be a function
