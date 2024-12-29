@@ -482,6 +482,7 @@ possibly with extra assumptions that are automatically satisfied for finite dime
 
 \begin{theorem}%
   \label{thm:cdh-at-implicit-dichotomy}
+  \uses{def:cdh-at}
   Let \(E\) and \(F\) be finite dimensional real normed spaces.
   Consider a set \(s \subset E \times F\) and \((a, b) \in s\).
   Then
@@ -497,6 +498,11 @@ possibly with extra assumptions that are automatically satisfied for finite dime
     \end{itemize}
   \end{itemize}
 \end{theorem}
+
+\begin{proof}
+  \uses{thm:cdh-at-implicit-ker}
+  This theorem is a special case of \autoref{thm:cdh-at-implicit-ker} for \(G=\mathbb R\).
+\end{proof}
 
 \chapter{Local estimates}%
 \label{cha:local-estimates}
@@ -534,7 +540,7 @@ to make definitions and arguments simpler.
   \item each \(\psi_{i}(x, y)\) is expanding in \(y\) on \(V_{i+1}\) for each \(x \in B_{i + 1}\);
   \item for any map \(f\colon E\times \mathbb R^{d_{i}} \to \mathbb R\)
     that is \(C^{k-i+(\alpha)}\) on \((t_{i}, B_{i}\times V_{i})\) and vanishes on \(t_{i}\),
-    the differential \(D(f \circ \psi_{i})\) vanishes on \(t_{i+1}\).
+    the differential \(D_{2}(f \circ \psi_{i})\) vanishes on \(t_{i+1}\).
   \end{itemize}
 \end{definition}
 
@@ -594,9 +600,8 @@ to make definitions and arguments simpler.
 \end{remark}
 
 \begin{corollary}%
-  \label{cor:cdh-at-sub-affine-le-of-meas-fderiv}
-  Let \(E\) be a finite dimensional real normed space.
-  Let \(F\) be a real normed space.
+  \label{cor:cdh-at-sub-le-of-meas-fderiv}
+  Let \(E\) and \(F\) be a real normed spaces.
   Consider a function \(f\colon E\to F\), points \(a, b \in E\),
   and numbers \(C\ge 0\), \(\delta\ge 0\), \(r \ge 0\) such that
   \begin{itemize}
@@ -615,44 +620,194 @@ to make definitions and arguments simpler.
 \end{proof}
 
 \begin{corollary}%
-  \label{cor:sub-isBigO-rpow-of-fderiv}
-  
+  \label{cor:cdh-at-isLittleO-of-density}
+  \uses{def:cdh-at}
+  Let \(f\colon E \to F\) be a function from a finite dimensional real normed space to a real normed space.
+  Consider a set \(s\) and a point \(a\) such that
+  \begin{itemize}
+  \item \(f\) is \(C^{1+(\alpha)}\) at \(a\);
+  \item \(Df(x)=0\) for each \(x\in s\);
+  \item \(a\in s\) is a Lebesgue density point of \(s\).
+  \end{itemize}
+  Then \(f(x)-f(a)=o\left(\left\|x - a\right\|^{1+\alpha}\right)\) as \(x\to a\).
 \end{corollary}
 
-\begin{lemma}%
-  \label{lem:cdh-at-sub-affine-isBigO}
-  \uses{def:cdh-at}
-  If \(f\colon E \to F\) is \(C^{1+(\alpha)}\) at \(a\),
-  then \(f(x) - f(a) - Df(a)(x - a) = O\left(\|x - a\|^{1 + \alpha}\right)\) as \(x \to a\).
-\end{lemma}
-Here \(Df(a)(x - a)\) means differential of \(f\) at \(a\) applied to \(x - a\).
-
 \begin{proof}
-  We have
-  \begin{align*}
-    f(x) - f(a) - Df(a)(x - a) &= \int_{0}^{1}\left(Df(a + t(x - a)) - Df(a)\right)(x - a)\,dt\\
-                               &= O\left(\int_{0}^{1}t^{\alpha}\|x - a\|^{1+\alpha}\,dt\right)\\
-                               &= O\left(\|x - a\|^{1 + \alpha}\right).
-  \end{align*}
-\end{proof}
+  \uses{cor:cdh-at-sub-le-of-meas-fderiv,cor:meas-ball-gt-pos}
+  Take \(C\) such that \(\|Df(x)\|\le C\|x - a\|^{\alpha}\) for \(x\) sufficiently close to \(a\).
+  It suffices to show that for every \(\epsilon > 0\),
+  we have \(\|f(x) - f(a)\| \le 2C\epsilon\|x - a\|^{1+\alpha}\)
+  for all \(x\) sufficiently close to \(a\).
 
-\begin{remark}
-  An alternative proof of \autoref{lem:cdh-at-sub-affine-isBigO}
-  applies \autoref{lem:cdh-at-sub-affine-le-of-meas} to \(\delta=1\).
-\end{remark}
+  Choose \(\delta > 0\) such that for any set \(T\) of measure at least \((1-\delta)\mu(B_{1})\) in a unit ball,
+  for each point \(x\) on the unit sphere there exists another point \(y\) on the sphere
+  such that \(\|x - y\| \le \epsilon\)
+  and the measure of \(t\in [0, 1]\) such that \(x+t(y - x)\in T\) is at least \(1 - \epsilon\).
+  Existence of \(\delta > 0\) with these properties follows from \autoref{cor:meas-ball-gt-pos}
+
+  Then choose \(R>0\) such that
+  \(s\) occupies at least \(1-\delta\) fraction of the volume of a ball \(B_{r}(a)\) for all \(0 < r < R\)
+  and the estimate \(\|Df(x)\|\le C\|x - a\|^{\alpha}\) holds on \(B_{R}(a)\).
+  Take \(x\in B_{R}(a)\).
+  Find \(y\) such that \(\|y - a\| = \|x - a\|\), \(\|y - x\| \le \epsilon\|x - a\|\),
+  and the measure of \(t\in [0, 1]\) such that \(a + t(y - a)\in s\) is at least \(1 - \epsilon\).
+
+  Then \(\|f(x) - f(y)\| \le C\|x - a\|^{\alpha}\|x - y\| \le C\epsilon\|x - a\|^{\alpha+1}\)
+  due to the Mean Value Theorem.
+  On the other hand, \autoref{cor:cdh-at-sub-le-of-meas-fderiv} implies that
+  \(\|f(y) - f(a)\| \le C\epsilon\|y - a\|^{\alpha+1}\).
+
+  Finally, the triangle inequality implies that \(\|f(x) - f(a)\| \le 2C\epsilon\|x - a\|^{\alpha+1}\).
+\end{proof}
 
 \begin{corollary}%
-  \label{cor:cdh-at-sub-isBigO}
-  \uses{def:cdh-at}
-  If \(f\colon E \to F\) is \(C^{1+(\alpha)}\) at \(a\) and \(Df(a) = 0\),
-  then \(f(x) - f(a) = O\left(\|x - a\|^{1 + \alpha}\right)\) as \(x \to a\).
+  \label{cor:cdh-at-sub-le}
+  Let \(f\colon E\to F\) be a function between real normed spaces.
+  Suppose that \(f\) is differentiable in a neighborhood of \(a \in E\)
+  and \(\|Df(x)\|\le C\|x - a\|^{r}\) on a convex set \(s \ni a\).
+  Then \(\|f(x) - f(a)\|\le C\|x - a\|^{r + 1}\) for \(x\in s\).
 \end{corollary}
 
 \begin{proof}
-  \uses{lem:cdh-at-sub-affine-isBigO}
-  Immediately follows from \autoref{lem:cdh-at-sub-affine-isBigO} and \(Df(a) = 0\).
+  \uses{cor:cdh-at-sub-le-of-meas-fderiv}
+  This statement immediately follows from \autoref{cor:cdh-at-sub-le-of-meas-fderiv} for \(\delta = 1\).
 \end{proof}
 
+\begin{corollary}%
+  \label{cor:sub-isBigO-rpow-of-fderiv}
+  If \(f\colon E \to F\) is \(C^{1}\) at \(a \in E\) and \(\|Df(x)\|=O\left(\left\|x - a\right\|^{r}\right)\) as \(x\to a\), where \(r\ge 0\),
+  then \(\|x - a\| = O\left(\left\|x - a\right\|^{r + 1}\right)\) as \(x\to a\).
+\end{corollary}
+
+\begin{proof}
+  \uses{cor:cdh-at-sub-le}
+  The statement immediately follows from \autoref{cor:cdh-at-sub-le}.
+\end{proof}
+
+\begin{corollary}%
+  \label{cor:sub-isLittleO-rpow-of-fderiv}
+  If \(f\colon E \to F\) is \(C^{1}\) at \(a \in E\) and \(\|Df(x)\|=o\left(\left\|x - a\right\|^{r}\right)\) as \(x\to a\), where \(r\ge 0\),
+  then \(\|x - a\| = o\left(\left\|x - a\right\|^{r + 1}\right)\) as \(x\to a\).
+\end{corollary}
+
+\begin{proof}
+  \uses{cor:cdh-at-sub-le}
+  The statement immediately follows from \autoref{cor:cdh-at-sub-le}.
+\end{proof}
+
+\begin{theorem}%
+  \label{thm:moreira-chart-isBigO}
+  \uses{def:moreira-chart}
+  Consider \(s\subset U\subset E\times\mathbb R^{n}\).
+  Consider a Moreira chart of \((s, U)\) of smoothness \(C^{k+(\alpha)}\) of depth \(k\).
+  Let \(f\colon E\times\mathbb R^{n}\to F\) be a function
+  such that \(f\) is \(C^{k+(\alpha)}\) on \((s, U)\).
+  Then for any \((a, b)\in t_{k}\), we have
+  \(f(a, \Psi_{k}(a, y)) - f(a, \Psi_{k}(a, b))=O\left(\|y - b\|^{k + \alpha}\right)\) as \(y\to b\).
+\end{theorem}
+
+\begin{proof}
+  \uses{cor:sub-isBigO-rpow-of-fderiv}
+  We prove it by induction on \(k\).
+  The induction base \(k = 1\) follows from the definition of a \(C^{1+(\alpha)}\) function,
+  and the induction step follows from \autoref{cor:sub-isLittleO-rpow-of-fderiv}
+\end{proof}
+
+\begin{theorem}%
+  \label{thm:moreira-chart-isLittleO}
+  \uses{def:moreira-chart}
+  Consider \(s\subset U\subset E\times\mathbb R^{n}\).
+  Consider a Moreira chart of \((s, U)\) of smoothness \(C^{k+(\alpha)}\) of depth \(k\), \(k > 0\).
+  Let \(f\colon E\times\mathbb R^{n}\to F\) be a function
+  such that \(f\) is \(C^{k+(\alpha)}\) on \((s, U)\).
+  Consider \((a, b)\in t_{k}\) such that \(b\) is a Lebesgue density point of the closure of the set \(\{y\mid (a, y)\in t_{k}\}\).
+  Then \(f(a, \Psi_{k}(a, y)) - f(a, \Psi_{k}(a, b))=o\left(\|y - b\|^{k + \alpha}\right)\) as \(y\to b\).
+\end{theorem}
+
+\begin{proof}
+  \uses{cor:cdh-at-isLittleO-of-density,cor:sub-isLittleO-rpow-of-fderiv}
+  We prove it by induction on \(k\).
+  The induction base \(k = 1\) follows from \autoref{cor:cdh-at-isLittleO-of-density}
+  while the induction step follows from \autoref{cor:sub-isLittleO-rpow-of-fderiv}
+\end{proof}
+
+\section{Moreira covering}%
+\label{sec:moreira-covering}
+
+The following definition does not appear in the original paper,
+but it helps to expose parts of the proof of Theorem 2.1 from the paper.
+\begin{definition}%
+  \label{def:moreira-covering}
+  \uses{def:moreira-chart, def:moreira-chart-map}
+  Let \(E\) be a real normed space, let \(n\) be a natural number.
+  Consider a set \(s\subset E \times \mathbb R^{n}\) and its open neighborhood \(U\supset s\).
+  A \emph{Moreira covering} of \((s, U)\) of depth \(l\)
+  is a countable collection of Moreira charts of depth \(l\)
+  such that the union of the sets \(((x, y) \mapsto (x, \Psi_{l}(x, y)))(t_{l})\) is the whole \(s\).
+\end{definition}
+
+\begin{lemma}%
+  \label{lem:moreira-covering-zero}
+  \uses{def:moreira-covering}
+  If \(E\) is a real normed space with second-countable topology and \(n\) is a natural number,
+  then every pair \((s, U)\) in \(E\times\mathbb R^{n}\)
+  admits a Moreira covering of depth \(0\).
+\end{lemma}
+
+\begin{proof}
+  This lemma follows immediately from the definitions
+  and the fact that a second countaable topological space is hereditarily Lindelof.
+\end{proof}
+
+\begin{lemma}%
+  \label{lem:moreira-covering-one}
+  \uses{def:moreira-covering}
+  If \(E\) is a real normed space with second-countable topology and \(n\) is a natural number,
+  then every pair \((s, U)\) in \(E\times\mathbb R^{n}\)
+  admits a Moreira covering of depth \(1\).
+\end{lemma}
+
+\begin{proof}
+  \uses{thm:cdh-at-implicit-dichotomy}
+  The proof is by induction on \(n\).
+  Let \(t \subset s\) be the set of points \((x, y)\in s\)
+  such that there exists a function \(f\colon E\times\mathbb R^{n}\to \mathbb R\)
+  such that \(f\) is \(C^{k+(\alpha)}\) on \((s, U)\), \(\left.f\right|_{s}=0\), and \(D_{2}f\ne 0\).
+
+  For each \((a, b)\in s\), we use \autoref{thm:cdh-at-implicit-dichotomy}
+  to find a function \(\psi\colon E\times\mathbb R^{n - 1}\to \mathbb R^{n}\),
+  open balls \(B\subset E\) and \(V\subset\mathbb R^{n - 1}\) with centers \(x\) and \(0\),
+  and a set \(u\subset E\times\mathbb R^{n - 1}\) such that
+  \begin{itemize}
+  \item \(\psi\) is \(C^{k+(\alpha)}\) on \((u, B\times V)\);
+  \item \(((x, y) \mapsto (x, \psi(x, y)))(u)\) is a neighborhood of \((a, b)\) within \(s\);
+  \item \(\psi(x, y)\) is expanding in \(y\) on \(V\) for each \(x\in B\).
+  \end{itemize}
+  The latter condition can be satisfied by composing \(\psi\) with a homoethety.
+  Then we apply the inductive assumption to \((u, B\times V)\) and compose each chart with \(\psi\).
+
+  For each \((a, b)\in s \setminus t\), we choose open balls \(B\) and \(V\) with centers \(a\) and \(b\)
+  such that \(B\times V\subset U\), then take \(\psi(x, y) = y\) and \((s \setminus t)\cap (B\times V)\)
+  as a chart and its domain, respectively.
+
+  Charts of the first type cover \(t\) and charts of the second type cover \(s \setminus t\),
+  thus their union covers the whole \(s\).
+\end{proof}
+
+\begin{theorem}%
+  \label{thm:moreira-covering-exists}
+  \uses{def:moreira-covering}
+  In the assumptions of the previous lemma, \((s, U)\) admits a Moreira covering of any depth \(l \le k\).
+\end{theorem}
+
+\begin{proof}
+  \uses{lem:moreira-covering-zero,lem:moreira-covering-one}
+  The proof is by induction on \(l\).
+  The induction base is given by \autoref{lem:moreira-covering-zero}.
+  For the induction step, use \autoref{lem:moreira-covering-one} to get a Moreira covering of depth \(1\),
+  then take a Moreira covering of depth \(l\) for each \((t, B\times V)\) in this covering,
+  then compose them.
+\end{proof}
 
 %%% Local Variables:
 %%% mode: latex
