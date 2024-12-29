@@ -1,6 +1,6 @@
-import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Topology.MetricSpace.Holder
+import SardMoreira.ContDiff
 
 open scoped unitInterval Topology NNReal
 open Asymptotics Filter Set
@@ -8,7 +8,7 @@ open Asymptotics Filter Set
 namespace Asymptotics
 
 /-- If `a ≤ b`, then `x^b = O(x^a)` as `x → 0`, `x ≥ 0`, unless `b = 0` and `a ≠ 0`. -/
-theorem IsBigO.rpow_rpow_nhdsWithin_Ici_zero_of_le {a b : ℝ} (h : a ≤ b) (himp : b = 0 → a = 0) :
+theorem IsBigO.rpow_rpow_nhdsGE_zero_of_le {a b : ℝ} (h : a ≤ b) (himp : b = 0 → a = 0) :
     (· ^ b : ℝ → ℝ) =O[𝓝[≥] 0] (· ^ a) :=
   .of_bound' <| mem_of_superset (Icc_mem_nhdsGE one_pos) fun x hx ↦ by
     simpa [Real.abs_rpow_of_nonneg hx.1, abs_of_nonneg hx.1]
@@ -16,7 +16,7 @@ theorem IsBigO.rpow_rpow_nhdsWithin_Ici_zero_of_le {a b : ℝ} (h : a ≤ b) (hi
 
 theorem IsBigO.id_rpow_of_le_one {a : ℝ} (ha : a ≤ 1) :
     (id : ℝ → ℝ) =O[𝓝[≥] 0] (· ^ a) := by
-  simpa using rpow_rpow_nhdsWithin_Ici_zero_of_le ha (by simp)
+  simpa using rpow_rpow_nhdsGE_zero_of_le ha (by simp)
 
 end Asymptotics
 
@@ -31,29 +31,6 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-
-theorem ContDiffOn.continuousAt_iteratedFDerivWithin {f : E → F} {s : Set E} {n : WithTop ℕ∞}
-    {k : ℕ} {a : E} (hf : ContDiffOn 𝕜 n f s) (hs : UniqueDiffOn 𝕜 s) (ha : s ∈ 𝓝 a) (hk : k ≤ n) :
-    ContinuousAt (iteratedFDerivWithin 𝕜 k f s) a :=
-  (hf.continuousOn_iteratedFDerivWithin hk hs).continuousAt ha
-
-theorem ContDiffWithinAt.continuousWithinAt_iteratedFDerivWithin
-    {f : E → F} {s : Set E} {n : WithTop ℕ∞} {k : ℕ} {a : E} (hf : ContDiffWithinAt 𝕜 n f s a)
-    (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) (hk : k ≤ n) :
-    ContinuousWithinAt (iteratedFDerivWithin 𝕜 k f s) s a :=
-  (hf.iteratedFderivWithin_right hs (by rwa [zero_add]) ha).continuousWithinAt
-
-theorem ContDiffAt.continuousAt_iteratedFDeriv
-    {f : E → F} {n : WithTop ℕ∞} {k : ℕ} {a : E} (hf : ContDiffAt 𝕜 n f a) (hk : k ≤ n) :
-    ContinuousAt (iteratedFDeriv 𝕜 k f) a := by
-  simp only [← continuousWithinAt_univ, ← iteratedFDerivWithin_univ]
-  exact hf.contDiffWithinAt.continuousWithinAt_iteratedFDerivWithin uniqueDiffOn_univ trivial hk
-
-theorem ContDiffAt.differentiableAt_iteratedFDeriv
-    {f : E → F} {a : E} {n : WithTop ℕ∞} {m : ℕ} (hf : ContDiffAt 𝕜 n f a) (hm : m < n) :
-    DifferentiableAt 𝕜 (iteratedFDeriv 𝕜 m f) a := by
-  simp only [← differentiableWithinAt_univ, ← iteratedFDerivWithin_univ]
-  exact hf.differentiableWithinAt_iteratedFDerivWithin hm (by simp [uniqueDiffOn_univ])
 
 variable (𝕜) in
 structure ContDiffMoreiraHolderAt (k : ℕ) (α : I) (f : E → F) (a : E) : Prop where
@@ -81,7 +58,7 @@ theorem of_exponent_le {k : ℕ} {f : E → F} {a : E} {α β : I}
     (hf : ContDiffMoreiraHolderAt 𝕜 k α f a) (hle : β ≤ α) : ContDiffMoreiraHolderAt 𝕜 k β f a where
   contDiffAt := hf.contDiffAt
   isBigO := hf.isBigO.trans <| by
-    refine .comp_tendsto (.rpow_rpow_nhdsWithin_Ici_zero_of_le hle fun hα ↦ ?_) ?_
+    refine .comp_tendsto (.rpow_rpow_nhdsGE_zero_of_le hle fun hα ↦ ?_) ?_
     · exact le_antisymm (le_trans (mod_cast hle) hα.le) β.2.1
     · exact tendsto_norm_sub_self_nhdsLE a
 
@@ -103,3 +80,5 @@ theorem of_contDiffOn_holderWith {f : E → F} {s : Set E} {k : ℕ} {α : I} {a
       using hd.dist_le hx (mem_of_mem_nhds hs)
 
 end ContDiffMoreiraHolderAt
+
+structure ContDiffMoreiraHolderOn
