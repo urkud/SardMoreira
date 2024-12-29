@@ -100,7 +100,7 @@ theorem continuous_toUpper_comp_iff : Continuous (WithUpper.toUpper ∘ f) ↔ L
 
 end Topology
 
-theorem LowerSemicontinuousOn.exists_isMin {X α : Type*} [TopologicalSpace X] [LinearOrder α]
+theorem LowerSemicontinuousOn.exists_isMinOn {X α : Type*} [TopologicalSpace X] [LinearOrder α]
     {f : X → α} {s : Set X} (hf : LowerSemicontinuousOn f s) (hs : IsCompact s) (hne : s.Nonempty) :
     ∃ x ∈ s, IsMinOn f s x := by
   rw [← Topology.continuousOn_toUpper_comp_iff] at hf
