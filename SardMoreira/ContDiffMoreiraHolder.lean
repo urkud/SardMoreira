@@ -56,12 +56,12 @@ theorem ContDiffAt.differentiableAt_iteratedFDeriv
   exact hf.differentiableWithinAt_iteratedFDerivWithin hm (by simp [uniqueDiffOn_univ])
 
 variable (𝕜) in
-structure ContDiffHolderAt (k : ℕ) (α : I) (f : E → F) (a : E) : Prop where
+structure ContDiffMoreiraHolderAt (k : ℕ) (α : I) (f : E → F) (a : E) : Prop where
   contDiffAt : ContDiffAt 𝕜 k f a
   isBigO : (iteratedFDeriv 𝕜 k f · - iteratedFDeriv 𝕜 k f a) =O[𝓝 a] (‖· - a‖ ^ (α : ℝ))
 
-theorem ContDiffAt.contDiffHolderAt {n : WithTop ℕ∞} {k : ℕ} {f : E → F} {a : E}
-    (h : ContDiffAt 𝕜 n f a) (hk : k < n) (α : I) : ContDiffHolderAt 𝕜 k α f a where
+theorem ContDiffAt.contDiffMoreiraHolderAt {n : WithTop ℕ∞} {k : ℕ} {f : E → F} {a : E}
+    (h : ContDiffAt 𝕜 n f a) (hk : k < n) (α : I) : ContDiffMoreiraHolderAt 𝕜 k α f a where
   contDiffAt := h.of_le hk.le
   isBigO := calc
     (iteratedFDeriv 𝕜 k f · - iteratedFDeriv 𝕜 k f a) =O[𝓝 a] (· - a) :=
@@ -69,37 +69,37 @@ theorem ContDiffAt.contDiffHolderAt {n : WithTop ℕ∞} {k : ℕ} {f : E → F}
     _ =O[𝓝 a] (‖· - a‖ ^ (α : ℝ)) :=
       .of_norm_left <| .comp_tendsto (.id_rpow_of_le_one α.2.2) <| tendsto_norm_sub_self_nhdsLE a
 
-namespace ContDiffHolderAt
+namespace ContDiffMoreiraHolderAt
 
 @[simp]
 theorem zero_exponent_iff {k : ℕ} {f : E → F} {a : E} :
-    ContDiffHolderAt 𝕜 k 0 f a ↔ ContDiffAt 𝕜 k f a := by
+    ContDiffMoreiraHolderAt 𝕜 k 0 f a ↔ ContDiffAt 𝕜 k f a := by
   refine ⟨contDiffAt, fun h ↦ ⟨h, ?_⟩⟩
   simpa using ((h.continuousAt_iteratedFDeriv le_rfl).sub_const _).norm.isBoundedUnder_le
 
-theorem of_exponent_le {k : ℕ} {f : E → F} {a : E} {α β : I} (hf : ContDiffHolderAt 𝕜 k α f a)
-    (hle : β ≤ α) : ContDiffHolderAt 𝕜 k β f a where
+theorem of_exponent_le {k : ℕ} {f : E → F} {a : E} {α β : I}
+    (hf : ContDiffMoreiraHolderAt 𝕜 k α f a) (hle : β ≤ α) : ContDiffMoreiraHolderAt 𝕜 k β f a where
   contDiffAt := hf.contDiffAt
   isBigO := hf.isBigO.trans <| by
     refine .comp_tendsto (.rpow_rpow_nhdsWithin_Ici_zero_of_le hle fun hα ↦ ?_) ?_
     · exact le_antisymm (le_trans (mod_cast hle) hα.le) β.2.1
     · exact tendsto_norm_sub_self_nhdsLE a
 
-theorem of_lt {k l : ℕ} {f : E → F} {a : E} {α β : I} (hf : ContDiffHolderAt 𝕜 k α f a)
-    (hlt : l < k) : ContDiffHolderAt 𝕜 l β f a :=
-  hf.contDiffAt.contDiffHolderAt (mod_cast hlt) _
+theorem of_lt {k l : ℕ} {f : E → F} {a : E} {α β : I} (hf : ContDiffMoreiraHolderAt 𝕜 k α f a)
+    (hlt : l < k) : ContDiffMoreiraHolderAt 𝕜 l β f a :=
+  hf.contDiffAt.contDiffMoreiraHolderAt (mod_cast hlt) _
 
-theorem of_toLex_le {k l : ℕ} {f : E → F} {a : E} {α β : I} (hf : ContDiffHolderAt 𝕜 k α f a)
-    (hle : toLex (l, β) ≤ toLex (k, α)) : ContDiffHolderAt 𝕜 l β f a :=
+theorem of_toLex_le {k l : ℕ} {f : E → F} {a : E} {α β : I} (hf : ContDiffMoreiraHolderAt 𝕜 k α f a)
+    (hle : toLex (l, β) ≤ toLex (k, α)) : ContDiffMoreiraHolderAt 𝕜 l β f a :=
   ((Prod.Lex.le_iff _ _).mp hle).elim hf.of_lt <| by rintro ⟨rfl, hle⟩; exact hf.of_exponent_le hle
 
 theorem of_contDiffOn_holderWith {f : E → F} {s : Set E} {k : ℕ} {α : I} {a : E} {C : ℝ≥0}
     (hf : ContDiffOn 𝕜 k f s) (hs : s ∈ 𝓝 a)
     (hd : HolderOnWith C ⟨α, α.2.1⟩ (iteratedFDeriv 𝕜 k f) s) :
-    ContDiffHolderAt 𝕜 k α f a where
+    ContDiffMoreiraHolderAt 𝕜 k α f a where
   contDiffAt := hf.contDiffAt hs
   isBigO := .of_bound C <| mem_of_superset hs fun x hx ↦ by
     simpa [Real.abs_rpow_of_nonneg, ← dist_eq_norm, dist_nonneg]
       using hd.dist_le hx (mem_of_mem_nhds hs)
 
-end ContDiffHolderAt
+end ContDiffMoreiraHolderAt

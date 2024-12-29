@@ -195,7 +195,7 @@ In this section,
 
 \begin{definition}%
   \label{def:cdh-at}
-  \lean{ContDiffHolderAt}
+  \lean{ContDiffMoreiraHolderAt}
   \leanok%
   We say that a map \(f\colon E\to F\) is \emph{\(C^{k+(\alpha)}\)} at a point \(a\),
   if it is \(C^{k}\) at \(a\) and \(D^{k}f(x) - D^{k}f(a) = O(\|x - a\|^{\alpha})\) as \(x\to a\).
@@ -204,7 +204,7 @@ In this section,
 Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoothness assumption.
 \begin{lemma}%
   \label{def:contdiffholder-imp-cdh-at}
-  \lean{ContDiffHolderAt.of_contDiffOn_holderWith}
+  \lean{ContDiffMoreiraHolderAt.of_contDiffOn_holderWith}
   \leanok%
   \uses{def:cdh-at}
   If \(f\colon E \to F\) is \(C^{k+\alpha}\) on an open set \(U\),
@@ -218,7 +218,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 
 \begin{lemma}%
   \label{lem:cdh-at-zero}
-  \lean{ContDiffHolderAt.zero_exponent_iff}
+  \lean{ContDiffMoreiraHolderAt.zero_exponent_iff}
   \leanok%
   \uses{def:cdh-at}
   A map \(f\colon E\to F\) is \(C^{k+(0)}\) at \(a\) iff it is \(C^{k}\) at \(a\).
@@ -235,7 +235,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-of-contDiffAt}
   \uses{def:cdh-at}
-  \lean{ContDiffAt.contDiffHolderAt}
+  \lean{ContDiffAt.contDiffMoreiraHolderAt}
   \leanok%
   If \(f\colon E\to F\) is \(C^{l}\) at \(a\) with \(l > k\),
   then it is \(C^{k+(\alpha)}\) at \(a\).
@@ -250,7 +250,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-mono}
   \uses{def:cdh-at}
-  \lean{ContDiffHolderAt.of_exponent_le, ContDiffHolderAt.of_lt, ContDiffHolderAt.of_toLex_le}
+  \lean{ContDiffMoreiraHolderAt.of_exponent_le, ContDiffMoreiraHolderAt.of_lt, ContDiffMoreiraHolderAt.of_toLex_le}
   \leanok%
   Let \(f\colon E\to F\) be a map which is \(C^{k+(\alpha)}\) at \(a\).
   Let \(l\) be a natural number and \(\beta \in [0, 1]\) be a real number.
