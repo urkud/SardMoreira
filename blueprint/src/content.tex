@@ -748,6 +748,22 @@ to make definitions and arguments simpler.
   while the induction step follows from \autoref{cor:sub-isLittleO-rpow-of-fderiv}
 \end{proof}
 
+\begin{corollary}%
+  \label{cor:moreira-chart-ae-isLittleO}
+  \uses{def:moreira-chart-map}
+  Consider \(s\subset U\subset E\times\mathbb R^{n}\).
+  Consider a Moreira chart of \((s, U)\) of smoothness \(C^{k+(\alpha)}\) of depth \(k\), \(k > 0\).
+  Let \(f\colon E\times\mathbb R^{n}\to F\) be a function
+  such that \(f\) is \(C^{k+(\alpha)}\) on \((s, U)\).
+  Then for a.e.\ \((a, b) \in t_{k}\), \(f(a, \Psi_{k}(a, y)) - f(a, \Psi_{k}(a, b))=o\left(\|y - b\|^{k + \alpha}\right)\) as \(y\to b\).
+\end{corollary}
+
+\begin{proof}
+  \uses{thm:moreira-chart-isLittleO, cor:measurable-density}
+  This fact immediately follows from \autoref{thm:moreira-chart-isLittleO}, \autoref{cor:measurable-density},
+  and the Lebesgue density theorem.
+\end{proof}
+
 \section{Moreira covering}%
 \label{sec:moreira-covering}
 
