@@ -5,40 +5,12 @@ import Mathlib.Topology.MetricSpace.Holder
 open scoped unitInterval Topology NNReal
 open Asymptotics Filter Set
 
-@[simp]
-theorem Subtype.edist_mk_mk {X : Type*} [PseudoEMetricSpace X]
-    {p : X → Prop} {x y : X} (hx : p x) (hy : p y) :
-    edist (⟨x, hx⟩ : Subtype p) ⟨y, hy⟩ = edist x y :=
-  rfl
-
-namespace HolderWith
-
-theorem restrict_iff {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
-    {C r : ℝ≥0} {f : X → Y} {s : Set X} :
-    HolderWith C r (s.restrict f) ↔ HolderOnWith C r f s := by
-  simp [HolderWith, HolderOnWith]
-
-protected alias ⟨_, _root_.HolderOnWith.holderWith⟩ := restrict_iff
-
-end HolderWith
-
-namespace HolderOnWith
-
--- TODO: In Mathlib, we should prove results about `HolderOnWith` first,
--- then apply to `s = univ`.
-theorem dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] {C r : ℝ≥0} {f : X → Y}
-    {s : Set X} {x y : X} (h : HolderOnWith C r f s) (hx : x ∈ s) (hy : y ∈ s) :
-    dist (f x) (f y) ≤ C * dist x y ^ (r : ℝ) :=
-  h.holderWith.dist_le ⟨x, hx⟩ ⟨y, hy⟩
-
-end HolderOnWith
-
 namespace Asymptotics
 
 /-- If `a ≤ b`, then `x^b = O(x^a)` as `x → 0`, `x ≥ 0`, unless `b = 0` and `a ≠ 0`. -/
 theorem IsBigO.rpow_rpow_nhdsWithin_Ici_zero_of_le {a b : ℝ} (h : a ≤ b) (himp : b = 0 → a = 0) :
     (· ^ b : ℝ → ℝ) =O[𝓝[≥] 0] (· ^ a) :=
-  .of_bound' <| mem_of_superset (Icc_mem_nhdsWithin_Ici' one_pos) fun x hx ↦ by
+  .of_bound' <| mem_of_superset (Icc_mem_nhdsGE one_pos) fun x hx ↦ by
     simpa [Real.abs_rpow_of_nonneg hx.1, abs_of_nonneg hx.1]
      using Real.rpow_le_rpow_of_exponent_ge_of_imp hx.1 hx.2 h fun _ ↦ himp
 
