@@ -1,3 +1,4 @@
+import SardMoreira.Chart
 import SardMoreira.ContDiff
 import SardMoreira.ContDiffMoreiraHolder
 import SardMoreira.LebesgueDensity
