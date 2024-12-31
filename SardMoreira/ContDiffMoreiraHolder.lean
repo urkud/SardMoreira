@@ -93,10 +93,23 @@ theorem prodMk {k : ℕ} {α : I} {f : E → F} {g : E → G} {a : E}
   contDiffAt := hf.contDiffAt.prod hg.contDiffAt
   isBigO := sorry
 
+-- See `YK-moreira` branch in Mathlib
 theorem comp {g : F → G} {f : E → F} {a : E} {k : ℕ} {α : I}
     (hg : ContDiffMoreiraHolderAt k α g (f a)) (hf : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) :
     ContDiffMoreiraHolderAt k α (g ∘ f) a :=
   sorry
+
+theorem continuousLinearMap_comp {f : E → F} {a : E} {k : ℕ} {α : I}
+    (hf : ContDiffMoreiraHolderAt k α f a) (g : F →L[ℝ] G) :
+    ContDiffMoreiraHolderAt k α (g ∘ f) a where
+  contDiffAt := g.contDiff.contDiffAt.comp a hf.contDiffAt
+  isBigO := by
+    refine .trans (.of_bound ‖g‖ ?_) hf.isBigO
+    refine (hf.contDiffAt.eventually (by simp)).mono fun x hx ↦ ?_
+    rw [g.iteratedFDeriv_comp_left' hx le_rfl, g.iteratedFDeriv_comp_left' hf.contDiffAt le_rfl]
+    -- TODO: add `ContinuousLinearMap.compContinuousMultilinearMap_sub`
+    convert g.norm_compContinuousMultilinearMap_le _
+    ext; simp
 
 end ContDiffMoreiraHolderAt
 
@@ -155,5 +168,11 @@ theorem comp {g : F → G} {t V : Set F} (hg : ContDiffMoreiraHolderOn k α g t 
   contDiffOn := hg.contDiffOn.comp hf.contDiffOn hUV
   isBigO _a ha := ((hg.contDiffMoreiraHolderAt <| hst ha).comp
     (hf.contDiffMoreiraHolderAt ha) hk).isBigO
+
+theorem continuousLinearMap_comp (hf : ContDiffMoreiraHolderOn k α f s U) (g : F →L[ℝ] G) :
+    ContDiffMoreiraHolderOn k α (g ∘ f) s U where
+  __ := hf
+  contDiffOn := g.contDiff.comp_contDiffOn hf.contDiffOn
+  isBigO _a ha := ((hf.contDiffMoreiraHolderAt ha).continuousLinearMap_comp g).isBigO
 
 end ContDiffMoreiraHolderOn

@@ -1,8 +1,9 @@
 import SardMoreira.ContDiffMoreiraHolder
 import Mathlib.Analysis.Normed.Affine.Isometry
+import Mathlib.Analysis.NormedSpace.HahnBanach.SeparatingDual
 
 open scoped unitInterval Topology NNReal
-open Asymptotics Filter Set Metric
+open Asymptotics Filter Set Metric Function
 
 namespace MoreiraSard
 
@@ -38,7 +39,8 @@ structure Chart (k : ℕ) (α : I) (l : Fin (k + 1)) (s U : Set (E × F)) where
   fderiv_comp_eq_zero' (i : Fin l) (f : E → (subspace i.castSucc) → ℝ) :
     ContDiffMoreiraHolderOn (k - i) α f.uncurry (holderSet i.castSucc)
       (ball 0 (radiusLeft i.castSucc) ×ˢ ball 0 (radiusRight i.castSucc)) →
-    ∀ x y, (x, y) ∈ holderSet i.succ → fderiv ℝ (f x ∘ toFunSnd i x) = 0
+    (∀ p ∈ holderSet i.castSucc, f p.1 p.2 = 0) →
+    ∀ x y, (x, y) ∈ holderSet i.succ → fderiv ℝ (f x ∘ toFunSnd i x) y = 0
 
 namespace Chart
 
@@ -90,7 +92,23 @@ theorem fderiv_comp_eq_zero (ψ : Chart k α l s U) (i : Fin l) {f : E × ψ.sub
     (hf : ContDiffMoreiraHolderOn (k - i) α f (ψ.holderSet i.castSucc) (ψ.dom i.castSucc))
     (hf₀ : ∀ x ∈ ψ.holderSet i.castSucc, f x = 0) {x : E × ψ.subspace i.succ}
     (hx : x ∈ ψ.holderSet i.succ) : fderiv ℝ (f ∘ ψ i ∘ .mk x.1) x.2 = 0 := by
-  sorry
+  suffices ∀ g : G →L[ℝ] ℝ, g.comp (fderiv ℝ (f ∘ ψ i ∘ .mk x.1) x.2) = 0 by
+    ext y
+    -- TODO: add `SeparatingDual.ext`
+    by_contra hy
+    obtain ⟨g, hg⟩ := SeparatingDual.exists_ne_zero (R := ℝ) hy
+    exact hg (DFunLike.congr_fun (this g) y)
+  intro g
+  rw [← g.fderiv, ← fderiv_comp]
+  · refine ψ.fderiv_comp_eq_zero' i (fun a b ↦ g (f (a, b))) ?_ ?_ x.1 x.2 hx
+    · exact hf.continuousLinearMap_comp g
+    · simp +contextual [hf₀]
+  · exact g.differentiableAt
+  · apply ContDiffAt.differentiableAt (n := (k - i : ℕ)) _ (by norm_cast; omega)
+    apply ((hf.contDiffOn.comp (ψ.contDiffMoreiraHolderOn i).contDiffOn _).contDiffAt _).comp
+    · refine contDiffAt_const.prod contDiffAt_id
+    · exact ψ.mapsTo_dom _
+    · exact (ψ.isOpen_dom _).mem_nhds <| ψ.holderSet_subset_dom _ hx
 
 def compUpTo (ψ : Chart k α l s U) (i : Fin (l + 1)) : E × ψ.subspace i → E × F :=
   i.induction (fun xy ↦ (xy.1, xy.2.1) + ψ.center) fun j ↦ (· ∘ ψ j)
