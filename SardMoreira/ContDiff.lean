@@ -2,7 +2,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Basic
 import SardMoreira.ContinuousMultilinearMap
 
 open scoped unitInterval Topology NNReal
-open Asymptotics Filter Set
+open Function Asymptotics Filter Set
 
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -147,6 +147,105 @@ theorem iteratedFDeriv_comp {g : F → G} {f : E → F} {a : E} (hg : ContDiffAt
 namespace OrderedFinpartition
 
 variable {n : ℕ} (c : OrderedFinpartition n)
+
+/-- Cover `[0, n)`, `n ≠ 0`, by a single subset. -/
+@[simps (config := .asFn)]
+def single (n : ℕ) (hn : n ≠ 0) : OrderedFinpartition n where
+  length := 1
+  partSize _ := n
+  partSize_pos _ := hn.bot_lt
+  emb _ := id
+  emb_strictMono _ := strictMono_id
+  parts_strictMono := Subsingleton.strictMono _
+  disjoint := subsingleton_univ.pairwise _
+  cover x := ⟨0, x, rfl⟩
+
+@[simp]
+theorem applyOrderedFinpartition_single (hn : n ≠ 0)
+    (p : ∀ i : Fin (single n hn).length, E [×(single n hn).partSize i]→L[𝕜] F)
+    (m : Fin n → E) (i : Fin (single n hn).length) :
+    (single n hn).applyOrderedFinpartition p m i = p i m :=
+  rfl
+
+@[simp]
+theorem sum_partSize : ∑ i, c.partSize i = n := calc
+  ∑ i, c.partSize i = Fintype.card (Σ i, Fin (c.partSize i)) := by simp
+  _ = n := by rw [Fintype.card_congr c.equivSigma, Fintype.card_fin]
+
+@[simp]
+theorem length_eq_zero : c.length = 0 ↔ n = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ nonpos_iff_eq_zero.mp <| h ▸ c.length_le⟩
+  rw [← c.sum_partSize, Finset.sum_eq_zero]
+  simp [(c.partSize_pos _).ne', h]
+
+@[simp] theorem length_pos_iff : 0 < c.length ↔ 0 < n := by simp [pos_iff_ne_zero]
+
+theorem length_eq_one_iff (hn : n ≠ 0) : c.length = 1 ↔ c = single n hn := by
+  refine ⟨fun hc ↦ ?_, fun h ↦ h ▸ rfl⟩
+  have hsum := c.sum_partSize
+  cases' c with length partSize partSize_pos emb emb_strictMono parts_strictMono disjoint cover
+  subst hc
+  obtain rfl : partSize = fun _ ↦ n := by
+    rw [funext_iff, Fin.forall_fin_one]
+    simpa using hsum
+  obtain rfl : emb = fun _ ↦ id := by
+    rw [funext_iff, Fin.forall_fin_one, ← (emb_strictMono 0).range_inj strictMono_id]
+    simpa [eq_univ_iff_forall, Fin.exists_fin_one] using cover
+  rfl
+
+theorem length_eq_one_iff_exists : c.length = 1 ↔ ∃ h, c = single n h := by
+  refine ⟨fun hc ↦ ?_, fun ⟨_, h⟩ ↦ h ▸ rfl⟩
+  suffices n ≠ 0 from ⟨this, (c.length_eq_one_iff this).mp hc⟩
+  simp [← c.length_eq_zero, hc]
+
+theorem partSize_eq_iff_length_eq_one (i : Fin c.length) : c.partSize i = n ↔ c.length = 1 := by
+  constructor
+  · intro h
+    by_contra h'
+    have : Nontrivial (Fin c.length) := by
+      rw [Fin.nontrivial_iff_two_le]
+      have := i.is_lt
+      omega
+    rcases exists_ne i with ⟨j, hj⟩
+    refine h.not_lt <| LT.lt.trans_eq ?_ c.sum_partSize
+    exact Finset.single_lt_sum hj (Finset.mem_univ _) (Finset.mem_univ _) (c.partSize_pos _)
+      (by simp)
+  · rw [length_eq_one_iff_exists]
+    rintro ⟨h, rfl⟩
+    rfl
+
+theorem partSize_eq_iff_eq_single (i : Fin c.length) :
+    c.partSize i = n ↔ c = single n (i.is_lt.trans_le c.length_le).ne_bot := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rwa [c.partSize_eq_iff_length_eq_one i, length_eq_one_iff] at h
+  · generalize_proofs at h
+    subst h
+    rfl
+
+
+theorem length_eq_iff : c.length = n ↔ c = atomic n := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  have H₀ := c.sum_partSize
+  cases' c with length partSize partSize_pos emb emb_strictMono parts_strictMono disjoint cover
+  dsimp at *
+  subst h
+  obtain rfl : partSize = fun _ ↦ 1 := by
+    suffices ∀ i ∈ Finset.univ, 1 = partSize i by simpa [eq_comm, funext_iff] using this
+    rw [← Finset.sum_eq_sum_iff_of_le]
+    · simp [H₀]
+    · exact fun i _ ↦ partSize_pos i
+  obtain rfl : emb = fun i _ ↦ i := by
+    suffices ∀ i, emb i 0 = i by
+      ext i j : 2
+      convert this i
+    rw [← funext_iff, ← StrictMono.range_inj, Surjective.range_eq, Surjective.range_eq]
+    exacts [surjective_id, Finite.surjective_of_injective parts_strictMono.injective,
+      parts_strictMono, strictMono_id]
+  rfl
+
+theorem length_lt_iff : c.length < n ↔ c ≠ atomic n := by
+  rw [c.length_le.lt_iff_ne]
+  exact c.length_eq_iff.not
 
 theorem norm_compAlongOrderedFinpartitionL_apply_le (f : F [×c.length]→L[𝕜] G) :
     ‖c.compAlongOrderedFinpartitionL 𝕜 E F G f‖ ≤ ‖f‖ :=
