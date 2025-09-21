@@ -96,7 +96,7 @@ namespace OrderedFinpartition
 variable {n : ℕ} (c : OrderedFinpartition n)
 
 /-- Cover `[0, n)`, `n ≠ 0`, by a single subset. -/
-@[simps (config := .asFn)]
+@[simps -fullyApplied]
 def single (n : ℕ) (hn : n ≠ 0) : OrderedFinpartition n where
   length := 1
   partSize _ := n
@@ -130,7 +130,8 @@ theorem length_eq_zero : c.length = 0 ↔ n = 0 := by
 theorem length_eq_one_iff (hn : n ≠ 0) : c.length = 1 ↔ c = single n hn := by
   refine ⟨fun hc ↦ ?_, fun h ↦ h ▸ rfl⟩
   have hsum := c.sum_partSize
-  cases' c with length partSize partSize_pos emb emb_strictMono parts_strictMono disjoint cover
+  cases c with
+  | _ length partSize partSize_pos emb emb_strictMono parts_strictMono disjoint cover => ?_
   subst hc
   obtain rfl : partSize = fun _ ↦ n := by
     rw [funext_iff, Fin.forall_fin_one]
@@ -238,7 +239,7 @@ theorem taylorLeftInv_coeff_one (p : FormalMultilinearSeries 𝕜 E F) (i : F �
 
 theorem taylorLeftInv_coeff_add_two
     (p : FormalMultilinearSeries 𝕜 E F) (i : F →L[𝕜] E) (x : E) (n : ℕ) :
-    p.taylorLeftInv i x (n + 2) = -∑ c in {OrderedFinpartition.atomic (n + 2)}ᶜ,
+    p.taylorLeftInv i x (n + 2) = -∑ c ∈ {OrderedFinpartition.atomic (n + 2)}ᶜ,
       (taylorLeftInv p i x).compAlongOrderedFinpartition (p.compContinuousLinearMap i) c := by
   rw [taylorLeftInv, ← Finset.sum_subtype ({OrderedFinpartition.atomic (n + 2)}ᶜ) _
     (fun c ↦ c.compAlongOrderedFinpartition (taylorLeftInv p i x c.length)
