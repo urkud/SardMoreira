@@ -1,7 +1,7 @@
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import SardMoreira.ContinuousMultilinearMap
 
-open scoped unitInterval Topology NNReal
+open scoped unitInterval Topology NNReal Classical
 open Function Asymptotics Filter Set
 
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
@@ -10,26 +10,6 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
   {f : E → F} {s : Set E} {n : WithTop ℕ∞} {k : ℕ} {a : E}
 
 protected alias UniqueDiffOn.univ := uniqueDiffOn_univ
-
-theorem Asymptotics.IsBigO.of_norm_eventuallyLE {α : Type*} {l : Filter α} {f : α → E}
-    {g : α → ℝ} (h : (‖f ·‖) ≤ᶠ[l] g) : f =O[l] g :=
-  .of_bound' <| h.mono fun _ h ↦ h.trans <| le_abs_self _
-
-theorem Asymptotics.IsBigO.of_norm_le {α : Type*} {l : Filter α} {f : α → E}
-    {g : α → ℝ} (h : ∀ x, ‖f x‖ ≤ g x) : f =O[l] g :=
-  .of_norm_eventuallyLE <| .of_forall h
-
-theorem Asymptotics.IsBigO.finsetProd {α ι R K : Type*} [SeminormedCommRing R] [NormedField K]
-    {l : Filter α} {s : Finset ι} {f : ι → α → R} {g : ι → α → K}
-    (hf : ∀ i ∈ s, f i =O[l] g i) : (∏ i ∈ s, f i ·) =O[l] (∏ i ∈ s, g i ·) := by
-  induction s using Finset.cons_induction with
-  | empty => simp [isBoundedUnder_const]
-  | cons i s hi ihs =>
-    simp only [Finset.prod_cons, Finset.forall_mem_cons] at hf ⊢
-    exact hf.1.mul (ihs hf.2)
-
-@[simp]
-theorem Prod.norm_mk {E F : Type*} [Norm E] [Norm F] (a : E) (b : F) : ‖(a, b)‖ = max ‖a‖ ‖b‖ := rfl
 
 protected theorem UniqueDiffOn.frequently_smallSets {s : Set E} (hs : UniqueDiffOn 𝕜 s) (a : E) :
     ∃ᶠ t in (𝓝[s] a).smallSets, t ∈ 𝓝[s] a ∧ UniqueDiffOn 𝕜 t := by
@@ -45,17 +25,12 @@ theorem ContDiffOn.continuousAt_iteratedFDerivWithin (hf : ContDiffOn 𝕜 n f s
 theorem ContDiffWithinAt.continuousWithinAt_iteratedFDerivWithin (hf : ContDiffWithinAt 𝕜 n f s a)
     (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) (hk : k ≤ n) :
     ContinuousWithinAt (iteratedFDerivWithin 𝕜 k f s) s a :=
-  (hf.iteratedFderivWithin_right hs (by rwa [zero_add]) ha).continuousWithinAt
+  (hf.iteratedFDerivWithin_right hs (by rwa [zero_add]) ha).continuousWithinAt
 
 theorem ContDiffAt.continuousAt_iteratedFDeriv (hf : ContDiffAt 𝕜 n f a) (hk : k ≤ n) :
     ContinuousAt (iteratedFDeriv 𝕜 k f) a := by
   simp only [← continuousWithinAt_univ, ← iteratedFDerivWithin_univ]
   exact hf.contDiffWithinAt.continuousWithinAt_iteratedFDerivWithin uniqueDiffOn_univ trivial hk
-
-theorem ContDiffAt.differentiableAt_iteratedFDeriv (hf : ContDiffAt 𝕜 n f a) (hk : k < n) :
-    DifferentiableAt 𝕜 (iteratedFDeriv 𝕜 k f) a := by
-  simp only [← differentiableWithinAt_univ, ← iteratedFDerivWithin_univ]
-  exact hf.differentiableWithinAt_iteratedFDerivWithin hk (by simp [uniqueDiffOn_univ])
 
 /-- Generalizes `ContinuousLinearMap.iteratedFderivWithin_comp_left`
 by weakening a `ContDiffOn` assumption to `ContDiffWithinAt`.  -/
@@ -82,8 +57,8 @@ theorem iteratedFDerivWithin_prodMk {f : E → F} {g : E → G} (hf : ContDiffWi
     iteratedFDerivWithin 𝕜 i (fun x ↦ (f x, g x)) s a =
       (iteratedFDerivWithin 𝕜 i f s a).prod (iteratedFDerivWithin 𝕜 i g s a) := by
   rw [ContinuousMultilinearMap.eq_prod_iff,
-    ← ContinuousLinearMap.iteratedFDerivWithin_comp_left' _ (hf.prod hg) hs ha hi,
-    ← ContinuousLinearMap.iteratedFDerivWithin_comp_left' _ (hf.prod hg) hs ha hi]
+    ← ContinuousLinearMap.iteratedFDerivWithin_comp_left' _ (hf.prodMk hg) hs ha hi,
+    ← ContinuousLinearMap.iteratedFDerivWithin_comp_left' _ (hf.prodMk hg) hs ha hi]
   exact ⟨rfl, rfl⟩
 
 theorem iteratedFDeriv_prodMk {f : E → F} {g : E → G} (hf : ContDiffAt 𝕜 n f a)
@@ -92,18 +67,6 @@ theorem iteratedFDeriv_prodMk {f : E → F} {g : E → G} (hf : ContDiffAt 𝕜 
       (iteratedFDeriv 𝕜 i f a).prod (iteratedFDeriv 𝕜 i g a) := by
   simp only [← iteratedFDerivWithin_univ]
   exact iteratedFDerivWithin_prodMk hf.contDiffWithinAt hg.contDiffWithinAt .univ (mem_univ _) hi
-
-theorem ContDiffWithinAt.eventually_hasFTaylorSeriesUpToOn {f : E → F} {s : Set E} {a : E}
-    (h : ContDiffWithinAt 𝕜 n f s a) (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) {m : ℕ} (hm : m ≤ n) :
-    ∀ᶠ t in (𝓝[s] a).smallSets, HasFTaylorSeriesUpToOn m f (ftaylorSeriesWithin 𝕜 f s) t := by
-  rcases h.contDiffOn' hm (by simp) with ⟨U, hUo, haU, hfU⟩
-  have : ∀ᶠ t in (𝓝[s] a).smallSets, t ⊆ s ∩ U := by
-    rw [eventually_smallSets_subset]
-    exact inter_mem_nhdsWithin _ <| hUo.mem_nhds haU
-  refine this.mono fun t ht ↦ .mono ?_ ht
-  rw [insert_eq_of_mem ha] at hfU
-  refine (hfU.ftaylorSeriesWithin (hs.inter hUo)).congr_series fun k hk x hx ↦ ?_
-  exact iteratedFDerivWithin_inter_open hUo hx.2
 
 theorem iteratedFDerivWithin_comp_of_eventually
     {g : F → G} {f : E → F} {t : Set F} {s : Set E} {a : E}
@@ -127,22 +90,6 @@ theorem iteratedFDerivWithin_comp_of_eventually
     hu (mem_of_mem_nhdsWithin ha hau) |>.trans ?_
   refine iteratedFDerivWithin_congr_set (hus.eventuallyLE.antisymm ?_) _
   exact set_eventuallyLE_iff_mem_inf_principal.mpr hau
-
-theorem iteratedFDerivWithin_comp {g : F → G} {f : E → F} {t : Set F} {s : Set E} {a : E}
-    (hg : ContDiffWithinAt 𝕜 n g t (f a)) (hf : ContDiffWithinAt 𝕜 n f s a)
-    (ht : UniqueDiffOn 𝕜 t) (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) (hst : MapsTo f s t)
-    {i : ℕ} (hi : i ≤ n) :
-    iteratedFDerivWithin 𝕜 i (g ∘ f) s a =
-      (ftaylorSeriesWithin 𝕜 g t (f a)).taylorComp (ftaylorSeriesWithin 𝕜 f s a) i :=
-  iteratedFDerivWithin_comp_of_eventually hg hf ht hs ha (eventually_mem_nhdsWithin.mono hst) hi
-
-theorem iteratedFDeriv_comp {g : F → G} {f : E → F} {a : E} (hg : ContDiffAt 𝕜 n g (f a))
-    (hf : ContDiffAt 𝕜 n f a) {i : ℕ} (hi : i ≤ n) :
-    iteratedFDeriv 𝕜 i (g ∘ f) a =
-      (ftaylorSeries 𝕜 g (f a)).taylorComp (ftaylorSeries 𝕜 f a) i := by
-  simp only [← iteratedFDerivWithin_univ, ← ftaylorSeriesWithin_univ]
-  exact iteratedFDerivWithin_comp hg.contDiffWithinAt hf.contDiffWithinAt .univ .univ (mem_univ _)
-    (mapsTo_univ _ _) hi
 
 namespace OrderedFinpartition
 
@@ -222,7 +169,6 @@ theorem partSize_eq_iff_eq_single (i : Fin c.length) :
     subst h
     rfl
 
-
 theorem length_eq_iff : c.length = n ↔ c = atomic n := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
   have H₀ := c.sum_partSize
@@ -268,6 +214,87 @@ theorem norm_compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_le
     · exact c.norm_compAlongOrderedFinpartition_le (f₁ - f₂) g₂
 
 end OrderedFinpartition
+
+namespace FormalMultilinearSeries
+
+noncomputable def taylorLeftInv (p : FormalMultilinearSeries 𝕜 E F)
+    (i : F →L[𝕜] E) (x : E) : FormalMultilinearSeries 𝕜 F E
+  | 0 => ContinuousMultilinearMap.uncurry0 𝕜 F x
+  | 1 => (continuousMultilinearCurryFin1 𝕜 F E).symm i
+  | n + 2 =>
+    -∑ c : { c : OrderedFinpartition (n + 2) // c.length < n + 2 },
+        c.val.compAlongOrderedFinpartition (taylorLeftInv p i x c.val.length)
+          fun m ↦ p.compContinuousLinearMap i (c.val.partSize m)
+
+@[simp]
+theorem taylorLeftInv_coeff_zero (p : FormalMultilinearSeries 𝕜 E F) (i : F →L[𝕜] E) (x : E) :
+    p.taylorLeftInv i x 0 = .uncurry0 𝕜 F x := by
+  rw [taylorLeftInv]
+
+@[simp]
+theorem taylorLeftInv_coeff_one (p : FormalMultilinearSeries 𝕜 E F) (i : F →L[𝕜] E) (x : E) :
+    p.taylorLeftInv i x 1 = (continuousMultilinearCurryFin1 𝕜 F E).symm i := by
+  rw [taylorLeftInv]
+
+theorem taylorLeftInv_coeff_add_two
+    (p : FormalMultilinearSeries 𝕜 E F) (i : F →L[𝕜] E) (x : E) (n : ℕ) :
+    p.taylorLeftInv i x (n + 2) = -∑ c in {OrderedFinpartition.atomic (n + 2)}ᶜ,
+      (taylorLeftInv p i x).compAlongOrderedFinpartition (p.compContinuousLinearMap i) c := by
+  rw [taylorLeftInv, ← Finset.sum_subtype ({OrderedFinpartition.atomic (n + 2)}ᶜ) _
+    (fun c ↦ c.compAlongOrderedFinpartition (taylorLeftInv p i x c.length)
+    (fun m ↦ p.compContinuousLinearMap i (c.partSize m)))]
+  · simp only [compAlongOrderedFinpartition]
+  · simp [OrderedFinpartition.length_lt_iff]
+
+end FormalMultilinearSeries
+
+theorem PartialHomeomorph.fderiv_symm (f : PartialHomeomorph E F) {y : F} (hy : y ∈ f.target)
+    (f' : E ≃L[𝕜] F) (hf' : HasFDerivAt f (f' : E →L[𝕜] F) (f.symm y)) :
+    fderiv 𝕜 f.symm y = f'.symm :=
+  (hf'.of_local_left_inverse (f.symm.continuousAt hy) <| f.eventually_right_inverse hy).fderiv
+
+-- TODO: add before `HasFDerivAt.of_local_left_inverse`
+theorem HasFDerivWithinAt.of_local_leftInverse {f : E → F} {f' : E ≃L[𝕜] F} {g : F → E} {a : F}
+    {s : Set E} {t : Set F} (hg : Tendsto g (𝓝[t] a) (𝓝[s] (g a)))
+    (hf : HasFDerivWithinAt f (f' : E →L[𝕜] F) s (g a)) (ha : a ∈ t)
+    (hfg : ∀ᶠ y in 𝓝[t] a, f (g y) = y) :
+    HasFDerivWithinAt g (f'.symm : F →L[𝕜] E) t a := by
+  have : (fun x : F => g x - g a - f'.symm (x - a)) =O[𝓝[t] a]
+      fun x : F => f' (g x - g a) - (x - a) := by
+    refine ((f'.symm : F →L[𝕜] E).isBigO_comp _ _).congr (fun x => ?_) fun _ => rfl
+    simp
+  refine .of_isLittleO <| this.trans_isLittleO ?_
+  clear this
+  refine ((hf.isLittleO.comp_tendsto hg).symm.congr' (hfg.mono ?_) .rfl).trans_isBigO ?_
+  · intro p hp
+    simp [hp, hfg.self_of_nhdsWithin ha]
+  · refine ((hf.isBigO_sub_rev f'.antilipschitz).comp_tendsto hg).congr'
+      (Eventually.of_forall fun _ => rfl) (hfg.mono ?_)
+    rintro p hp
+    simp only [(· ∘ ·), hp, hfg.self_of_nhdsWithin ha]
+
+theorem HasFTaylorSeriesUpToOn.partialEquivSymm {f : PartialEquiv E F} {f' : E → (E ≃L[𝕜] F)}
+    {p : E → FormalMultilinearSeries 𝕜 E F} (hf : HasFTaylorSeriesUpToOn n f p f.source)
+    (hf' : ∀ x ∈ f.source, HasFDerivWithinAt f (f' x : E →L[𝕜] F) f.source x) :
+    HasFTaylorSeriesUpToOn n f.symm
+      (fun y ↦ (p (f.symm y)).taylorLeftInv (f' (f.symm y)).symm (f.symm y)) f.target where
+  zero_eq y hy := by simp
+  fderivWithin := _
+  cont := _
+
+theorem PartialHomeomorph.iteratedFDeriv_symm_eq_taylorLeftInv (f : PartialHomeomorph E F)
+    (f' : E → (E ≃L[𝕜] F)) (hf : ContDiffOn 𝕜 n f f.source)
+    (hf' : ∀ x ∈ f.source, HasFDerivAt f (f' x : E →L[𝕜] F) x)
+    {y : F} (hy : y ∈ f.target) {i : ℕ} (hi : i ≤ n) :
+    iteratedFDeriv 𝕜 i f.symm y =
+      (ftaylorSeries 𝕜 f (f.symm y)).taylorLeftInv (f' (f.symm y)).symm (f.symm y) i := by
+  induction i using Nat.strong_induction_on with
+  | h i ih =>
+    match i with
+    | 0 => ext; simp
+    | 1 => ext; simp [f.fderiv_symm hy (f' (f.symm y)) (hf' _ (f.symm_mapsTo hy))]
+    | i + 2 =>
+      rw [FormalMultilinearSeries.taylorLeftInv_coeff_add_two]
 
 theorem FormalMultilinearSeries.taylorComp_sub_taylorComp_isBigO
     {α : Type*} {l : Filter α} {p₁ p₂ : α → FormalMultilinearSeries 𝕜 F G}

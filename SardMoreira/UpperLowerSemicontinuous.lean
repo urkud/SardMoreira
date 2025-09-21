@@ -5,67 +5,6 @@ open Set Filter Function TopologicalSpace
 
 namespace Topology
 
-namespace WithLower
-
-section Preorder
-
-variable {α : Type*} [Preorder α] {a b : α}
-
-@[simp] theorem toLower_le_toLower : toLower a ≤ toLower b ↔ a ≤ b := .rfl
-@[simp] theorem toLower_lt_toLower : toLower a < toLower b ↔ a < b := .rfl
-
-@[fun_prop]
-theorem continuous_toLower [TopologicalSpace α] [ClosedIciTopology α] :
-    Continuous (toLower : α → WithLower α) :=
-  continuous_generateFrom_iff.mpr <| by rintro _ ⟨a, rfl⟩; exact isClosed_Ici.isOpen_compl
-
-end Preorder
-
-instance {α} [PartialOrder α] : PartialOrder (WithLower α) := ‹_›
-instance {α} [LinearOrder α] : LinearOrder (WithLower α) := ‹_›
-
-end WithLower
-
-namespace WithUpper
-
-section Preorder
-
-variable {α : Type*} [Preorder α] {a b : α}
-
-@[simp] theorem toUpper_le_toUpper : toUpper a ≤ toUpper b ↔ a ≤ b := .rfl
-@[simp] theorem toUpper_lt_toUpper : toUpper a < toUpper b ↔ a < b := .rfl
-
-@[fun_prop]
-theorem continuous_toUpper [TopologicalSpace α] [ClosedIicTopology α] :
-    Continuous (toUpper : α → WithUpper α) :=
-  WithLower.continuous_toLower (α := αᵒᵈ)
-
-end Preorder
-
-instance {α} [PartialOrder α] : PartialOrder (WithUpper α) := ‹_›
-instance {α} [LinearOrder α] : LinearOrder (WithUpper α) := ‹_›
-
-end WithUpper
-
-theorem IsLower.tendsto_nhds_iff_not_le {α X : Type*} [Preorder X] [TopologicalSpace X] [IsLower X]
-    {f : α → X} {l : Filter α} {x : X} :
-    Tendsto f l (𝓝 x) ↔ ∀ y, ¬y ≤ x → ∀ᶠ z in l, ¬y ≤ f z := by
-  simp [topology_eq_lowerTopology, tendsto_nhds_generateFrom_iff, Filter.Eventually, Ici,
-    compl_setOf]
-
-theorem IsLower.tendsto_nhds_iff_lt {α X : Type*} [LinearOrder X] [TopologicalSpace X] [IsLower X]
-    {f : α → X} {l : Filter α} {x : X} :
-    Tendsto f l (𝓝 x) ↔ ∀ y, x < y → ∀ᶠ z in l, f z < y := by
-  simp only [IsLower.tendsto_nhds_iff_not_le, not_le]
-
-theorem IsUpper.tendsto_nhds_iff_not_le {α X : Type*} [Preorder X] [TopologicalSpace X] [IsUpper X]
-    {f : α → X} {l : Filter α} {x : X} : Tendsto f l (𝓝 x) ↔ ∀ y, ¬x ≤ y → ∀ᶠ z in l, ¬f z ≤ y :=
-  IsLower.tendsto_nhds_iff_not_le (X := Xᵒᵈ)
-
-theorem IsUpper.tendsto_nhds_iff_lt {α X : Type*} [LinearOrder X] [TopologicalSpace X] [IsUpper X]
-    {f : α → X} {l : Filter α} {x : X} : Tendsto f l (𝓝 x) ↔ ∀ y < x, ∀ᶠ z in l, y < f z :=
-  IsLower.tendsto_nhds_iff_lt (X := Xᵒᵈ)
-
 variable {X Y : Type*} [TopologicalSpace X] [LinearOrder Y] {f : X → Y} {s : Set X} {x : X}
 
 theorem continuousWithinAt_toLower_comp_iff :
