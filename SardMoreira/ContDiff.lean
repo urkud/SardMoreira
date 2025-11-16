@@ -18,7 +18,7 @@ theorem ContDiffOn.continuousAt_iteratedFDerivWithin (hf : ContDiffOn 𝕜 n f s
 theorem ContDiffWithinAt.continuousWithinAt_iteratedFDerivWithin (hf : ContDiffWithinAt 𝕜 n f s a)
     (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) (hk : k ≤ n) :
     ContinuousWithinAt (iteratedFDerivWithin 𝕜 k f s) s a :=
-  (hf.iteratedFderivWithin_right hs (by rwa [zero_add]) ha).continuousWithinAt
+  (hf.iteratedFDerivWithin_right hs (by rwa [zero_add]) ha).continuousWithinAt
 
 theorem ContDiffAt.continuousAt_iteratedFDeriv (hf : ContDiffAt 𝕜 n f a) (hk : k ≤ n) :
     ContinuousAt (iteratedFDeriv 𝕜 k f) a := by

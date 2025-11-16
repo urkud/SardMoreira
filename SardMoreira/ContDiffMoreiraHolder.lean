@@ -5,10 +5,6 @@ import SardMoreira.ContDiff
 open scoped unitInterval Topology NNReal
 open Asymptotics Filter Set
 
-theorem monotone_fst_ofLex {α β : Type*} [Preorder α] [Preorder β] :
-    Monotone fun x : α ×ₗ β ↦ (ofLex x).1 := fun _ _ h ↦
-  ((Prod.Lex.le_iff _ _).mp h).elim le_of_lt <| le_of_eq ∘ And.left
-
 namespace Asymptotics
 
 /-- If `a ≤ b`, then `x^b = O(x^a)` as `x → 0`, `x ≥ 0`, unless `b = 0` and `a ≠ 0`. -/
@@ -24,15 +20,30 @@ theorem IsBigO.id_rpow_of_le_one {a : ℝ} (ha : a ≤ 1) :
 
 end Asymptotics
 
-@[to_additive]
-theorem tendsto_norm_div_self_nhdsGE {E : Type*} [SeminormedGroup E] (a : E) :
-    Tendsto (‖· / a‖) (𝓝 a) (𝓝[≥] 0) :=
-  tendsto_nhdsWithin_iff.mpr ⟨tendsto_norm_div_self a, by simp⟩
-
 variable {E F G : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+theorem iteratedFDerivWithin_prodMk {f : E → F} {g : E → G} {n : ℕ} {s : Set E} {x : E}
+    (hf : ContDiffWithinAt ℝ n f s x) (hg : ContDiffWithinAt ℝ n g s x) (hs : UniqueDiffOn ℝ s)
+    (hx : x ∈ s) :
+    iteratedFDerivWithin ℝ n (fun a ↦ (f a, g a)) s x =
+      (iteratedFDerivWithin ℝ n f s x).prod (iteratedFDerivWithin ℝ n g s x) := by
+  ext1
+  · rw [← (ContinuousLinearMap.fst ℝ F G).iteratedFDerivWithin_comp_left
+      (hf.prodMk hg) hs hx le_rfl]
+    ext; simp [Function.comp_def] -- TODO: add `fst_compContinuousMultilinearMap_prod`
+  · rw [← (ContinuousLinearMap.snd ℝ F G).iteratedFDerivWithin_comp_left
+      (hf.prodMk hg) hs hx le_rfl]
+    ext; simp [Function.comp_def] -- TODO: add `fst_compContinuousMultilinearMap_prod`
+
+theorem iteratedFDeriv_prodMk {f : E → F} {g : E → G} {n : ℕ} {x : E}
+    (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x) :
+    iteratedFDeriv ℝ n (fun a ↦ (f a, g a)) x =
+      (iteratedFDeriv ℝ n f x).prod (iteratedFDeriv ℝ n g x) := by
+  simp only [← iteratedFDerivWithin_univ, ← contDiffWithinAt_univ] at *
+  apply iteratedFDerivWithin_prodMk <;> simp [*, uniqueDiffOn_univ]
 
 structure ContDiffMoreiraHolderAt (k : ℕ) (α : I) (f : E → F) (a : E) : Prop where
   contDiffAt : ContDiffAt ℝ k f a
@@ -69,7 +80,7 @@ theorem of_lt {k l : ℕ} {f : E → F} {a : E} {α β : I} (hf : ContDiffMoreir
 
 theorem of_toLex_le {k l : ℕ} {f : E → F} {a : E} {α β : I} (hf : ContDiffMoreiraHolderAt k α f a)
     (hle : toLex (l, β) ≤ toLex (k, α)) : ContDiffMoreiraHolderAt l β f a :=
-  ((Prod.Lex.le_iff _ _).mp hle).elim hf.of_lt <| by rintro ⟨rfl, hle⟩; exact hf.of_exponent_le hle
+  (Prod.Lex.le_iff.mp hle).elim hf.of_lt <| by rintro ⟨rfl, hle⟩; exact hf.of_exponent_le hle
 
 theorem of_le {k l : ℕ} {f : E → F} {a : E} {α : I} (hf : ContDiffMoreiraHolderAt k α f a)
     (hl : l ≤ k) : ContDiffMoreiraHolderAt l α f a :=
@@ -90,14 +101,38 @@ theorem fst {k : ℕ} {α : I} {a : E × F} : ContDiffMoreiraHolderAt k α Prod.
 theorem prodMk {k : ℕ} {α : I} {f : E → F} {g : E → G} {a : E}
     (hf : ContDiffMoreiraHolderAt k α f a) (hg : ContDiffMoreiraHolderAt k α g a) :
     ContDiffMoreiraHolderAt k α (fun x ↦ (f x, g x)) a where
-  contDiffAt := hf.contDiffAt.prod hg.contDiffAt
-  isBigO := sorry
+  contDiffAt := hf.contDiffAt.prodMk hg.contDiffAt
+  isBigO := calc
+    _ =ᶠ[𝓝 a] (fun x ↦ (iteratedFDeriv ℝ k f x - iteratedFDeriv ℝ k f a).prod
+                (iteratedFDeriv ℝ k g x - iteratedFDeriv ℝ k g a)) := by
+      filter_upwards [hf.contDiffAt.eventually (by simp),
+        hg.contDiffAt.eventually (by simp)] with x hfx hgx
+      apply DFunLike.ext
+      simp [iteratedFDeriv_prodMk, hfx, hgx, hf.contDiffAt, hg.contDiffAt]
+    _ =O[𝓝 a] fun x ↦ ‖x - a‖ ^ (α : ℝ) := by
+      refine .of_norm_left ?_
+      simp only [ContinuousMultilinearMap.opNorm_prod, ← Prod.norm_mk]
+      exact (hf.isBigO.prod_left hg.isBigO).norm_left
 
--- See `YK-moreira` branch in Mathlib
 theorem comp {g : F → G} {f : E → F} {a : E} {k : ℕ} {α : I}
     (hg : ContDiffMoreiraHolderAt k α g (f a)) (hf : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) :
-    ContDiffMoreiraHolderAt k α (g ∘ f) a :=
-  sorry
+    ContDiffMoreiraHolderAt k α (g ∘ f) a where
+  contDiffAt := hg.contDiffAt.comp _ hf.contDiffAt
+  isBigO := calc
+    (fun x ↦ iteratedFDeriv ℝ k (g ∘ f) x - iteratedFDeriv ℝ k (g ∘ f) a)
+      =ᶠ[𝓝 a] fun x ↦ (ftaylorSeries ℝ g (f x)).taylorComp (ftaylorSeries ℝ f x) k -
+                (ftaylorSeries ℝ g (f a)).taylorComp (ftaylorSeries ℝ f a) k := by
+      filter_upwards [hf.contDiffAt.eventually (by simp),
+        hf.contDiffAt.continuousAt.eventually <| hg.contDiffAt.eventually (by simp)]
+        with x hfx hgx
+      rw [iteratedFDeriv_comp hg.contDiffAt hf.contDiffAt le_rfl,
+        iteratedFDeriv_comp hgx hfx le_rfl]
+    _ =O[𝓝 a] _ := by
+      simp only [FormalMultilinearSeries.taylorComp, ← Finset.sum_sub_distrib,
+        FormalMultilinearSeries.compAlongOrderedFinpartition,
+        ← OrderedFinpartition.compAlongOrderedFinpartitionL_apply]
+      refine .sum fun c _ ↦ ?_
+      sorry
 
 theorem continuousLinearMap_comp {f : E → F} {a : E} {k : ℕ} {α : I}
     (hf : ContDiffMoreiraHolderAt k α f a) (g : F →L[ℝ] G) :
@@ -135,7 +170,7 @@ theorem prodMk {g : E → G} (hf : ContDiffMoreiraHolderOn k α f s U)
     (hg : ContDiffMoreiraHolderOn k α g s U) :
     ContDiffMoreiraHolderOn k α (fun x ↦ (f x, g x)) s U where
   __ := hf
-  contDiffOn := hf.contDiffOn.prod hg.contDiffOn
+  contDiffOn := hf.contDiffOn.prodMk hg.contDiffOn
   isBigO _a ha := ((hf.contDiffMoreiraHolderAt ha).prodMk (hg.contDiffMoreiraHolderAt ha)).isBigO
 
 theorem _root_.ContDiffOn.contDiffMoreiraHolderOn {n : WithTop ℕ∞} (h : ContDiffOn ℝ n f U)
@@ -149,7 +184,7 @@ theorem of_toLex_le (h : ContDiffMoreiraHolderOn k α f s U) {l β}
     (hl : toLex (l, β) ≤ toLex (k, α)) :
     ContDiffMoreiraHolderOn l β f s U where
   __ := h
-  contDiffOn := h.contDiffOn.of_le <| mod_cast monotone_fst_ofLex hl
+  contDiffOn := h.contDiffOn.of_le <| mod_cast Prod.Lex.monotone_fst_ofLex hl
   isBigO _a ha := ((h.contDiffMoreiraHolderAt ha).of_toLex_le hl).isBigO
 
 theorem of_lt (h : ContDiffMoreiraHolderOn k α f s U) {l β} (hl : l < k) :

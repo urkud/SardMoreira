@@ -60,13 +60,13 @@ theorem Measurable.measure_ball {α X : Type*} {_ : MeasurableSpace α}
     [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
     {f : α → X} {g : α → ℝ} (hf : Measurable f) (hg : Measurable g) :
     Measurable (fun a ↦ μ (ball (f a) (g a))) :=
-  lowerSemicontinuous_measure_ball.measurable.comp (hf.prod_mk hg)
+  lowerSemicontinuous_measure_ball.measurable.comp (hf.prodMk hg)
 
 theorem IsCompact.exists_isMinOn_measure_ball {X : Type*} [PseudoMetricSpace X]
     [MeasurableSpace X] [OpensMeasurableSpace X] (μ : Measure X) {s : Set X}
     (hs : IsCompact s) (hne : s.Nonempty) (r : ℝ) : ∃ x ∈ s, IsMinOn (μ <| ball · r) s x :=
   ((lowerSemicontinuous_measure_ball.comp_continuous
-    (continuous_id.prod_mk continuous_const)).lowerSemicontinuousOn _).exists_isMinOn hs hne
+    (continuous_id.prodMk continuous_const)).lowerSemicontinuousOn _).exists_isMinOn hs hne
 
 theorem IsCompact.exists_pos_forall_lt_measure_ball {X : Type*} [PseudoMetricSpace X]
     [MeasurableSpace X] [OpensMeasurableSpace X] (μ : Measure X) [μ.IsOpenPosMeasure] {s : Set X}
@@ -90,7 +90,7 @@ This is a version of `measurable_measure_prod_mk_right`. -/
 theorem Measurable.measure_apply {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) [SFinite μ] (s : β → Set α) (hs : MeasurableSet {p : α × β | p.1 ∈ s p.2}) :
     Measurable fun b ↦ μ (s b) :=
-  measurable_measure_prod_mk_right hs
+  measurable_measure_prodMk_right hs
 
 theorem Metric.biInter_lt_rat_closedBall {X : Type*} [PseudoMetricSpace X] (x : X) (r : ℝ) :
     closedBall x r = ⋂ (q : ℚ) (_ : r < q), closedBall x q := by
@@ -205,7 +205,7 @@ theorem MeasurableSet.setOf_tendsto_measure_sectl_inter_closedBall_div
     · exact measurable_const
   refine measurableSet_tendsto_fun (fun q ↦ .div ?_ (.measure_apply μ _ this)) hf
   refine .measure_apply _ _ ?_
-  exact .inter (hs.preimage <| .prod_mk measurable_fst measurable_snd.snd) this
+  exact .inter (hs.preimage <| .prodMk measurable_fst measurable_snd.snd) this
 
 theorem MeasurableSet.setOf_tendsto_measure_inter_closedBall_div
     {X : Type*} [PseudoMetricSpace X] [SecondCountableTopology X]
