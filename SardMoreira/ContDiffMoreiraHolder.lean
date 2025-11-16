@@ -60,6 +60,14 @@ theorem ContDiffAt.contDiffMoreiraHolderAt {n : WithTop ℕ∞} {k : ℕ} {f : E
 
 namespace ContDiffMoreiraHolderAt
 
+theorem continuousAt {k : ℕ} {α : I} {f : E → F} {a : E} (h : ContDiffMoreiraHolderAt k α f a) :
+    ContinuousAt f a :=
+  h.contDiffAt.continuousAt
+
+theorem differentiableAt {k : ℕ} {α : I} {f : E → F} {a : E} (h : ContDiffMoreiraHolderAt k α f a)
+    (hk : k ≠ 0) : DifferentiableAt ℝ f a :=
+  h.contDiffAt.differentiableAt <| by norm_cast; omega
+
 @[simp]
 theorem zero_exponent_iff {k : ℕ} {f : E → F} {a : E} :
     ContDiffMoreiraHolderAt k 0 f a ↔ ContDiffAt ℝ k f a := by
@@ -117,22 +125,28 @@ theorem prodMk {k : ℕ} {α : I} {f : E → F} {g : E → G} {a : E}
 theorem comp {g : F → G} {f : E → F} {a : E} {k : ℕ} {α : I}
     (hg : ContDiffMoreiraHolderAt k α g (f a)) (hf : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) :
     ContDiffMoreiraHolderAt k α (g ∘ f) a where
-  contDiffAt := hg.contDiffAt.comp _ hf.contDiffAt
+  contDiffAt := hg.contDiffAt.comp a hf.contDiffAt
   isBigO := calc
-    (fun x ↦ iteratedFDeriv ℝ k (g ∘ f) x - iteratedFDeriv ℝ k (g ∘ f) a)
+    (iteratedFDeriv ℝ k (g ∘ f) · - iteratedFDeriv ℝ k (g ∘ f) a)
       =ᶠ[𝓝 a] fun x ↦ (ftaylorSeries ℝ g (f x)).taylorComp (ftaylorSeries ℝ f x) k -
-                (ftaylorSeries ℝ g (f a)).taylorComp (ftaylorSeries ℝ f a) k := by
+        (ftaylorSeries ℝ g (f a)).taylorComp (ftaylorSeries ℝ f a) k := by
       filter_upwards [hf.contDiffAt.eventually (by simp),
-        hf.contDiffAt.continuousAt.eventually <| hg.contDiffAt.eventually (by simp)]
-        with x hfx hgx
-      rw [iteratedFDeriv_comp hg.contDiffAt hf.contDiffAt le_rfl,
-        iteratedFDeriv_comp hgx hfx le_rfl]
-    _ =O[𝓝 a] _ := by
-      simp only [FormalMultilinearSeries.taylorComp, ← Finset.sum_sub_distrib,
-        FormalMultilinearSeries.compAlongOrderedFinpartition,
-        ← OrderedFinpartition.compAlongOrderedFinpartitionL_apply]
-      refine .sum fun c _ ↦ ?_
-      sorry
+        hf.continuousAt.eventually (hg.contDiffAt.eventually (by simp))] with x hfx hgx
+      rw [iteratedFDeriv_comp hgx hfx le_rfl,
+        iteratedFDeriv_comp hg.contDiffAt hf.contDiffAt le_rfl]
+    _ =O[𝓝 a] fun x ↦ ‖x - a‖ ^ (α : ℝ) := by
+      apply FormalMultilinearSeries.taylorComp_sub_taylorComp_isBigO
+      · intro i hi
+        exact ((hg.contDiffAt.continuousAt_iteratedFDeriv (mod_cast hi)).comp hf.continuousAt)
+          |>.norm.isBoundedUnder_le
+      · intro i hi
+        refine ((hg.of_le hi).isBigO.comp_tendsto hf.continuousAt).trans ?_
+        refine .rpow α.2.1 (.of_forall fun _ ↦ norm_nonneg _) <| .norm_norm ?_
+        exact (hf.differentiableAt hk).isBigO_sub
+      · intro i hi
+        exact (hf.contDiffAt.continuousAt_iteratedFDeriv (mod_cast hi)).norm.isBoundedUnder_le
+      · exact fun _ _ ↦ isBoundedUnder_const
+      · exact fun i hi ↦ (hf.of_le hi).isBigO
 
 theorem continuousLinearMap_comp {f : E → F} {a : E} {k : ℕ} {α : I}
     (hf : ContDiffMoreiraHolderAt k α f a) (g : F →L[ℝ] G) :
