@@ -32,6 +32,11 @@ theorem ContDiffAt.continuousAt_iteratedFDeriv (hf : ContDiffAt 𝕜 n f a) (hk 
   simp only [← continuousWithinAt_univ, ← iteratedFDerivWithin_univ]
   exact hf.contDiffWithinAt.continuousWithinAt_iteratedFDerivWithin uniqueDiffOn_univ trivial hk
 
+theorem ContDiffAt.differentiableAt_iteratedFDeriv (hf : ContDiffAt 𝕜 n f a) (hk : k < n) :
+    DifferentiableAt 𝕜 (iteratedFDeriv 𝕜 k f) a := by
+  simp only [← differentiableWithinAt_univ, ← iteratedFDerivWithin_univ]
+  exact hf.differentiableWithinAt_iteratedFDerivWithin hk (by simp [uniqueDiffOn_univ])
+
 /-- Generalizes `ContinuousLinearMap.iteratedFderivWithin_comp_left`
 by weakening a `ContDiffOn` assumption to `ContDiffWithinAt`.  -/
 theorem ContinuousLinearMap.iteratedFDerivWithin_comp_left' (g : F →L[𝕜] G)
@@ -274,6 +279,7 @@ theorem HasFDerivWithinAt.of_local_leftInverse {f : E → F} {f' : E ≃L[𝕜] 
     rintro p hp
     simp only [(· ∘ ·), hp, hfg.self_of_nhdsWithin ha]
 
+/-
 theorem HasFTaylorSeriesUpToOn.partialEquivSymm {f : PartialEquiv E F} {f' : E → (E ≃L[𝕜] F)}
     {p : E → FormalMultilinearSeries 𝕜 E F} (hf : HasFTaylorSeriesUpToOn n f p f.source)
     (hf' : ∀ x ∈ f.source, HasFDerivWithinAt f (f' x : E →L[𝕜] F) f.source x) :
@@ -296,6 +302,7 @@ theorem PartialHomeomorph.iteratedFDeriv_symm_eq_taylorLeftInv (f : PartialHomeo
     | 1 => ext; simp [f.fderiv_symm hy (f' (f.symm y)) (hf' _ (f.symm_mapsTo hy))]
     | i + 2 =>
       rw [FormalMultilinearSeries.taylorLeftInv_coeff_add_two]
+-/
 
 theorem FormalMultilinearSeries.taylorComp_sub_taylorComp_isBigO
     {α : Type*} {l : Filter α} {p₁ p₂ : α → FormalMultilinearSeries 𝕜 F G}

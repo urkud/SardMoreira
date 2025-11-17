@@ -1,6 +1,5 @@
 import SardMoreira.ContDiffMoreiraHolder
-import Mathlib.Analysis.Normed.Affine.Isometry
-import Mathlib.Analysis.NormedSpace.HahnBanach.SeparatingDual
+import Mathlib
 
 open scoped unitInterval Topology NNReal
 open Asymptotics Filter Set Metric Function

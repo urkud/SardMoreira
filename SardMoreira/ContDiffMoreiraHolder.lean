@@ -25,26 +25,6 @@ variable {E F G : Type*}
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G]
 
-theorem iteratedFDerivWithin_prodMk {f : E → F} {g : E → G} {n : ℕ} {s : Set E} {x : E}
-    (hf : ContDiffWithinAt ℝ n f s x) (hg : ContDiffWithinAt ℝ n g s x) (hs : UniqueDiffOn ℝ s)
-    (hx : x ∈ s) :
-    iteratedFDerivWithin ℝ n (fun a ↦ (f a, g a)) s x =
-      (iteratedFDerivWithin ℝ n f s x).prod (iteratedFDerivWithin ℝ n g s x) := by
-  ext1
-  · rw [← (ContinuousLinearMap.fst ℝ F G).iteratedFDerivWithin_comp_left
-      (hf.prodMk hg) hs hx le_rfl]
-    ext; simp [Function.comp_def] -- TODO: add `fst_compContinuousMultilinearMap_prod`
-  · rw [← (ContinuousLinearMap.snd ℝ F G).iteratedFDerivWithin_comp_left
-      (hf.prodMk hg) hs hx le_rfl]
-    ext; simp [Function.comp_def] -- TODO: add `fst_compContinuousMultilinearMap_prod`
-
-theorem iteratedFDeriv_prodMk {f : E → F} {g : E → G} {n : ℕ} {x : E}
-    (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x) :
-    iteratedFDeriv ℝ n (fun a ↦ (f a, g a)) x =
-      (iteratedFDeriv ℝ n f x).prod (iteratedFDeriv ℝ n g x) := by
-  simp only [← iteratedFDerivWithin_univ, ← contDiffWithinAt_univ] at *
-  apply iteratedFDerivWithin_prodMk <;> simp [*, uniqueDiffOn_univ]
-
 structure ContDiffMoreiraHolderAt (k : ℕ) (α : I) (f : E → F) (a : E) : Prop where
   contDiffAt : ContDiffAt ℝ k f a
   isBigO : (iteratedFDeriv ℝ k f · - iteratedFDeriv ℝ k f a) =O[𝓝 a] (‖· - a‖ ^ (α : ℝ))
@@ -116,7 +96,8 @@ theorem prodMk {k : ℕ} {α : I} {f : E → F} {g : E → G} {a : E}
       filter_upwards [hf.contDiffAt.eventually (by simp),
         hg.contDiffAt.eventually (by simp)] with x hfx hgx
       apply DFunLike.ext
-      simp [iteratedFDeriv_prodMk, hfx, hgx, hf.contDiffAt, hg.contDiffAt]
+      rw [iteratedFDeriv_prodMk _ _ le_rfl, iteratedFDeriv_prodMk _ _ le_rfl] <;>
+        simp [hfx, hgx, hf.contDiffAt, hg.contDiffAt]
     _ =O[𝓝 a] fun x ↦ ‖x - a‖ ^ (α : ℝ) := by
       refine .of_norm_left ?_
       simp only [ContinuousMultilinearMap.opNorm_prod, ← Prod.norm_mk]

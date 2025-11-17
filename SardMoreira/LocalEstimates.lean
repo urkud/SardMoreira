@@ -18,87 +18,121 @@ section NormedField
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-lemma dist_le_mul_volume_of_norm_deriv_le {f : ℝ → E} {a b C : ℝ}
-    (hfd : DifferentiableOn ℝ f (Set.uIcc a b)) (hnorm : ∀ᵐ t, t ∈ Set.uIcc a b → ‖deriv f t‖ ≤ C) :
-    dist (f a) (f b) ≤ C * volume.real {x ∈ Set.uIcc a b | deriv f x ≠ 0} := by
-  set s := {x ∈ uIcc a b | deriv f x ≠ 0}
-  wlog hab : a < b generalizing a b
-  · rcases (not_lt.mp hab).eq_or_lt with rfl | hlt
-    · have : volume s = 0 := measure_mono_null (by simp [s]) (measure_singleton b)
-      simp [this, Measure.real]
-    · rw [dist_comm]
-      simp only [s]
-      rw [uIcc_comm] at hfd hnorm ⊢
-      apply this <;> assumption
-  have hC₀ : 0 ≤ C := by
-    have : ∃ᵐ t, t ∈ uIcc a b := by simp [frequently_ae_iff, sub_eq_zero, hab.ne']
-    rcases hnorm.and_frequently this |>.exists with ⟨t, ht₁, ht₂⟩
-    exact (norm_nonneg _).trans (ht₁ ht₂)
+theorem lineMap_mem_openSegment (a b : E) {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    lineMap a b t ∈ openSegment ℝ a b :=
+  (openSegment_eq_image_lineMap _ _ _).superset <| mem_image_of_mem _ ht
+
+theorem DifferentiableAt.lineDifferentiableAt {f : E → F} {a b : E} (hf : DifferentiableAt ℝ f a) :
+    LineDifferentiableAt ℝ f a b :=
+  hf.hasFDerivAt.hasLineDerivAt _ |>.lineDifferentiableAt
+
+lemma dist_le_integral_of_norm_deriv_le_of_le {f : ℝ → E} {B : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
+    (hfc : ContinuousOn f (Set.Icc a b)) (hfd : DifferentiableOn ℝ f (Set.Ioo a b))
+    (hfB : ∀ᵐ t, t ∈ Ioo a b → ‖deriv f t‖ ≤ B t)
+    (hBi : IntervalIntegrable B volume a b) : dist (f a) (f b) ≤ ∫ t in a..b, B t := by
   wlog hE : CompleteSpace E generalizing E
   · set g : ℝ → UniformSpace.Completion E := (↑) ∘ f with hg
-    have hgd : DifferentiableOn ℝ g (Set.uIcc a b) :=
+    have hgc : ContinuousOn g (Icc a b) :=
+      (UniformSpace.Completion.continuous_coe E).comp_continuousOn hfc
+    have hgd : DifferentiableOn ℝ g (Ioo a b) :=
       UniformSpace.Completion.toComplL.differentiable.comp_differentiableOn hfd
-    have hdg : ∀ᵐ t, t ∈ Set.uIcc a b → deriv g t = deriv f t := by
-      filter_upwards [hnorm, volume.ae_ne (min a b), volume.ae_ne (max a b)]
-        with t hft htmin htmax htuIcc
+    have hdg : ∀ t ∈ Set.Ioo a b, deriv g t = deriv f t := by
+      intro t ht
       have : HasFDerivAt (𝕜 := ℝ) (↑) UniformSpace.Completion.toComplL (f t) := by
         rw [← UniformSpace.Completion.coe_toComplL (𝕜 := ℝ)]
         exact (UniformSpace.Completion.toComplL (E := E) (𝕜 := ℝ)).hasFDerivAt
-      have hdft : HasDerivAt f (deriv f t) t :=
-        hfd.hasDerivAt <| Icc_mem_nhds (lt_of_le_of_ne htuIcc.1 htmin.symm)
-          (lt_of_le_of_ne htuIcc.2 htmax)
+      have hdft : HasDerivAt f (deriv f t) t := hfd.hasDerivAt <| Ioo_mem_nhds ht.1 ht.2
       rw [hg, (this.comp_hasDerivAt t hdft).deriv, UniformSpace.Completion.coe_toComplL]
-    have hgn : ∀ᵐ t, t ∈ Set.uIcc a b → ‖deriv g t‖ ≤ C := by
-      filter_upwards [hnorm, hdg] with t hft ht ht_mem
-      rw [ht ht_mem, UniformSpace.Completion.norm_coe]
-      exact hft ht_mem
-    have hgs : s =ᵐ[volume] {t ∈ uIcc a b | deriv g t ≠ 0} := by
-      refine .set_eq ?_
-      filter_upwards [hdg] with t ht
-      simp +contextual [s, ht]
-    convert this hgd hgn inferInstance using 1
-    · simp [g]
-    · rw [measureReal_congr hgs]
-  set s := {x ∈ uIcc a b | deriv f x ≠ 0}
-  calc
-    dist (f a) (f b) ≤ ‖∫ t in uIcc a b, deriv f t‖ := by
-      rw [dist_eq_norm_sub', ← intervalIntegral.integral_eq_sub_of_hasDeriv_right]
-      · rw [intervalIntegral.norm_integral_eq_norm_integral_uIoc,
-          Measure.restrict_congr_set uIoc_ae_eq_interval]
-      · exact hfd.continuousOn
-      · intro t ht
-        exact hfd.hasDerivAt (Icc_mem_nhds ht.1 ht.2) |>.hasDerivWithinAt
-      · refine (intervalIntegrable_const (c := C)).mono_fun' ?_ ?_
-        · apply aestronglyMeasurable_deriv
-        · rwa [Measure.restrict_congr_set uIoc_ae_eq_interval, Filter.EventuallyLE,
-            ae_restrict_iff']
-          exact measurableSet_uIcc
-    _ = ‖∫ t in s, deriv f t‖ := by
-      rw [setIntegral_eq_of_subset_of_ae_diff_eq_zero]
-      · exact measurableSet_uIcc.nullMeasurableSet
-      · exact inter_subset_left
-      · apply ae_of_all
-        rintro t ⟨ht, hts⟩
-        simpa [s, ht] using hts
-    _ ≤ C * volume.real s := by
-      apply norm_setIntegral_le_of_norm_le_const_ae'
-      · calc
-          volume s ≤ volume (uIcc a b) := by gcongr; apply inter_subset_left
-          _ < ⊤ := by simp
-      · exact hnorm.mono fun t ht hts ↦ ht hts.1
+    have hgn : ∀ᵐ t, t ∈ Ioo a b → ‖deriv g t‖ ≤ B t :=
+      hfB.mono fun t htB ht ↦ by
+        simpa only [hdg t ht, UniformSpace.Completion.norm_coe] using htB ht
+    simpa [g] using this hgc hgd hgn inferInstance
+  have hfB' : (‖deriv f ·‖) ≤ᵐ[volume.restrict (uIoc a b)] B := by
+    rwa [uIoc_of_le hab, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc, EventuallyLE,
+        ae_restrict_iff' measurableSet_Ioo]
+  rw [dist_eq_norm_sub', ← intervalIntegral.integral_eq_sub_of_hasDeriv_right (f' := deriv f)]
+  · refine (intervalIntegral.norm_integral_le_of_norm_le hfB' hBi).trans_eq (abs_of_nonneg ?_)
+    apply intervalIntegral.integral_nonneg_of_ae_restrict hab
+    rw [EventuallyLE, ← Measure.restrict_congr_set Ioo_ae_eq_Icc,
+      ae_restrict_iff' measurableSet_Ioo]
+    exact hfB.mono fun t ht ht_mem ↦ (norm_nonneg _).trans (ht ht_mem)
+  · rwa [uIcc_of_le hab]
+  · rw [min_eq_left hab, max_eq_right hab]
+    intro t ht
+    exact hfd.hasDerivAt (isOpen_Ioo.mem_nhds ht) |>.hasDerivWithinAt
+  · apply hBi.mono_fun (aestronglyMeasurable_deriv _ _)
+    exact hfB'.trans <| .of_forall fun _ ↦ le_abs_self _
 
-lemma dist_le_mul_volume_of_norm_lineDeriv_le {f : E → F} {a b : E} {C : ℝ≥0}
-    (hf : DifferentiableOn ℝ f (segment ℝ a b))
-    (hf' : ∀ᵐ t : ℝ, t ∈ I → ‖lineDeriv ℝ f (lineMap a b t) (b - a)‖ ≤ C) :
-    ‖f b - f a‖ ≤ C * volume.real {t ∈ I | lineDeriv ℝ f (lineMap a b t) (b - a) ≠ 0} := by
+lemma dist_le_mul_volume_of_norm_deriv_le_of_le {f : ℝ → E} {a b C : ℝ} (hab : a ≤ b)
+    (hfc : ContinuousOn f (Icc a b)) (hfd : DifferentiableOn ℝ f (Ioo a b))
+    (hnorm : ∀ᵐ t, t ∈ Ioo a b → ‖deriv f t‖ ≤ C) :
+    dist (f a) (f b) ≤ C * volume.real {x ∈ Ioo a b | deriv f x ≠ 0} := by
+  set s := toMeasurable volume {x | deriv f x ≠ 0}
+  have hsm : MeasurableSet s := by measurability
+  calc
+    dist (f a) (f b) ≤ ∫ t in a..b, indicator s (fun _ ↦ C) t := by
+      apply dist_le_integral_of_norm_deriv_le_of_le hab hfc hfd
+      · refine hnorm.mono fun t ht ht_mem ↦ ?_
+        apply le_indicator_apply
+        · exact fun ht' ↦ ht ht_mem
+        · simp only [s, norm_le_zero_iff]
+          exact not_imp_comm.2 fun h ↦ subset_toMeasurable _ _ h
+      · rw [intervalIntegrable_iff_integrableOn_Ioo_of_le hab]
+        refine (integrableOn_const.mpr ?_).indicator hsm
+        simp
+    _ = C * volume.real {x ∈ Ioo a b | deriv f x ≠ 0} := by
+      rw [intervalIntegral.integral_of_le hab, Measure.restrict_congr_set Ioo_ae_eq_Ioc.symm,
+        integral_indicator hsm, Measure.restrict_restrict hsm,
+        setIntegral_const, smul_eq_mul, mul_comm]
+      simp only [s, Measure.real,
+        Measure.measure_toMeasurable_inter_of_sFinite measurableSet_Ioo]
+      simp only [inter_def, mem_setOf_eq, and_comm]
+
+lemma dist_le_mul_volume_of_norm_lineDeriv_le {f : E → F} {a b : E} {C : ℝ}
+    (hfc : ContinuousOn f (segment ℝ a b))
+    (hfd : ∀ t ∈ Ioo (0 : ℝ) 1, LineDifferentiableAt ℝ f (lineMap a b t) (b - a))
+    (hf' : ∀ᵐ t : ℝ, t ∈ Ioo (0 : ℝ) 1 → ‖lineDeriv ℝ f (lineMap a b t) (b - a)‖ ≤ C) :
+    ‖f b - f a‖ ≤
+      C * volume.real {t ∈ Ioo (0 : ℝ) 1 | lineDeriv ℝ f (lineMap a b t) (b - a) ≠ 0} := by
   set g : ℝ → F := fun t ↦ f (lineMap a b t)
-  have hdg (t : ℝ) : deriv g t = lineDeriv ℝ f (lineMap a b t) (b - a) := by
-    conv_lhs => rw [← zero_add t, ← deriv_comp_add_const]
-    rw [lineDeriv]
-    simp [lineMap_apply_module', g, add_smul, add_assoc, add_comm, add_left_comm]
-  suffices dist (g 0) (g 1) ≤ C * volume.real {t ∈ uIcc 0 1 | deriv g t ≠ 0} by
-    simpa [g, ← hdg, dist_eq_norm_sub'] using this
-  apply dist_le_mul_volume_of_norm_deriv_le
-  · refine hf.comp (lineMap _ _).differentiableOn ?_
-    simp [segment_eq_image_lineMap, mapsTo_image]
-  · simpa [hdg] using hf'
+  have hgc : ContinuousOn g (Icc 0 1) := by
+    refine hfc.comp ?_ ?_
+    · exact AffineMap.lineMap_continuous.continuousOn
+    · simp [segment_eq_image_lineMap, mapsTo_image]
+  have hdg (t : ℝ) (ht : t ∈ Ioo 0 1) : HasDerivAt g (lineDeriv ℝ f (lineMap a b t) (b - a)) t := by
+    have := (hfd t ht).hasLineDerivAt.scomp_of_eq (𝕜 := ℝ) t ((hasDerivAt_id t).sub_const t)
+    simpa [g, lineMap_apply_module', Function.comp_def, sub_smul, add_comm _ a] using this
+  suffices dist (g 0) (g 1) ≤ C * volume.real {t ∈ Ioo 0 1 | deriv g t ≠ 0} by
+    convert this using 1
+    · simp [g, dist_eq_norm_sub']
+    · congr 2 with t
+      simp +contextual [(hdg _ _).deriv]
+  apply dist_le_mul_volume_of_norm_deriv_le_of_le zero_le_one hgc
+  · exact fun t ht ↦ (hdg t ht).differentiableAt.differentiableWithinAt
+  · exact hf'.mono fun t ht ht_mem ↦ by simpa only [(hdg t ht_mem).deriv] using ht ht_mem
+
+lemma dist_le_mul_volume_of_norm_fderiv_le {f : E → F} {a b : E} {C : ℝ} {s : Set E}
+    (hs : IsOpen s) (hf : DiffContOnCl ℝ f s) (hab : openSegment ℝ a b ⊆ s)
+    (hC : ∀ x ∈ s, ‖fderiv ℝ f x‖ ≤ C) :
+    ‖f b - f a‖ ≤
+      C * ‖b - a‖ * volume.real {t ∈ Ioo (0 : ℝ) 1 | fderiv ℝ f (lineMap a b t) ≠ 0} := by
+  have hmem_s : ∀ t ∈ Ioo (0 : ℝ) 1, lineMap a b t ∈ s := fun t ht ↦
+    hab <| lineMap_mem_openSegment a b ht
+  have hC₀ : 0 ≤ C := (norm_nonneg _).trans <| hC _ <| hmem_s (1 / 2) (by norm_num)
+  have hfc : ContinuousOn f (segment ℝ a b) :=
+    hf.continuousOn.mono <| segment_subset_closure_openSegment.trans <| closure_mono hab
+  have hfd : ∀ t ∈ Ioo (0 : ℝ) 1, LineDifferentiableAt ℝ f (lineMap a b t) (b - a) := fun t ht ↦
+    (hf.differentiableAt hs <| hmem_s t ht).lineDifferentiableAt
+  have hfC : ∀ t ∈ Ioo (0 : ℝ) 1, ‖lineDeriv ℝ f (lineMap a b t) (b - a)‖ ≤ C * ‖b - a‖ := by
+    intro t ht
+    rw [DifferentiableAt.lineDeriv_eq_fderiv]
+    · exact ContinuousLinearMap.le_of_opNorm_le _ (hC _ <| hmem_s t ht) _
+    · exact hf.differentiableAt hs <| hmem_s t ht
+  refine dist_le_mul_volume_of_norm_lineDeriv_le hfc hfd (.of_forall hfC) |>.trans ?_
+  gcongr
+  · refine ne_top_of_le_ne_top ?_ (measure_mono inter_subset_left)
+    simp
+  · rintro t ⟨ht_mem, ht⟩
+    use ht_mem
+    contrapose! ht
+    simp [(hf.differentiableAt hs <| hmem_s t ht_mem).lineDeriv_eq_fderiv, ht]
