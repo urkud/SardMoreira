@@ -1,6 +1,8 @@
 import SardMoreira.Chart
 import SardMoreira.ContDiff
 import SardMoreira.ContDiffMoreiraHolder
+import SardMoreira.ContinuousMultilinearMap
 import SardMoreira.LebesgueDensity
 import SardMoreira.LocalEstimates
+import SardMoreira.ToSphereBallBound
 import SardMoreira.UpperLowerSemicontinuous

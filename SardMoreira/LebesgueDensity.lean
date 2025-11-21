@@ -1,5 +1,6 @@
 import Mathlib
 import SardMoreira.UpperLowerSemicontinuous
+import SardMoreira.ToSphereBallBound
 
 open scoped ENNReal NNReal Set.Notation Pointwise
 open MeasureTheory Filter Set Function Metric Topology
@@ -160,6 +161,7 @@ theorem IsCompact.exists_pos_forall_lt_measure_ball {X : Type*} [PseudoMetricSpa
   · rcases hs.exists_isMinOn_measure_ball μ hne r with ⟨x, hxs, hx⟩
     rcases ENNReal.lt_iff_exists_nnreal_btwn.mp (Metric.measure_ball_pos μ x hr) with ⟨m, hm₀, hmx⟩
     exact ⟨m, mod_cast hm₀, fun y hy ↦ hmx.trans_le <| hx hy⟩
+
 
 theorem exists_pos_forall_lt_measure_ball {X : Type*} [PseudoMetricSpace X] [CompactSpace X]
     [MeasurableSpace X] [OpensMeasurableSpace X] (μ : Measure X) [μ.IsOpenPosMeasure]
@@ -485,11 +487,10 @@ theorem exists_pos_forall_measure_le_exists_mem_sphere_dist_lt_volume_smul_mem_l
     ∃ δ : ℝ≥0, 0 < δ ∧ ∀ s, μ s ≤ δ → ∀ x ∈ Metric.sphere (0 : E) 1,
       ∃ y ∈ Metric.sphere (0 : E) 1,
         dist y x < ε ∧ volume {t : ℝ | 0 ≤ t ∧ t • y ∈ s} < ε := by
-  rcases exists_pos_forall_lt_measure_ball (X := Metric.sphere (0 : E) 1) μ.toSphere (r := ε)
-    (by positivity) with ⟨δ, hδ₀, hδ⟩
+  rcases exists_pos_forall_lt_measure_ball μ.toSphere (r := ε) (by positivity) with ⟨δ, hδ₀, hδ⟩
   rcases exists_pos_forall_measure_le_toSphere_ge_le μ (ε := min δ ε) (by positivity)
     with ⟨η, hη₀, hη⟩
-  refine ⟨η, by positivity, fun s hs x hx ↦ ?_⟩
+  refine ⟨η, hη₀, fun s hs x hx ↦ ?_⟩
   specialize hη s hs
   contrapose! hη
   calc
