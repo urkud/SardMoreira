@@ -1,95 +1,25 @@
-import Mathlib
 import SardMoreira.UpperLowerSemicontinuous
-import SardMoreira.ToSphereBallBound
+import SardMoreira.NormedSpace
+import SardMoreira.MeasureComap
+import Mathlib.Data.Real.StarOrdered
+import Mathlib.LinearAlgebra.FreeModule.PID
+import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import Mathlib.MeasureTheory.Covering.Besicovitch
+import Mathlib.RingTheory.SimpleRing.Principal
+import Mathlib.Topology.EMetricSpace.Paracompact
+import Mathlib.Topology.Separation.CompletelyRegular
+import Mathlib.Dynamics.Ergodic.Action.Regular
+import Mathlib.MeasureTheory.Constructions.Polish.Basic
+import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 open scoped ENNReal NNReal Set.Notation Pointwise
 open MeasureTheory Filter Set Function Metric Topology
-
-noncomputable instance : MeasureSpace ℝ≥0 where
-  volume := .comap (↑) (volume : Measure ℝ)
-
-protected theorem NNReal.norm_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (a : ℝ≥0) (x : E) : ‖a • x‖ = a * ‖x‖ := by
-  simp [NNReal.smul_def, norm_smul]
-
-protected theorem NNReal.dist_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (a : ℝ≥0) (x y : E) : dist (a • x) (a • y) = a * dist x y := by
-  simp [NNReal.smul_def, dist_smul₀]
-
-theorem NNReal.volume_def : (volume : Measure ℝ≥0) = .comap (↑) (volume : Measure ℝ) := rfl
 
 theorem MeasureTheory.Measure.cofinite_le_ae {α : Type*} {_ : MeasurableSpace α} (μ : Measure α) :
     μ.cofinite ≤ ae μ := by
   intro s hs
   simp_all [mem_cofinite, mem_ae_iff]
-
-theorem MeasureTheory.Measure.comap_apply_le {α β : Type*} {_ : MeasurableSpace α}
-    {_ : MeasurableSpace β} (f : α → β) (μ : Measure β) {s : Set α}
-    (hs : NullMeasurableSet s (μ.comap f)) :
-    μ.comap f s ≤ μ (f '' s) := by
-  by_cases hf : Injective f ∧ ∀ t, MeasurableSet t → NullMeasurableSet (f '' t) μ
-  · rw [comap_apply₀ _ _ hf.1 hf.2 hs]
-  · rw [comap, dif_neg hf]
-    simp
-
-instance {α β : Type*} {_ : MeasurableSpace α} {_ : MeasurableSpace β} (μ : Measure β) (f : α → β)
-    [IsFiniteMeasure μ] : IsFiniteMeasure (μ.comap f) where
-  measure_univ_lt_top :=
-    (Measure.comap_apply_le _ _ nullMeasurableSet_univ).trans_lt (measure_lt_top _ _)
-
-theorem MeasureTheory.nullMeasurableSet_sum {ι α : Type*} {_ : MeasurableSpace α}
-    [Countable ι] {μ : ι → Measure α} {s : Set α} :
-    NullMeasurableSet s (.sum μ) ↔ ∀ i, NullMeasurableSet s (μ i) := by
-  refine ⟨fun hs i ↦ hs.mono <| Measure.le_sum _ _, fun h ↦ ?_⟩
-  use ⋂ i, toMeasurable (μ i) s, by measurability
-  rw [EventuallyEq, Measure.ae_sum_iff]
-  intro i
-  refine (subset_iInter fun i ↦ subset_toMeasurable (μ i) s).eventuallyLE.antisymm ?_
-  exact (iInter_subset _ i).eventuallyLE.trans (h i).toMeasurable_ae_eq.le
-
-theorem MeasureTheory.Measure.comap_sum_countable {ι α β : Type*} {_ : MeasurableSpace α}
-    {_ : MeasurableSpace β} [Countable ι] {f : α → β} {μ : ι → Measure β}
-    (hf : ∀ i t, MeasurableSet t → NullMeasurableSet (f '' t) (μ i)) :
-    (Measure.sum μ).comap f = .sum fun i ↦ (μ i).comap f := by
-  by_cases hfi : Injective f
-  · ext1 s hs
-    simp +contextual [Measure.sum_apply_of_countable, comap_apply₀, hs.nullMeasurableSet,
-      nullMeasurableSet_sum, hfi, hf]
-  · simp [comap_undef, hfi]
-
-protected def MeasureTheory.Measure.FiniteSpanningSetsIn.comap {α β : Type*}
-    {_ : MeasurableSpace α} {_ : MeasurableSpace β} {μ : Measure β} {T : Set (Set β)}
-    (sets : μ.FiniteSpanningSetsIn T) {S : Set (Set α)} {f : α → β} (hf : MapsTo (f ⁻¹' ·) T S)
-    (hmeas : ∀ n, MeasurableSet (f ⁻¹' (sets.set n))) :
-    (μ.comap f).FiniteSpanningSetsIn S where
-  set n := f ⁻¹' (sets.set n)
-  set_mem n := hf <| sets.set_mem n
-  finite n := (Measure.comap_apply_le _ _ (hmeas n).nullMeasurableSet).trans_lt <|
-    (measure_mono (image_preimage_subset _ _)).trans_lt <| sets.finite n
-  spanning := by simp [← preimage_iUnion, sets.spanning]
-
-protected theorem MeasureTheory.SigmaFinite.comap
-    {α β : Type*} {_ : MeasurableSpace α} {_ : MeasurableSpace β} (μ : Measure β) {f : α → β}
-    (hf : Measurable f) [SigmaFinite μ] : SigmaFinite (μ.comap f) :=
-  ⟨⟨μ.toFiniteSpanningSetsIn.comap (mapsTo_univ _ _) fun n ↦
-    hf <| μ.toFiniteSpanningSetsIn.set_mem n⟩⟩
-
-instance {α : Type*} {_ : MeasurableSpace α} {p : α → Prop} {μ : Measure α} [SigmaFinite μ] :
-    SigmaFinite (μ.comap (↑) : Measure (Subtype p)) :=
-  .comap μ measurable_subtype_coe
-
-instance {α β : Type*} {_ : MeasurableSpace α} {_ : MeasurableSpace β} (μ : Measure β) [SFinite μ]
-    (f : α → β) : SFinite (μ.comap f) := by
-  by_cases hf : ∀ t, MeasurableSet t → NullMeasurableSet (f '' t) μ
-  · rw [← sum_sfiniteSeq μ, Measure.comap_sum_countable]
-    · infer_instance
-    · exact fun n t ht ↦ (hf t ht).mono (sfiniteSeq_le _ _)
-  · rw [Measure.comap_undef]
-    · infer_instance
-    · exact mt And.right hf
-
--- TODO: should we have this instance? I'm not sure.
-instance : SigmaFinite (volume : Measure ℝ≥0) := .comap _ (by fun_prop)
 
 theorem MeasureTheory.tendsto_measure_biUnion_lt {α : Type*} {m : MeasurableSpace α}
     {μ : Measure α} {ι : Type*} [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι]
@@ -161,7 +91,6 @@ theorem IsCompact.exists_pos_forall_lt_measure_ball {X : Type*} [PseudoMetricSpa
   · rcases hs.exists_isMinOn_measure_ball μ hne r with ⟨x, hxs, hx⟩
     rcases ENNReal.lt_iff_exists_nnreal_btwn.mp (Metric.measure_ball_pos μ x hr) with ⟨m, hm₀, hmx⟩
     exact ⟨m, mod_cast hm₀, fun y hy ↦ hmx.trans_le <| hx hy⟩
-
 
 theorem exists_pos_forall_lt_measure_ball {X : Type*} [PseudoMetricSpace X] [CompactSpace X]
     [MeasurableSpace X] [OpensMeasurableSpace X] (μ : Measure X) [μ.IsOpenPosMeasure]

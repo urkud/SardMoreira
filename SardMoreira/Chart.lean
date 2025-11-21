@@ -1,5 +1,10 @@
 import SardMoreira.ContDiffMoreiraHolder
-import Mathlib
+import Mathlib.Order.CompletePartialOrder
+import Mathlib.Algebra.Lie.OfAssociative
+import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib.Topology.GDelta.MetrizableSpace
+import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.NormedSpace.HahnBanach.SeparatingDual
 
 open scoped unitInterval Topology NNReal
 open Asymptotics Filter Set Metric Function

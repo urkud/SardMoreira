@@ -1,4 +1,6 @@
-import Mathlib
+import Mathlib.Analysis.Calculus.DiffContOnCl
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 open scoped Topology NNReal unitInterval
 open Asymptotics Filter MeasureTheory AffineMap Set

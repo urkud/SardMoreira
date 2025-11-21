@@ -4,5 +4,8 @@ import SardMoreira.ContDiffMoreiraHolder
 import SardMoreira.ContinuousMultilinearMap
 import SardMoreira.LebesgueDensity
 import SardMoreira.LocalEstimates
+import SardMoreira.MeasureComap
+import SardMoreira.MeasureNNReal
+import SardMoreira.NormedSpace
 import SardMoreira.ToSphereBallBound
 import SardMoreira.UpperLowerSemicontinuous

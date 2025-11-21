@@ -1,5 +1,4 @@
 import Mathlib.Analysis.Calculus.ContDiff.Basic
-import SardMoreira.ContinuousMultilinearMap
 
 open scoped unitInterval Topology NNReal Classical
 open Function Asymptotics Filter Set
