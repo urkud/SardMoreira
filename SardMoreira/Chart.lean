@@ -105,7 +105,7 @@ theorem fderiv_comp_eq_zero (ψ : Chart k α l s U) (i : Fin l) {f : E × ψ.sub
   · exact g.differentiableAt
   · apply ContDiffAt.differentiableAt (n := (k - i : ℕ)) _ (by norm_cast; omega)
     apply ((hf.contDiffOn.comp (ψ.contDiffMoreiraHolderOn i).contDiffOn _).contDiffAt _).comp
-    · refine contDiffAt_const.prod contDiffAt_id
+    · refine contDiffAt_const.prodMk contDiffAt_id
     · exact ψ.mapsTo_dom _
     · exact (ψ.isOpen_dom _).mem_nhds <| ψ.holderSet_subset_dom _ hx
 
@@ -127,7 +127,7 @@ theorem contDiffMoreiraHolderOn_compUpTo (ψ : Chart k α l s U) (i : Fin (l + 1
     simp only [compUpTo_zero]
     refine ContDiffOn.contDiffMoreiraHolderOn (.add ?_ contDiffOn_const)
       (ψ.holderSet_subset_dom _) (ψ.isOpen_dom _) (WithTop.coe_lt_top _) _
-    exact .prod contDiffOn_fst ((ψ.subspace 0).subtypeL.contDiff.comp_contDiffOn contDiffOn_snd)
+    exact contDiffOn_fst.prodMk ((ψ.subspace 0).subtypeL.contDiff.comp_contDiffOn contDiffOn_snd)
   | succ i ih =>
     dsimp only [compUpTo_succ]
     refine (ih.of_le ?_).comp ((ψ.contDiffMoreiraHolderOn _).of_le ?_) ?_ ?_ ?_

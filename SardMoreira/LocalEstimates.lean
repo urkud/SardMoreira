@@ -3,15 +3,9 @@ import Mathlib
 open scoped Topology NNReal unitInterval
 open Asymptotics Filter MeasureTheory AffineMap Set
 
--- From Mathlib
-@[simp]
-lemma UniformSpace.Completion.coe_eq_zero_iff {α : Type*} [UniformSpace α] [Zero α] [T0Space α]
-    {x : α} : (x : Completion α) = 0 ↔ x = 0 :=
-  (Completion.coe_injective α).eq_iff
-
 lemma MeasureTheory.Measure.ae_ne {α : Type*} {_ : MeasurableSpace α} {μ : Measure α}
     [NoAtoms μ] (a : α) : ∀ᵐ x ∂μ, x ≠ a :=
-  (countable_singleton a).ae_not_mem μ
+  (countable_singleton a).ae_notMem μ
 
 section NormedField
 
@@ -51,11 +45,8 @@ lemma dist_le_integral_of_norm_deriv_le_of_le {f : ℝ → E} {B : ℝ → ℝ} 
     rwa [uIoc_of_le hab, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc, EventuallyLE,
         ae_restrict_iff' measurableSet_Ioo]
   rw [dist_eq_norm_sub', ← intervalIntegral.integral_eq_sub_of_hasDeriv_right (f' := deriv f)]
-  · refine (intervalIntegral.norm_integral_le_of_norm_le hfB' hBi).trans_eq (abs_of_nonneg ?_)
-    apply intervalIntegral.integral_nonneg_of_ae_restrict hab
-    rw [EventuallyLE, ← Measure.restrict_congr_set Ioo_ae_eq_Icc,
-      ae_restrict_iff' measurableSet_Ioo]
-    exact hfB.mono fun t ht ht_mem ↦ (norm_nonneg _).trans (ht ht_mem)
+  · apply intervalIntegral.norm_integral_le_of_norm_le hab _ hBi
+    rwa [← ae_restrict_iff' measurableSet_Ioc, ← uIoc_of_le hab]
   · rwa [uIcc_of_le hab]
   · rw [min_eq_left hab, max_eq_right hab]
     intro t ht
@@ -78,8 +69,7 @@ lemma dist_le_mul_volume_of_norm_deriv_le_of_le {f : ℝ → E} {a b C : ℝ} (h
         · simp only [s, norm_le_zero_iff]
           exact not_imp_comm.2 fun h ↦ subset_toMeasurable _ _ h
       · rw [intervalIntegrable_iff_integrableOn_Ioo_of_le hab]
-        refine (integrableOn_const.mpr ?_).indicator hsm
-        simp
+        refine (integrableOn_const ?_ ?_).indicator hsm <;> simp
     _ = C * volume.real {x ∈ Ioo a b | deriv f x ≠ 0} := by
       rw [intervalIntegral.integral_of_le hab, Measure.restrict_congr_set Ioo_ae_eq_Ioc.symm,
         integral_indicator hsm, Measure.restrict_restrict hsm,
@@ -132,7 +122,5 @@ lemma dist_le_mul_volume_of_norm_fderiv_le {f : E → F} {a b : E} {C : ℝ} {s 
   gcongr
   · refine ne_top_of_le_ne_top ?_ (measure_mono inter_subset_left)
     simp
-  · rintro t ⟨ht_mem, ht⟩
-    use ht_mem
-    contrapose! ht
-    simp [(hf.differentiableAt hs <| hmem_s t ht_mem).lineDeriv_eq_fderiv, ht]
+  · contrapose!
+    simp +contextual [(hf.differentiableAt hs <| hmem_s _ ‹_›).lineDeriv_eq_fderiv]

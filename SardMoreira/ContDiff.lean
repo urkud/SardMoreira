@@ -32,11 +32,6 @@ theorem ContDiffAt.continuousAt_iteratedFDeriv (hf : ContDiffAt 𝕜 n f a) (hk 
   simp only [← continuousWithinAt_univ, ← iteratedFDerivWithin_univ]
   exact hf.contDiffWithinAt.continuousWithinAt_iteratedFDerivWithin uniqueDiffOn_univ trivial hk
 
-theorem ContDiffAt.differentiableAt_iteratedFDeriv (hf : ContDiffAt 𝕜 n f a) (hk : k < n) :
-    DifferentiableAt 𝕜 (iteratedFDeriv 𝕜 k f) a := by
-  simp only [← differentiableWithinAt_univ, ← iteratedFDerivWithin_univ]
-  exact hf.differentiableWithinAt_iteratedFDerivWithin hk (by simp [uniqueDiffOn_univ])
-
 /-- Generalizes `ContinuousLinearMap.iteratedFderivWithin_comp_left`
 by weakening a `ContDiffOn` assumption to `ContDiffWithinAt`.  -/
 theorem ContinuousLinearMap.iteratedFDerivWithin_comp_left' (g : F →L[𝕜] G)
@@ -178,7 +173,7 @@ theorem partSize_eq_iff_eq_single (i : Fin c.length) :
 theorem length_eq_iff : c.length = n ↔ c = atomic n := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
   have H₀ := c.sum_partSize
-  cases' c with length partSize partSize_pos emb emb_strictMono parts_strictMono disjoint cover
+  cases c with | _ length partSize partSize_pos emb emb_strictMono parts_strictMono disjoint cover
   dsimp at *
   subst h
   obtain rfl : partSize = fun _ ↦ 1 := by
@@ -254,7 +249,7 @@ theorem taylorLeftInv_coeff_add_two
 
 end FormalMultilinearSeries
 
-theorem PartialHomeomorph.fderiv_symm (f : PartialHomeomorph E F) {y : F} (hy : y ∈ f.target)
+theorem PartialHomeomorph.fderiv_symm (f : OpenPartialHomeomorph E F) {y : F} (hy : y ∈ f.target)
     (f' : E ≃L[𝕜] F) (hf' : HasFDerivAt f (f' : E →L[𝕜] F) (f.symm y)) :
     fderiv 𝕜 f.symm y = f'.symm :=
   (hf'.of_local_left_inverse (f.symm.continuousAt hy) <| f.eventually_right_inverse hy).fderiv

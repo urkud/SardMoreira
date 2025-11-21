@@ -10,17 +10,17 @@ autoImplicit = false
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "d62eab0cc36ea522904895389c301cf8d844fd69"
+rev = "v4.24.0"
 
-# [[require]]
-# name = "checkdecls"
-# git = "https://github.com/urkud/checkdecls.git"
-# rev = "YK-fix-superscript"
+[[require]]
+name = "checkdecls"
+scope = "PatrickMassot"
+rev = "master"
 
-# [[require]]
-# name = "«doc-gen4»"
-# git = "https://github.com/leanprover/doc-gen4"
-# rev = "main"
+[[require]]
+name = "«doc-gen4»"
+scope = "leanprover"
+rev = "v4.24.0"
 
 [[lean_lib]]
 name = "SardMoreira"
