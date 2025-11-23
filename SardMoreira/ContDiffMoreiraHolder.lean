@@ -136,7 +136,7 @@ theorem continuousLinearMap_comp {f : E → F} {a : E} {k : ℕ} {α : I}
   isBigO := by
     refine .trans (.of_bound ‖g‖ ?_) hf.isBigO
     refine (hf.contDiffAt.eventually (by simp)).mono fun x hx ↦ ?_
-    rw [g.iteratedFDeriv_comp_left' hx le_rfl, g.iteratedFDeriv_comp_left' hf.contDiffAt le_rfl]
+    rw [g.iteratedFDeriv_comp_left hx le_rfl, g.iteratedFDeriv_comp_left hf.contDiffAt le_rfl]
     -- TODO: add `ContinuousLinearMap.compContinuousMultilinearMap_sub`
     convert g.norm_compContinuousMultilinearMap_le _
     ext; simp
