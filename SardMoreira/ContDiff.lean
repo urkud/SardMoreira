@@ -31,34 +31,15 @@ theorem ContDiffAt.continuousAt_iteratedFDeriv (hf : ContDiffAt 𝕜 n f a) (hk 
   simp only [← continuousWithinAt_univ, ← iteratedFDerivWithin_univ]
   exact hf.contDiffWithinAt.continuousWithinAt_iteratedFDerivWithin uniqueDiffOn_univ trivial hk
 
-/-- Generalizes `ContinuousLinearMap.iteratedFderivWithin_comp_left`
-by weakening a `ContDiffOn` assumption to `ContDiffWithinAt`.  -/
-theorem ContinuousLinearMap.iteratedFDerivWithin_comp_left' (g : F →L[𝕜] G)
-    (hf : ContDiffWithinAt 𝕜 n f s a) (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) {i : ℕ} (hi : i ≤ n) :
-    iteratedFDerivWithin 𝕜 i (g ∘ f) s a =
-      g.compContinuousMultilinearMap (iteratedFDerivWithin 𝕜 i f s a) := by
-  rcases hf.contDiffOn' hi (by simp) with ⟨U, hU, haU, hfU⟩
-  rw [← iteratedFDerivWithin_inter_open hU haU, ← iteratedFDerivWithin_inter_open (f := f) hU haU]
-  rw [insert_eq_of_mem ha] at hfU
-  exact .symm <| (hfU.ftaylorSeriesWithin (hs.inter hU)).continuousLinearMap_comp g
-    |>.eq_iteratedFDerivWithin_of_uniqueDiffOn le_rfl (hs.inter hU) ⟨ha, haU⟩
-
-/-- Generalizes `ContinuousLinearMap.iteratedFderiv_comp_left`
-by weakening a `ContDiff` assumption to `ContDiffAt`.  -/
-theorem ContinuousLinearMap.iteratedFDeriv_comp_left' (g : F →L[𝕜] G) (hf : ContDiffAt 𝕜 n f a)
-    {i : ℕ} (hi : i ≤ n) :
-    iteratedFDeriv 𝕜 i (g ∘ f) a = g.compContinuousMultilinearMap (iteratedFDeriv 𝕜 i f a) := by
-  simp only [← iteratedFDerivWithin_univ]
-  exact g.iteratedFDerivWithin_comp_left' hf.contDiffWithinAt .univ (mem_univ _) hi
-
 theorem iteratedFDerivWithin_prodMk {f : E → F} {g : E → G} (hf : ContDiffWithinAt 𝕜 n f s a)
     (hg : ContDiffWithinAt 𝕜 n g s a) (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) {i : ℕ} (hi : i ≤ n) :
     iteratedFDerivWithin 𝕜 i (fun x ↦ (f x, g x)) s a =
       (iteratedFDerivWithin 𝕜 i f s a).prod (iteratedFDerivWithin 𝕜 i g s a) := by
-  rw [ContinuousMultilinearMap.eq_prod_iff,
-    ← ContinuousLinearMap.iteratedFDerivWithin_comp_left' _ (hf.prodMk hg) hs ha hi,
-    ← ContinuousLinearMap.iteratedFDerivWithin_comp_left' _ (hf.prodMk hg) hs ha hi]
-  exact ⟨rfl, rfl⟩
+  ext
+  · rw [← ContinuousLinearMap.iteratedFDerivWithin_comp_left _ (hf.prodMk hg) hs ha hi]
+    simp [Function.comp_def]
+  · rw [← ContinuousLinearMap.iteratedFDerivWithin_comp_left _ (hf.prodMk hg) hs ha hi]
+    simp [Function.comp_def]
 
 theorem iteratedFDeriv_prodMk {f : E → F} {g : E → G} (hf : ContDiffAt 𝕜 n f a)
     (hg : ContDiffAt 𝕜 n g a) {i : ℕ} (hi : i ≤ n) :
@@ -248,8 +229,8 @@ theorem taylorLeftInv_coeff_add_two
 
 end FormalMultilinearSeries
 
-theorem PartialHomeomorph.fderiv_symm (f : OpenPartialHomeomorph E F) {y : F} (hy : y ∈ f.target)
-    (f' : E ≃L[𝕜] F) (hf' : HasFDerivAt f (f' : E →L[𝕜] F) (f.symm y)) :
+theorem OpenPartialHomeomorph.fderiv_symm (f : OpenPartialHomeomorph E F) {y : F}
+    (hy : y ∈ f.target) (f' : E ≃L[𝕜] F) (hf' : HasFDerivAt f (f' : E →L[𝕜] F) (f.symm y)) :
     fderiv 𝕜 f.symm y = f'.symm :=
   (hf'.of_local_left_inverse (f.symm.continuousAt hy) <| f.eventually_right_inverse hy).fderiv
 
