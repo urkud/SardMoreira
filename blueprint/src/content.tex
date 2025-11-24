@@ -174,10 +174,13 @@ TODO:\@ generalize some statement about Vitali families to outer measures.
 
 \begin{lemma}%
   \label{lem:iteratedFDeriv-prod}
+  \lean{iteratedFDeriv_prodMk}
+  \leanok%
   If \(f\colon E \to F\) and \(g\colon E \to G\) are \(C^{k}\) at \(a\),
   then \(D^{k}(x \mapsto (f(x), g(x)))(a) = (D^{k}f(a), D^{k}g(a))\).
 \end{lemma}
 \begin{proof}
+  \leanok%
   This lemma immediately follows from uniqueness of the iterated derivative
   and lemmas in the library.
 \end{proof}
@@ -273,23 +276,29 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-prodMk}
   \uses{def:cdh-at}
+  \lean{ContDiffMoreiraHolderAt.prodMk}
+  \leanok%
   If \(f \colon E \to F\) and \(g \colon E \to G\) are \(C^{k+(\alpha)}\) at \(a \in E\),
   then \(x \mapsto (f(x), g(x))\) is \(C^{k+(\alpha)}\) at \(a\).
 \end{lemma}
 \begin{proof}
   \uses{lem:iteratedFDeriv-prod}
+  \leanok%
   The lemma immediately follows from \autoref{lem:iteratedFDeriv-prod}.
 \end{proof}
 
 \begin{lemma}%
   \label{lem:cdh-at-clm-comp}
   \uses{def:cdh-at}
+  \lean{ContDiffMoreiraHolderAt.continuousLinearMap_comp}
+  \leanok%
   If \(f \colon E \to F\) is \(C^{k+(\alpha)}\) at \(a \in E\)
   and \(g \colon F \to G\) is a continuous linear map,
   then \(g \circ f\) is \(C^{k+(\alpha)}\) at \(a\).
 \end{lemma}
 
 \begin{proof}
+  \leanok%
   Immediately follows from \(D^{k}(g \circ f) = g\circ D^{k}f\).
 \end{proof}
 
@@ -300,6 +309,8 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-fderiv}
   \uses{def:cdh-at}
+  \lean{ContDiffMoreiraHolderAt.fderiv'}
+  \leanok%
   If \(f \colon E \to F\) is \(C^{k+1+(\alpha)}\) at \(a \in E\),
   then \(Df\) is \(C^{k+(\alpha)}\) at \(a\).
 \end{lemma}
@@ -307,6 +318,8 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{corollary}%
   \label{lem:cdh-at-iteratedFDeriv}
   \uses{def:cdh-at}
+  \lean{ContDiffMoreiraHolderAt.iteratedFDeriv'}
+  \leanok%
   If \(f \colon E \to F\) is \(C^{k+l+(\alpha)}\) at \(a \in E\),
   then \(D^{k}f\) is \(C^{l+(\alpha)}\) at \(a\).
 \end{corollary}
@@ -320,12 +333,15 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-comp}
   \uses{def:cdh-at}
+  \lean{ContDiffMoreiraHolderAt.comp}
+  \leanok%
   Consider \(g\colon F \to G\), \(f\colon E \to F\), and \(a \in E\)
   such that \(g\) is \(C^{k+(\alpha)}\) at \(f(a)\) and \(f\) is \(C^{k+(\alpha)}\) at \(a\), where \(k > 0\) and \(\alpha \in [0, 1]\).
   Then \(g\circ f\) is \(C^{k+(\alpha)}\) at \(a\).
 \end{lemma}
 
 \begin{proof}
+  \leanok%
   Since \(g\) is \(C^{k}\) at \(f(a)\) and \(f\) is \(C^{k}\) at \(a\),
   the composition \(g\circ f\) is \(C^{k}\) at \(a\).
   Let us show that \(D^{k}(g\circ f)(x) - D^{k}(g\circ f)(a) = O(\|x - a\|^{\alpha})\) as \(x\to \alpha\).
@@ -391,6 +407,8 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:exists-cdh-on}
   \uses{def:cdh-at,def:cdh-on}
+  \lean{ContDiffMoreiraHolderOn.exists_superset}
+  \leanok%
   Given a map \(f\colon E \to F\), a set \(K\), a natural number \(k\), and a real number \(\alpha \in [0, 1]\),
   there exists \(U\) such that \(f\) is \(C^{k+(\alpha)}\) on \((K, U)\)
   iff \(f\) is \(C^{k+(\alpha)}\) at each \(a \in K\).
@@ -399,6 +417,8 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-on-comp}
   \uses{def:cdh-on}
+  \lean{ContDiffMoreiraHolderOn.comp}
+  \leanok%
   Suppose that
   \begin{itemize}
   \item \(k > 0\), \(\alpha \in [0, 1]\);
@@ -412,6 +432,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 
 \begin{proof}
   \uses{lem:cdh-at-comp}
+  \leanok%
   This statement immediately follows from \autoref{lem:cdh-at-comp}.
 \end{proof}
 

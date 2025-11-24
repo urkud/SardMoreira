@@ -141,6 +141,16 @@ theorem continuousLinearMap_comp {f : E → F} {a : E} {k : ℕ} {α : I}
     convert g.norm_compContinuousMultilinearMap_le _
     ext; simp
 
+theorem fderiv' {f : E → F} {a : E} {k l : ℕ} {α : I}
+    (hf : ContDiffMoreiraHolderAt k α f a) (hl : l + 1 ≤ k) :
+    ContDiffMoreiraHolderAt l α (fderiv ℝ f) a := by
+  sorry
+
+theorem iteratedFDeriv' {f : E → F} {a : E} {k l m : ℕ} {α : I}
+    (hf : ContDiffMoreiraHolderAt k α f a) (hl : l + m ≤ k) :
+    ContDiffMoreiraHolderAt l α (iteratedFDeriv ℝ m f) a := by
+  sorry
+
 end ContDiffMoreiraHolderAt
 
 structure ContDiffMoreiraHolderOn (k : ℕ) (α : I) (f : E → F) (s U : Set E) : Prop where
@@ -156,6 +166,10 @@ variable {f : E → F} {s U : Set E} {k : ℕ} {α : I} {a : E}
 theorem contDiffMoreiraHolderAt (h : ContDiffMoreiraHolderOn k α f s U) (ha : a ∈ s) :
     ContDiffMoreiraHolderAt k α f a :=
   ⟨h.contDiffOn.contDiffAt <| h.isOpen.mem_nhds <| h.subset ha, h.isBigO a ha⟩
+
+theorem exists_superset :
+    ∃ U, s ⊆ U ∧ ContDiffMoreiraHolderOn k α f s U ↔ ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x := by
+  sorry
 
 theorem fst {s U : Set (E × F)} (hsub : s ⊆ U) (ho : IsOpen U) :
     ContDiffMoreiraHolderOn k α Prod.fst s U :=
