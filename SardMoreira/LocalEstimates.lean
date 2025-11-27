@@ -124,6 +124,5 @@ lemma dist_le_mul_volume_of_norm_fderiv_le {f : E → F} {a b : E} {C : ℝ} {s 
   gcongr
   · refine ne_top_of_le_ne_top ?_ (measure_mono inter_subset_left)
     simp
-  · contrapose!
-    simp +contextual [(hf.differentiableAt hs <| hmem_s _ ‹_›).lineDeriv_eq_fderiv]
+  · simp +contextual [(hf.differentiableAt hs <| hmem_s _ ‹_›).lineDeriv_eq_fderiv]
 
