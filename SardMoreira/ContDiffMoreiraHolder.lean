@@ -211,39 +211,45 @@ theorem contDiffMoreiraHolderAt (h : ContDiffMoreiraHolderOn k α f s U) (ha : a
 theorem exists_superset :
     ∃ U, s ⊆ U ∧ ContDiffMoreiraHolderOn k α f s U ↔ ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x := by
   by_cases h : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x;
-  · -- For each $x \in s$, there exists an open set $U_x$ containing $x$ such that $f$ is $C^{k,\alpha}$ on $U_x$.
-    have h_open : ∀ x ∈ s, ∃ U_x : Set E, IsOpen U_x ∧ x ∈ U_x ∧ ContDiffMoreiraHolderOn k α f {x} U_x := by
+  · -- For each $x \in s$, there exists an open set $U_x$ containing $x$
+    -- such that $f$ is $C^{k,\alpha}$ on $U_x$.
+    have h_open : ∀ x ∈ s, ∃ U_x : Set E,
+        IsOpen U_x ∧ x ∈ U_x ∧ ContDiffMoreiraHolderOn k α f {x} U_x := by
       intro x hx
-      obtain ⟨U_x, hU_x_open, hxU_x, hU_x⟩ : ∃ U_x : Set E, IsOpen U_x ∧ x ∈ U_x ∧ ContDiffOn ℝ k f U_x ∧ (iteratedFDeriv ℝ k f · - iteratedFDeriv ℝ k f x) =O[𝓝 x] (‖· - x‖ ^ (α : ℝ)) := by
-        obtain ⟨U_x, hU_x_open, hxU_x, hU_x⟩ : ∃ U_x : Set E, IsOpen U_x ∧ x ∈ U_x ∧ ContDiffOn ℝ k f U_x := by
+      obtain ⟨U_x, hU_x_open, hxU_x, hU_x⟩ :
+          ∃ U_x : Set E, IsOpen U_x ∧ x ∈ U_x ∧ ContDiffOn ℝ k f U_x ∧
+            (iteratedFDeriv ℝ k f · - iteratedFDeriv ℝ k f x) =O[𝓝 x] (‖· - x‖ ^ (α : ℝ)) := by
+        obtain ⟨U_x, hU_x_open, hxU_x, hU_x⟩ :
+            ∃ U_x : Set E, IsOpen U_x ∧ x ∈ U_x ∧ ContDiffOn ℝ k f U_x := by
           -- By definition of ContDiffAt, there exists an open neighborhood U_x of x where f is C^k.
-          obtain ⟨U_x, hU_x_open, hxU_x, hU_x_cont⟩ : ∃ U_x : Set E, IsOpen U_x ∧ x ∈ U_x ∧ ContDiffOn ℝ k f U_x := by
+          obtain ⟨U_x, hU_x_open, hxU_x, hU_x_cont⟩ :
+              ∃ U_x : Set E, IsOpen U_x ∧ x ∈ U_x ∧ ContDiffOn ℝ k f U_x := by
             have h_cont_diff : ContDiffAt ℝ k f x := by
               exact h x hx |>.1
             have := h_cont_diff.eventually;
-            rcases mem_nhds_iff.mp ( this ( by norm_num ) ) with ⟨ U, hU, hxU, hU' ⟩;
-            exact ⟨ U, hxU, hU', fun y hy => hU hy |> ContDiffAt.contDiffWithinAt ⟩;
+            rcases mem_nhds_iff.mp (this (by norm_num)) with ⟨U, hU, hxU, hU'⟩;
+            exact ⟨U, hxU, hU', fun y hy => hU hy |> ContDiffAt.contDiffWithinAt⟩;
           use U_x;
-        exact ⟨ U_x, hU_x_open, hxU_x, hU_x, h x hx |>.2 ⟩;
+        exact ⟨U_x, hU_x_open, hxU_x, hU_x, h x hx |>.2⟩;
       use U_x;
-      exact ⟨ hU_x_open, hxU_x, ⟨ by simpa, hU_x_open, hU_x.1, by simpa using hU_x.2 ⟩ ⟩;
+      exact ⟨hU_x_open, hxU_x, ⟨by simpa, hU_x_open, hU_x.1, by simpa using hU_x.2⟩⟩;
     choose! U hU using h_open;
-    refine ⟨ ⋃ x ∈ s, U x, ?_ ⟩;
+    refine ⟨⋃ x ∈ s, U x, ?_⟩;
     simp_all only [implies_true, iff_true]
     obtain ⟨val, property⟩ := α
     apply And.intro
-    · exact fun x hx => Set.mem_iUnion₂.2 ⟨ x, hx, hU x hx |>.2.1 ⟩;
+    · exact fun x hx => Set.mem_iUnion₂.2 ⟨x, hx, hU x hx |>.2.1⟩;
     · constructor;
-      · exact fun x hx => Set.mem_iUnion₂.2 ⟨ x, hx, hU x hx |>.2.1 ⟩;
+      · exact fun x hx => Set.mem_iUnion₂.2 ⟨x, hx, hU x hx |>.2.1⟩;
       · exact isOpen_biUnion fun x hx => hU x hx |>.1;
       · intro x hx;
-        obtain ⟨ y, hy, hy' ⟩ := Set.mem_iUnion₂.mp hx;
+        obtain ⟨y, hy, hy'⟩ := Set.mem_iUnion₂.mp hx;
         have := hU y hy;
-        exact this.2.2.contDiffOn.contDiffAt ( this.1.mem_nhds hy' ) |> ContDiffAt.contDiffWithinAt;
+        exact this.2.2.contDiffOn.contDiffAt (this.1.mem_nhds hy') |> ContDiffAt.contDiffWithinAt;
       · intro x hx;
         have := hU x hx |>.2.2.isBigO;
         exact this x rfl;
-  · refine' ⟨ ∅, _ ⟩ ; aesop
+  · use ∅; aesop
 
 theorem fst {s U : Set (E × F)} (hsub : s ⊆ U) (ho : IsOpen U) :
     ContDiffMoreiraHolderOn k α Prod.fst s U :=
@@ -278,14 +284,22 @@ theorem of_le (h : ContDiffMoreiraHolderOn k α f s U) {l} (hl : l ≤ k) :
     ContDiffMoreiraHolderOn l α f s U :=
   h.of_toLex_le <| Prod.Lex.toLex_mono ⟨hl, le_rfl⟩
 
-theorem comp {g : F → G} {t V : Set F} (hg : ContDiffMoreiraHolderOn k α g t V)
+theorem comp' {g : F → G} {t V : Set F} (hg : ContDiffMoreiraHolderOn k α g t V)
     (hf : ContDiffMoreiraHolderOn k α f s U) (hUV : MapsTo f U V) (hst : MapsTo f s t)
-    (hk : k ≠ 0) :
+    (hd : DifferentiableOn ℝ g V ∨ DifferentiableOn ℝ f U) :
     ContDiffMoreiraHolderOn k α (g ∘ f) s U where
   __ := hf
   contDiffOn := hg.contDiffOn.comp hf.contDiffOn hUV
-  isBigO _a ha := ((hg.contDiffMoreiraHolderAt <| hst ha).comp
-    (hf.contDiffMoreiraHolderAt ha) hk).isBigO
+  isBigO _a ha :=
+    ContDiffMoreiraHolderAt.isBigO <|
+      (hg.contDiffMoreiraHolderAt <| hst ha).comp' (hf.contDiffMoreiraHolderAt ha) <|
+        hd.imp (·.differentiableAt <| hg.isOpen.mem_nhds <| hUV <| hf.subset ha)
+          (·.differentiableAt <| hf.isOpen.mem_nhds <| hf.subset ha)
+
+theorem comp {g : F → G} {t V : Set F} (hg : ContDiffMoreiraHolderOn k α g t V)
+    (hf : ContDiffMoreiraHolderOn k α f s U) (hUV : MapsTo f U V) (hst : MapsTo f s t)
+    (hk : k ≠ 0) : ContDiffMoreiraHolderOn k α (g ∘ f) s U :=
+  hg.comp' hf hUV hst <| .inl <| hg.contDiffOn.differentiableOn <| by simpa [Nat.one_le_iff_ne_zero]
 
 theorem continuousLinearMap_comp (hf : ContDiffMoreiraHolderOn k α f s U) (g : F →L[ℝ] G) :
     ContDiffMoreiraHolderOn k α (g ∘ f) s U where
