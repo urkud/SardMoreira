@@ -209,7 +209,8 @@ theorem contDiffMoreiraHolderAt (h : ContDiffMoreiraHolderOn k α f s U) (ha : a
   ⟨h.contDiffOn.contDiffAt <| h.isOpen.mem_nhds <| h.subset ha, h.isBigO a ha⟩
 
 theorem exists_superset :
-    ∃ U, s ⊆ U ∧ ContDiffMoreiraHolderOn k α f s U ↔ ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x := by
+    ∃ U, s ⊆ U ∧
+      (ContDiffMoreiraHolderOn k α f s U ↔ ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x) := by
   by_cases h : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x;
   · -- For each $x \in s$, there exists an open set $U_x$ containing $x$
     -- such that $f$ is $C^{k,\alpha}$ on $U_x$.
@@ -249,7 +250,7 @@ theorem exists_superset :
       · intro x hx;
         have := hU x hx |>.2.2.isBigO;
         exact this x rfl;
-  · use ∅; aesop
+  · use univ; aesop (add unsafe ContDiffMoreiraHolderOn.contDiffMoreiraHolderAt)
 
 theorem fst {s U : Set (E × F)} (hsub : s ⊆ U) (ho : IsOpen U) :
     ContDiffMoreiraHolderOn k α Prod.fst s U :=
