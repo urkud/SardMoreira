@@ -25,6 +25,11 @@ variable {E F G : Type*}
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G]
 
+theorem iteratedFDeriv_apply_congr_order {k l : ℕ} (h : k = l) (f : E → F) (x : E) (m : Fin k → E) :
+    iteratedFDeriv ℝ k f x m = iteratedFDeriv ℝ l f x (m ∘ Fin.cast h.symm) := by
+  subst l
+  simp
+
 structure ContDiffMoreiraHolderAt (k : ℕ) (α : I) (f : E → F) (a : E) : Prop where
   contDiffAt : ContDiffAt ℝ k f a
   isBigO : (iteratedFDeriv ℝ k f · - iteratedFDeriv ℝ k f a) =O[𝓝 a] (‖· - a‖ ^ (α : ℝ))
@@ -103,8 +108,9 @@ theorem prodMk {k : ℕ} {α : I} {f : E → F} {g : E → G} {a : E}
       simp only [ContinuousMultilinearMap.opNorm_prod, ← Prod.norm_mk]
       exact (hf.isBigO.prod_left hg.isBigO).norm_left
 
-theorem comp {g : F → G} {f : E → F} {a : E} {k : ℕ} {α : I}
-    (hg : ContDiffMoreiraHolderAt k α g (f a)) (hf : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) :
+theorem comp' {g : F → G} {f : E → F} {a : E} {k : ℕ} {α : I}
+    (hg : ContDiffMoreiraHolderAt k α g (f a)) (hf : ContDiffMoreiraHolderAt k α f a)
+    (hd : DifferentiableAt ℝ g (f a) ∨ DifferentiableAt ℝ f a) :
     ContDiffMoreiraHolderAt k α (g ∘ f) a where
   contDiffAt := hg.contDiffAt.comp a hf.contDiffAt
   isBigO := calc
@@ -121,35 +127,70 @@ theorem comp {g : F → G} {f : E → F} {a : E} {k : ℕ} {α : I}
         exact ((hg.contDiffAt.continuousAt_iteratedFDeriv (mod_cast hi)).comp hf.continuousAt)
           |>.norm.isBoundedUnder_le
       · intro i hi
-        refine ((hg.of_le hi).isBigO.comp_tendsto hf.continuousAt).trans ?_
-        refine .rpow α.2.1 (.of_forall fun _ ↦ norm_nonneg _) <| .norm_norm ?_
-        exact (hf.differentiableAt hk).isBigO_sub
+        by_cases hfd : DifferentiableAt ℝ f a
+        · refine ((hg.of_le hi).isBigO.comp_tendsto hf.continuousAt).trans ?_
+          refine .rpow α.2.1 (.of_forall fun _ ↦ norm_nonneg _) <| .norm_norm ?_
+          exact hfd.isBigO_sub
+        · obtain rfl : k = 0 := by
+            contrapose! hfd
+            exact hf.differentiableAt hfd
+          obtain rfl : i = 0 := by rwa [nonpos_iff_eq_zero] at hi
+          refine .of_norm_left ?_
+          simp only [ftaylorSeries, iteratedFDeriv_zero_eq_comp, Function.comp_apply, ← map_sub,
+            LinearIsometryEquiv.norm_map, isBigO_norm_left]
+          refine ((hd.resolve_right hfd).isBigO_sub.comp_tendsto hf.continuousAt).trans ?_
+          refine .trans (.of_norm_right ?_) hf.isBigO
+          simp [iteratedFDeriv_zero_eq_comp, ← map_sub, Function.comp_def, isBigO_refl]
       · intro i hi
         exact (hf.contDiffAt.continuousAt_iteratedFDeriv (mod_cast hi)).norm.isBoundedUnder_le
       · exact fun _ _ ↦ isBoundedUnder_const
       · exact fun i hi ↦ (hf.of_le hi).isBigO
 
+theorem comp {g : F → G} {f : E → F} {a : E} {k : ℕ} {α : I}
+    (hg : ContDiffMoreiraHolderAt k α g (f a)) (hf : ContDiffMoreiraHolderAt k α f a)
+    (hk : k ≠ 0) : ContDiffMoreiraHolderAt k α (g ∘ f) a :=
+  hg.comp' hf (.inl <| hg.differentiableAt hk)
+
 theorem continuousLinearMap_comp {f : E → F} {a : E} {k : ℕ} {α : I}
     (hf : ContDiffMoreiraHolderAt k α f a) (g : F →L[ℝ] G) :
-    ContDiffMoreiraHolderAt k α (g ∘ f) a where
-  contDiffAt := g.contDiff.contDiffAt.comp a hf.contDiffAt
-  isBigO := by
-    refine .trans (.of_bound ‖g‖ ?_) hf.isBigO
-    refine (hf.contDiffAt.eventually (by simp)).mono fun x hx ↦ ?_
-    rw [g.iteratedFDeriv_comp_left hx le_rfl, g.iteratedFDeriv_comp_left hf.contDiffAt le_rfl]
-    -- TODO: add `ContinuousLinearMap.compContinuousMultilinearMap_sub`
-    convert g.norm_compContinuousMultilinearMap_le _
-    ext; simp
+    ContDiffMoreiraHolderAt k α (g ∘ f) a :=
+  g.contDiff.contDiffAt.contDiffMoreiraHolderAt (WithTop.coe_lt_top _) _ |>.comp' hf <|
+    .inl g.differentiableAt
 
-theorem fderiv' {f : E → F} {a : E} {k l : ℕ} {α : I}
+@[simp]
+theorem _root_.ContinuousLinearEquiv.contDiffMoreiraHolderAt_left_comp
+    {f : E → F} {a : E} {k : ℕ} {α : I} (g : F ≃L[ℝ] G) :
+    ContDiffMoreiraHolderAt k α (g ∘ f) a ↔ ContDiffMoreiraHolderAt k α f a :=
+  ⟨fun h ↦ by simpa [Function.comp_def] using h.continuousLinearMap_comp (g.symm : G →L[ℝ] F),
+    fun h ↦ h.continuousLinearMap_comp (g : F →L[ℝ] G)⟩
+
+@[simp]
+theorem _root_.LinearIsometryEquiv.contDiffMoreiraHolderAt_left_comp
+    {f : E → F} {a : E} {k : ℕ} {α : I} (g : F ≃ₗᵢ[ℝ] G) :
+    ContDiffMoreiraHolderAt k α (g ∘ f) a ↔ ContDiffMoreiraHolderAt k α f a :=
+  g.toContinuousLinearEquiv.contDiffMoreiraHolderAt_left_comp
+
+protected theorem fderiv {f : E → F} {a : E} {k l : ℕ} {α : I}
     (hf : ContDiffMoreiraHolderAt k α f a) (hl : l + 1 ≤ k) :
-    ContDiffMoreiraHolderAt l α (fderiv ℝ f) a := by
-  sorry
+    ContDiffMoreiraHolderAt l α (fderiv ℝ f) a where
+  contDiffAt := hf.contDiffAt.fderiv_right (mod_cast hl)
+  isBigO := .of_norm_left <| by
+    simpa [iteratedFDeriv_succ_eq_comp_right, Function.comp_def, ← dist_eq_norm_sub]
+      using hf.of_le hl |>.isBigO |>.norm_left
 
-theorem iteratedFDeriv' {f : E → F} {a : E} {k l m : ℕ} {α : I}
+protected theorem iteratedFDeriv {f : E → F} {a : E} {k l m : ℕ} {α : I}
     (hf : ContDiffMoreiraHolderAt k α f a) (hl : l + m ≤ k) :
     ContDiffMoreiraHolderAt l α (iteratedFDeriv ℝ m f) a := by
-  sorry
+  induction m generalizing l with
+  | zero =>
+    simpa +unfoldPartialApp [iteratedFDeriv_zero_eq_comp] using hf.of_le hl
+  | succ m ihm =>
+    rw [← add_assoc, add_right_comm] at hl
+    -- TODO: why `simp` fails to apply the lemma? Does it fail to unify some instances?
+    -- Does it happen on the latest Mathlib?
+    simp +unfoldPartialApp [iteratedFDeriv_succ_eq_comp_left]
+    convert (ihm hl).fderiv le_rfl using 0
+    convert LinearIsometryEquiv.contDiffMoreiraHolderAt_left_comp _ <;> rfl
 
 end ContDiffMoreiraHolderAt
 
@@ -169,7 +210,40 @@ theorem contDiffMoreiraHolderAt (h : ContDiffMoreiraHolderOn k α f s U) (ha : a
 
 theorem exists_superset :
     ∃ U, s ⊆ U ∧ ContDiffMoreiraHolderOn k α f s U ↔ ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x := by
-  sorry
+  by_cases h : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x;
+  · -- For each $x \in s$, there exists an open set $U_x$ containing $x$ such that $f$ is $C^{k,\alpha}$ on $U_x$.
+    have h_open : ∀ x ∈ s, ∃ U_x : Set E, IsOpen U_x ∧ x ∈ U_x ∧ ContDiffMoreiraHolderOn k α f {x} U_x := by
+      intro x hx
+      obtain ⟨U_x, hU_x_open, hxU_x, hU_x⟩ : ∃ U_x : Set E, IsOpen U_x ∧ x ∈ U_x ∧ ContDiffOn ℝ k f U_x ∧ (iteratedFDeriv ℝ k f · - iteratedFDeriv ℝ k f x) =O[𝓝 x] (‖· - x‖ ^ (α : ℝ)) := by
+        obtain ⟨U_x, hU_x_open, hxU_x, hU_x⟩ : ∃ U_x : Set E, IsOpen U_x ∧ x ∈ U_x ∧ ContDiffOn ℝ k f U_x := by
+          -- By definition of ContDiffAt, there exists an open neighborhood U_x of x where f is C^k.
+          obtain ⟨U_x, hU_x_open, hxU_x, hU_x_cont⟩ : ∃ U_x : Set E, IsOpen U_x ∧ x ∈ U_x ∧ ContDiffOn ℝ k f U_x := by
+            have h_cont_diff : ContDiffAt ℝ k f x := by
+              exact h x hx |>.1
+            have := h_cont_diff.eventually;
+            rcases mem_nhds_iff.mp ( this ( by norm_num ) ) with ⟨ U, hU, hxU, hU' ⟩;
+            exact ⟨ U, hxU, hU', fun y hy => hU hy |> ContDiffAt.contDiffWithinAt ⟩;
+          use U_x;
+        exact ⟨ U_x, hU_x_open, hxU_x, hU_x, h x hx |>.2 ⟩;
+      use U_x;
+      exact ⟨ hU_x_open, hxU_x, ⟨ by simpa, hU_x_open, hU_x.1, by simpa using hU_x.2 ⟩ ⟩;
+    choose! U hU using h_open;
+    refine ⟨ ⋃ x ∈ s, U x, ?_ ⟩;
+    simp_all only [implies_true, iff_true]
+    obtain ⟨val, property⟩ := α
+    apply And.intro
+    · exact fun x hx => Set.mem_iUnion₂.2 ⟨ x, hx, hU x hx |>.2.1 ⟩;
+    · constructor;
+      · exact fun x hx => Set.mem_iUnion₂.2 ⟨ x, hx, hU x hx |>.2.1 ⟩;
+      · exact isOpen_biUnion fun x hx => hU x hx |>.1;
+      · intro x hx;
+        obtain ⟨ y, hy, hy' ⟩ := Set.mem_iUnion₂.mp hx;
+        have := hU y hy;
+        exact this.2.2.contDiffOn.contDiffAt ( this.1.mem_nhds hy' ) |> ContDiffAt.contDiffWithinAt;
+      · intro x hx;
+        have := hU x hx |>.2.2.isBigO;
+        exact this x rfl;
+  · refine' ⟨ ∅, _ ⟩ ; aesop
 
 theorem fst {s U : Set (E × F)} (hsub : s ⊆ U) (ho : IsOpen U) :
     ContDiffMoreiraHolderOn k α Prod.fst s U :=
