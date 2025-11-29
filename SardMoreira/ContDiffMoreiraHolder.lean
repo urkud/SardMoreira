@@ -204,6 +204,12 @@ namespace ContDiffMoreiraHolderOn
 
 variable {f : E → F} {s U : Set E} {k : ℕ} {α : I} {a : E}
 
+theorem subset_left {t : Set E} (h : ContDiffMoreiraHolderOn k α f s U) (ht : t ⊆ s) :
+    ContDiffMoreiraHolderOn k α f t U where
+  __ := h
+  subset := ht.trans h.subset
+  isBigO a ha := h.isBigO a (ht ha)
+
 theorem contDiffMoreiraHolderAt (h : ContDiffMoreiraHolderOn k α f s U) (ha : a ∈ s) :
     ContDiffMoreiraHolderAt k α f a :=
   ⟨h.contDiffOn.contDiffAt <| h.isOpen.mem_nhds <| h.subset ha, h.isBigO a ha⟩
