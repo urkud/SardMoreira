@@ -74,6 +74,10 @@ theorem ContDiffAt.continuousAt_iteratedFDeriv (hf : ContDiffAt 𝕜 n f a) (hk 
   simp only [← continuousWithinAt_univ, ← iteratedFDerivWithin_univ]
   exact hf.contDiffWithinAt.continuousWithinAt_iteratedFDerivWithin uniqueDiffOn_univ trivial hk
 
+theorem ContDiffAt.continuousAt_fderiv (hf : ContDiffAt 𝕜 n f a) (hn : n ≠ 0) :
+    ContinuousAt (fderiv 𝕜 f) a :=
+  hf.fderiv_right (show 0 + 1 ≤ n by simpa [ENat.one_le_iff_ne_zero_withTop]) |>.continuousAt
+
 theorem iteratedFDerivWithin_prodMk {f : E → F} {g : E → G} (hf : ContDiffWithinAt 𝕜 n f s a)
     (hg : ContDiffWithinAt 𝕜 n g s a) (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) {i : ℕ} (hi : i ≤ n) :
     iteratedFDerivWithin 𝕜 i (fun x ↦ (f x, g x)) s a =

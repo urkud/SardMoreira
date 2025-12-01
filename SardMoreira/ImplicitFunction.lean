@@ -11,7 +11,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
-@[irreducible]
+@[irreducible, simps +simpRhs pt]
 def implicitFunctionDataOfComplementedKerRange (f : E → F) (f' : E →L[𝕜] F) {a : E}
     (hf : HasStrictFDerivAt f f' a) (hker : (LinearMap.ker f').ClosedComplemented)
     (hrange : (LinearMap.range f').ClosedComplemented) :
@@ -113,7 +113,24 @@ theorem ContDiffMoreiraHolderOn.exists_openPartialHomeomorph_conj_piProd_fst
     hf'.implicitToOpenPartialHomeomorphOfComplementedKerRange f f' hker hrange
   obtain ⟨V, hVo, hxV, hVU, hVd⟩ :
       ∃ V, IsOpen V ∧ x ∈ V ∧ V ⊆ U ∧ ∀ x' ∈ V, (fderiv ℝ epq' x').IsInvertible := by
-    sorry
+    suffices ∀ᶠ x' in 𝓝 x, x' ∈ U ∧ (fderiv ℝ epq' x').IsInvertible by
+      rcases eventually_nhds_iff.mp this with ⟨V, hV, hVo, hxV⟩
+      exact ⟨V, hVo, hxV, fun x' hx' ↦ (hV x' hx').1, fun x' hx' ↦ (hV x' hx').2⟩
+    have hinv : (fderiv ℝ epq' x).IsInvertible := by
+      have := hrange.isClosed.completeSpace_coe
+      have := hf'.implicitFunctionDataOfComplementedKerRange f f' hker hrange |>.hasStrictFDerivAt
+        |>.hasFDerivAt |>.fderiv
+      simp_all +unfoldPartialApp [epq',
+        HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplementedKerRange,
+        funext (ImplicitFunctionData.toOpenPartialHomeomorph_apply _),
+        ImplicitFunctionData.prodFun]
+    have hcontDiff : ContDiffAt ℝ k epq' x := by
+      rw [HasStrictFDerivAt.coe_implicitToOpenPartialHomeomorphOfComplementedKerRange]
+      refine .prodMk ?_ hker.choose.contDiff.contDiffAt
+      exact hrange.choose.contDiff.contDiffAt.comp _ <|
+        h.contDiffOn.contDiffAt <| h.isOpen.mem_nhds <| h.subset hx
+    exact Filter.inter_mem (h.isOpen.mem_nhds (h.subset hx))
+      (hcontDiff.continuousAt_fderiv (mod_cast hk) (ContinuousLinearEquiv.isOpen.mem_nhds hinv))
   set epq := epq'.restrOpen V hVo
   use p, q, r, epq, epr, Prod.snd ∘ epr ∘ f ∘ epq.symm, Set.inter_subset_right.trans hVU
   have heUV : ContDiffMoreiraHolderOn k α epq (epq.source ∩ s) epq.source := by
