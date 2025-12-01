@@ -334,17 +334,19 @@ theorem OpenPartialHomeomorph.iteratedFDeriv_symm_eq_taylorLeftInv [CompleteSpac
 
 namespace FormalMultilinearSeries
 
-theorem compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_isBigO
+variable
     {α : Type*} {l : Filter α} {p₁ p₂ : α → FormalMultilinearSeries 𝕜 F G}
-    {q₁ q₂ : α → FormalMultilinearSeries 𝕜 E F} {f : α → ℝ} {n : ℕ}
+    {q₁ q₂ : α → FormalMultilinearSeries 𝕜 E F} {B : α → ℝ} {i n : ℕ}
+
+theorem compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_isBigO
     (hp_bdd : ∀ k ≤ n, l.IsBoundedUnder (· ≤ ·) (‖p₁ · k‖))
-    (hpf : ∀ k ≤ n, (fun x ↦ p₁ x k - p₂ x k) =O[l] f)
+    (hpB : ∀ k ≤ n, (fun x ↦ p₁ x k - p₂ x k) =O[l] B)
     (hq₁_bdd : ∀ k ≤ n, l.IsBoundedUnder (· ≤ ·) (‖q₁ · k‖))
     (hq₂_bdd : ∀ k ≤ n, l.IsBoundedUnder (· ≤ ·) (‖q₂ · k‖))
-    (hqf : ∀ k ≤ n, (fun x ↦ q₁ x k - q₂ x k) =O[l] f)
+    (hqB : ∀ k ≤ n, (fun x ↦ q₁ x k - q₂ x k) =O[l] B)
     (c : OrderedFinpartition n) :
     (fun x ↦ (p₁ x).compAlongOrderedFinpartition (q₁ x) c -
-      (p₂ x).compAlongOrderedFinpartition (q₂ x) c) =O[l] f := by
+      (p₂ x).compAlongOrderedFinpartition (q₂ x) c) =O[l] B := by
   refine .trans (.of_norm_le fun _ ↦
     c.norm_compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_le ..) ?_
   refine .add ?_ ?_
@@ -353,25 +355,23 @@ theorem compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_isBigO
       (hq₁_bdd _ <| c.partSize_le _).isBigO_one ℝ
     have H₃ : ∀ m, (q₂ · (c.partSize m)) =O[l] (1 : α → ℝ) := fun m ↦
       (hq₂_bdd _ <| c.partSize_le _).isBigO_one ℝ
-    have H₄ : ∀ m, (fun x ↦ q₁ x (c.partSize m) - q₂ x (c.partSize m)) =O[l] f := fun m ↦
-      hqf _ <| c.partSize_le _
+    have H₄ : ∀ m, (fun x ↦ q₁ x (c.partSize m) - q₂ x (c.partSize m)) =O[l] B := fun m ↦
+      hqB _ <| c.partSize_le _
     rw [← isBigO_pi] at H₂ H₃ H₄
     have H₅ := ((H₂.prod_left H₃).norm_left.pow (c.length - 1)).mul H₄.norm_left
     simpa [mul_assoc] using H₁.norm_left.mul <| H₅.const_mul_left c.length
-  · have H₁ : (fun x ↦ p₁ x c.length - p₂ x c.length) =O[l] f := hpf _ c.length_le
+  · have H₁ : (fun x ↦ p₁ x c.length - p₂ x c.length) =O[l] B := hpB _ c.length_le
     have H₂ : ∀ i, (q₂ · (c.partSize i)) =O[l] (1 : α → ℝ) := fun i ↦
       (hq₂_bdd _ <| c.partSize_le i).isBigO_one ℝ
     simpa using H₁.norm_left.mul <| .finsetProd fun i _ ↦ (H₂ i).norm_left
 
 theorem taylorComp_sub_taylorComp_isBigO
-    {α : Type*} {l : Filter α} {p₁ p₂ : α → FormalMultilinearSeries 𝕜 F G}
-    {q₁ q₂ : α → FormalMultilinearSeries 𝕜 E F} {f : α → ℝ} {n : ℕ}
     (hp_bdd : ∀ k ≤ n, l.IsBoundedUnder (· ≤ ·) (‖p₁ · k‖))
-    (hpf : ∀ k ≤ n, (fun x ↦ p₁ x k - p₂ x k) =O[l] f)
+    (hpB : ∀ k ≤ n, (fun x ↦ p₁ x k - p₂ x k) =O[l] B)
     (hq₁_bdd : ∀ k ≤ n, l.IsBoundedUnder (· ≤ ·) (‖q₁ · k‖))
     (hq₂_bdd : ∀ k ≤ n, l.IsBoundedUnder (· ≤ ·) (‖q₂ · k‖))
-    (hqf : ∀ k ≤ n, (fun x ↦ q₁ x k - q₂ x k) =O[l] f) :
-    (fun x ↦ (p₁ x).taylorComp (q₁ x) n - (p₂ x).taylorComp (q₂ x) n) =O[l] f := by
+    (hqB : ∀ k ≤ n, (fun x ↦ q₁ x k - q₂ x k) =O[l] B) :
+    (fun x ↦ (p₁ x).taylorComp (q₁ x) n - (p₂ x).taylorComp (q₂ x) n) =O[l] B := by
   simp only [FormalMultilinearSeries.taylorComp, ← Finset.sum_sub_distrib]
   refine .sum fun c _ ↦ ?_
   apply compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_isBigO <;> assumption
