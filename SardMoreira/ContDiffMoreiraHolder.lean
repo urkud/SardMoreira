@@ -1,5 +1,4 @@
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Topology.MetricSpace.Holder
+import Mathlib
 import SardMoreira.ContDiff
 
 open scoped unitInterval Topology NNReal
@@ -193,6 +192,23 @@ protected theorem iteratedFDeriv {f : E → F} {a : E} {k l m : ℕ} {α : I}
     convert LinearIsometryEquiv.contDiffMoreiraHolderAt_left_comp _ <;> rfl
 
 end ContDiffMoreiraHolderAt
+
+theorem OpenPartialHomeomorph.contDiffMoreiraHolderAt_symm [CompleteSpace E] {k : ℕ} {α : I}
+    (f : OpenPartialHomeomorph E F) {f₀' : E ≃L[ℝ] F} {a : F} (ha : a ∈ f.target)
+    (hf₀' : HasFDerivAt f (f₀' : E →L[ℝ] F) (f.symm a))
+    (hf : ContDiffMoreiraHolderAt k α f (f.symm a)) :
+    ContDiffMoreiraHolderAt k α f.symm a where
+  contDiffAt := contDiffAt_symm f ha hf₀' hf.contDiffAt
+  isBigO := by
+    rcases eq_or_ne k 0 with rfl | hk
+    · sorry
+    · obtain ⟨f', hf'⟩ : ∃ f' : E → E ≃L[ℝ] F,
+          ∀ᶠ x in 𝓝 (f.symm a), HasFDerivAt f (f' x : E →L[ℝ] F) x := by
+        suffices ∀ᶠ x in 𝓝 (f.symm a), (fderiv ℝ f x).IsInvertible by
+          sorry
+        sorry
+      clear hf₀' f₀'
+      sorry
 
 structure ContDiffMoreiraHolderOn (k : ℕ) (α : I) (f : E → F) (s U : Set E) : Prop where
   subset : s ⊆ U
