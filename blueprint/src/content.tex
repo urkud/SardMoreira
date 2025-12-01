@@ -309,22 +309,28 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-fderiv}
   \uses{def:cdh-at}
-  \lean{ContDiffMoreiraHolderAt.fderiv'}
+  \lean{ContDiffMoreiraHolderAt.fderiv}
   \leanok%
   If \(f \colon E \to F\) is \(C^{k+1+(\alpha)}\) at \(a \in E\),
   then \(Df\) is \(C^{k+(\alpha)}\) at \(a\).
 \end{lemma}
 
+\begin{proof}
+  \leanok%
+  The lemma immediately follows from \(D^{k+1}f = D(D^{k}f)\).
+\end{proof}
+
 \begin{corollary}%
   \label{lem:cdh-at-iteratedFDeriv}
   \uses{def:cdh-at}
-  \lean{ContDiffMoreiraHolderAt.iteratedFDeriv'}
+  \lean{ContDiffMoreiraHolderAt.iteratedFDeriv}
   \leanok%
   If \(f \colon E \to F\) is \(C^{k+l+(\alpha)}\) at \(a \in E\),
   then \(D^{k}f\) is \(C^{l+(\alpha)}\) at \(a\).
 \end{corollary}
 \begin{proof}
   \uses{lem:cdh-at-fderiv, lem:cdh-at-clm-comp}
+  \leanok%
   The proof by induction on \(k\) using \autoref{lem:cdh-at-fderiv} and \autoref{lem:cdh-at-clm-comp}.
   The latter lemma is required, because \(D^{k+1}f\) and \(D(D^{k} f)\) have different types in Lean,
   and are related by a continuous linear equivalence.
@@ -413,6 +419,19 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
   there exists \(U\) such that \(f\) is \(C^{k+(\alpha)}\) on \((K, U)\)
   iff \(f\) is \(C^{k+(\alpha)}\) at each \(a \in K\).
 \end{lemma}
+
+\begin{proof}
+  \leanok%
+  Consider two cases.
+
+  \paragraph{Case 1: \(f\) is \(C^{k+(\alpha)}\) at each \(a \in K\).}
+  In this case, for each \(a \in K\) choose an open neighborhood \(U_{a}\) such that \(f\) is \(C^{k}\) on \(U_{a}\).
+  Then \(f\) is \(C^{k}\) on the union \(U = \bigcup_{a\in K} U_{a} \superset K\), hence it's \(C^{k+(\alpha)}\) on \((K, U)\).
+  So, in this case both parts of the equivalence are true.
+
+  \paragraph{Case 2: \(f\) is not \(C^{k+(\alpha)}\) at some \(a \in K\).}
+  In this case, \(f\) is not \(C^{k+(\alpha)}\) on \((K, U)\) for any \(U\), so we can take \(U\) to be the whole space.
+\end{proof}
 
 \begin{lemma}%
   \label{lem:cdh-on-comp}
