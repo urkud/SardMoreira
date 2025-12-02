@@ -273,6 +273,14 @@ theorem OpenPartialHomeomorph.fderiv_symm (f : OpenPartialHomeomorph E F) {y : F
     fderiv 𝕜 f.symm y = f'.symm :=
   (hf'.of_local_left_inverse (f.symm.continuousAt hy) <| f.eventually_right_inverse hy).fderiv
 
+theorem OpenPartialHomeomorph.contDiffAt_symm' [CompleteSpace E] (f : OpenPartialHomeomorph E F)
+    {a : F} (ha : a ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm a)).IsInvertible)
+    (hf : ContDiffAt 𝕜 n f (f.symm a)) : ContDiffAt 𝕜 n f.symm a := by
+  have := (differentiableAt_of_isInvertible_fderiv hf').hasFDerivAt
+  rcases hf' with ⟨e, he⟩
+  rw [← he] at this
+  exact f.contDiffAt_symm ha this hf
+
 -- TODO: add before `HasFDerivAt.of_local_left_inverse`
 theorem HasFDerivWithinAt.of_local_leftInverse {f : E → F} {f' : E ≃L[𝕜] F} {g : F → E} {a : F}
     {s : Set E} {t : Set F} (hg : Tendsto g (𝓝[t] a) (𝓝[s] (g a)))

@@ -191,6 +191,15 @@ protected theorem iteratedFDeriv {f : E → F} {a : E} {k l m : ℕ} {α : I}
     convert (ihm hl).fderiv le_rfl using 0
     convert LinearIsometryEquiv.contDiffMoreiraHolderAt_left_comp _ <;> rfl
 
+theorem congr_eventuallyEq {f g : E → F} {a : E} {k : ℕ} {α : I}
+    (hf : ContDiffMoreiraHolderAt k α f a) (hfg : f =ᶠ[𝓝 a] g) :
+    ContDiffMoreiraHolderAt k α g a where
+  contDiffAt := hf.contDiffAt.congr_of_eventuallyEq hfg.symm
+  isBigO := by
+    refine EventuallyEq.trans_isBigO (.sub ?_ ?_) hf.isBigO
+    · exact hfg.symm.iteratedFDeriv ℝ _
+    · rw [hfg.symm.iteratedFDeriv ℝ _ |>.self_of_nhds]
+
 end ContDiffMoreiraHolderAt
 
 theorem OpenPartialHomeomorph.contDiffMoreiraHolderAt_symm [CompleteSpace E] {k : ℕ} {α : I}
@@ -201,6 +210,15 @@ theorem OpenPartialHomeomorph.contDiffMoreiraHolderAt_symm [CompleteSpace E] {k 
   contDiffAt := contDiffAt_symm f ha hf₀' hf.contDiffAt
   isBigO := by
     sorry
+
+theorem OpenPartialHomeomorph.contDiffMoreiraHolderAt_symm' [CompleteSpace E] {k : ℕ} {α : I}
+    (f : OpenPartialHomeomorph E F) {a : F} (ha : a ∈ f.target)
+    (hf' : (fderiv ℝ f (f.symm a)).IsInvertible)
+    (hf : ContDiffMoreiraHolderAt k α f (f.symm a)) :
+    ContDiffMoreiraHolderAt k α f.symm a := by
+  have := differentiableAt_of_isInvertible_fderiv hf' |>.hasFDerivAt
+  rw [← hf'.choose_spec] at this
+  exact f.contDiffMoreiraHolderAt_symm ha this hf
 
 structure ContDiffMoreiraHolderOn (k : ℕ) (α : I) (f : E → F) (s U : Set E) : Prop where
   subset : s ⊆ U
@@ -221,6 +239,13 @@ theorem subset_left {t : Set E} (h : ContDiffMoreiraHolderOn k α f s U) (ht : t
 theorem contDiffMoreiraHolderAt (h : ContDiffMoreiraHolderOn k α f s U) (ha : a ∈ s) :
     ContDiffMoreiraHolderAt k α f a :=
   ⟨h.contDiffOn.contDiffAt <| h.isOpen.mem_nhds <| h.subset ha, h.isBigO a ha⟩
+
+theorem congr_eqOn {g} (hf : ContDiffMoreiraHolderOn k α f s U) (hfg : EqOn f g U) :
+    ContDiffMoreiraHolderOn k α g s U where
+  __ := hf
+  contDiffOn := hf.contDiffOn.congr hfg.symm
+  isBigO _a ha := (hf.contDiffMoreiraHolderAt ha).congr_eventuallyEq
+    (hfg.eventuallyEq_of_mem <| hf.isOpen.mem_nhds <| hf.subset ha) |>.isBigO
 
 theorem exists_superset :
     ∃ U, s ⊆ U ∧
@@ -323,3 +348,15 @@ theorem continuousLinearMap_comp (hf : ContDiffMoreiraHolderOn k α f s U) (g : 
   isBigO _a ha := ((hf.contDiffMoreiraHolderAt ha).continuousLinearMap_comp g).isBigO
 
 end ContDiffMoreiraHolderOn
+
+theorem OpenPartialHomeomorph.contDiffMoreiraHolderOn_symm [CompleteSpace E] {k : ℕ} {α : I}
+    {s : Set E} (f : OpenPartialHomeomorph E F)
+    (hf' : ∀ a ∈ f.source, (fderiv ℝ f a).IsInvertible)
+    (hf : ContDiffMoreiraHolderOn k α f (f.source ∩ s) f.source) :
+    ContDiffMoreiraHolderOn k α f.symm (f.target ∩ f.symm ⁻¹' s) f.target where
+  subset := Set.inter_subset_left
+  isOpen := f.open_target
+  contDiffOn _x hx := f.contDiffAt_symm' hx (hf' _ <| f.symm_mapsTo hx)
+    (hf.contDiffOn.contDiffAt <| f.open_source.mem_nhds <| f.symm_mapsTo hx) |>.contDiffWithinAt
+  isBigO _x hx := f.contDiffMoreiraHolderAt_symm' hx.1 (hf' _ <| f.symm_mapsTo hx.1)
+    (hf.contDiffMoreiraHolderAt ⟨f.symm_mapsTo hx.1, hx.2⟩) |>.isBigO
