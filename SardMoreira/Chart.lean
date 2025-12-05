@@ -124,7 +124,7 @@ theorem compUpTo_zero (ψ : Chart k α l s U) :
 theorem compUpTo_succ (ψ : Chart k α l s U) (i : Fin l) :
     ψ.compUpTo i.succ = ψ.compUpTo i.castSucc ∘ ψ i :=
   rfl
-    
+
 theorem contDiffMoreiraHolderOn_compUpTo (ψ : Chart k α l s U) (i : Fin (l + 1)) :
     ContDiffMoreiraHolderOn (k + 1 - i) α (ψ.compUpTo i) (ψ.holderSet i) (ψ.dom i) := by
   induction i using Fin.induction with

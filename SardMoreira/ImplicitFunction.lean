@@ -46,7 +46,7 @@ def implicitToOpenPartialHomeomorphOfComplementedKerRange (f : E → F) (f' : E 
     OpenPartialHomeomorph E (LinearMap.range f' × LinearMap.ker f') :=
   have := hrange.isClosed.completeSpace_coe
   (hf.implicitFunctionDataOfComplementedKerRange f f' hker hrange).toOpenPartialHomeomorph
-    
+
 @[simp]
 theorem mem_implicitToOpenPartialHomeomorphOfComplementedKerRange_source
     {f : E → F} {f' : E →L[𝕜] F} {a : E}
