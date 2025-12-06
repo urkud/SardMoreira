@@ -1,168 +1,277 @@
-import SardMoreira.ContDiffMoreiraHolder
-import Mathlib.Order.CompletePartialOrder
-import Mathlib.Algebra.Lie.OfAssociative
-import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Topology.GDelta.MetrizableSpace
-import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.NormedSpace.HahnBanach.SeparatingDual
+import Mathlib
+import SardMoreira.ImplicitFunction
 
 open scoped unitInterval Topology NNReal
 open Asymptotics Filter Set Metric Function
 
-namespace MoreiraSard
+local notation "dim" => Module.finrank ℝ
 
-variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+namespace ImplicitFunctionData
 
-structure Chart (k : ℕ) (α : I) (l : Fin (k + 1)) (s U : Set (E × F)) where
-  subspace : Fin (l + 1) → Submodule ℝ F
-  subspace_anti : Antitone subspace
-  center : E × F
-  radiusLeft : Fin (l + 1) → ℝ
-  radiusLeft_anti : Antitone radiusLeft
-  radiusLeft_pos i : 0 < radiusLeft i
-  radiusRight : Fin (l + 1) → ℝ
-  radiusRight_pos i : 0 < radiusRight i
-  toFunSnd (i : Fin l) : E → subspace i.succ → subspace i.castSucc
-  holderSet (i : Fin (l + 1)) : Set (E × subspace i)
-  holderSet_subset_dom_zero : holderSet 0 ⊆ ball 0 (radiusLeft 0) ×ˢ ball 0 (radiusRight 0)
-  mapsTo_holderSet_zero' : MapsTo (fun xy ↦ (xy.1, xy.2.1) + center) (holderSet 0) s
-  mapsTo_dom_zero : MapsTo (fun xy ↦ (xy.1, xy.2.1) + center)
-    (ball 0 (radiusLeft 0) ×ˢ ball (0 : subspace 0) (radiusRight 0)) U
-  mapsTo_holderSet' (i : Fin l) :
-    MapsTo (fun xy ↦ (xy.1, toFunSnd i xy.1 xy.2)) (holderSet i.succ) (holderSet i.castSucc)
-  toFunSnd_mem_ball (i : Fin l) {x : E} {y : subspace i.succ} :
-    x ∈ ball 0 (radiusLeft i.succ) → y ∈ ball 0 (radiusRight i.succ) →
-      toFunSnd i x y ∈ ball 0 (radiusRight i.castSucc)
-  contDiffMoreiraHolderOn_toFunSnd (i : Fin l) :
-    ContDiffMoreiraHolderOn (k - i) α (toFunSnd i).uncurry (holderSet i.succ)
-      (ball 0 (radiusLeft i.succ) ×ˢ ball 0 (radiusRight i.succ))
-  dist_le_toFunSnd {i : Fin l} {x : E} {y₁ y₂ : subspace i.succ} :
-    x ∈ ball 0 (radiusLeft i.succ) → y₁ ∈ ball 0 (radiusRight i.succ) →
-      y₂ ∈ ball 0 (radiusRight i.succ) → dist y₁ y₂ ≤ dist (toFunSnd i x y₁) (toFunSnd i x y₂)
-  fderiv_comp_eq_zero' (i : Fin l) (f : E → (subspace i.castSucc) → ℝ) :
-    ContDiffMoreiraHolderOn (k - i) α f.uncurry (holderSet i.castSucc)
-      (ball 0 (radiusLeft i.castSucc) ×ˢ ball 0 (radiusRight i.castSucc)) →
-    (∀ p ∈ holderSet i.castSucc, f p.1 p.2 = 0) →
-    ∀ x y, (x, y) ∈ holderSet i.succ → fderiv ℝ (f x ∘ toFunSnd i x) y = 0
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
 
-namespace Chart
+theorem differentiableAt_implicitFunction (φ : ImplicitFunctionData 𝕜 E F G) :
+    DifferentiableAt 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) :=
+  φ.hasStrictFDerivAt.to_localInverse.comp (φ.rightFun φ.pt)
+    ((hasStrictFDerivAt_const _ _).prodMk (hasStrictFDerivAt_id _))
+    |>.hasFDerivAt |>.differentiableAt
 
-variable {k : ℕ} {l : Fin (k + 1)} {α : I} {s U : Set (E × F)}
+theorem fderiv_implicitFunction_apply_eq_iff (φ : ImplicitFunctionData 𝕜 E F G) {x : G} {y : E} :
+    fderiv 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) x = y ↔
+      φ.leftDeriv y = 0 ∧ φ.rightDeriv y = x := by
+  unfold implicitFunction Function.curry toOpenPartialHomeomorph
+  simp only [← HasStrictFDerivAt.localInverse_def]
+  rw [φ.hasStrictFDerivAt.to_localInverse.comp (φ.rightFun φ.pt)
+    ((hasStrictFDerivAt_const _ _).prodMk (hasStrictFDerivAt_id _)) |>.hasFDerivAt |>.fderiv]
+  simp [ContinuousLinearEquiv.symm_apply_eq, @eq_comm _ (φ.leftDeriv _),
+    @eq_comm _ (φ.rightDeriv _)]
 
-@[coe]
-def toFun (ψ : Chart k α l s U) (i : Fin l) :
-    E × ψ.subspace i.succ → E × ψ.subspace i.castSucc :=
-  fun xy ↦ (xy.1, ψ.toFunSnd i xy.1 xy.2)
+@[simp]
+theorem leftDeriv_fderiv_implicitFunction (φ : ImplicitFunctionData 𝕜 E F G) (x : G) :
+    φ.leftDeriv (fderiv 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) x) = 0 := by
+  exact φ.fderiv_implicitFunction_apply_eq_iff.mp rfl |>.left
 
-instance instCoeFun : CoeFun (Chart k α l s U) fun ψ ↦ ∀ i : Fin l,
-    E × ψ.subspace i.succ → E × ψ.subspace i.castSucc :=
-  ⟨toFun⟩
+@[simp]
+theorem rightDeriv_fderiv_implicitFunction (φ : ImplicitFunctionData 𝕜 E F G) (x : G) :
+    φ.rightDeriv (fderiv 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) x) = x := by
+  exact φ.fderiv_implicitFunction_apply_eq_iff.mp rfl |>.right
 
-theorem apply_fst (ψ : Chart k α l s U) (i : Fin l) (x : E × ψ.subspace i.succ) :
-    (ψ i x).1 = x.1 :=
-  rfl
+theorem map_implicitFunction_nhdsWithin_preimage (φ : ImplicitFunctionData 𝕜 E F G)
+    (s : Set E) :
+    (𝓝[φ.implicitFunction (φ.leftFun φ.pt) ⁻¹' s] (φ.rightFun φ.pt)).map
+      (φ.implicitFunction (φ.leftFun φ.pt)) = 𝓝[s ∩ φ.leftFun ⁻¹' {φ.leftFun φ.pt}] φ.pt := by
+  sorry
 
-/-- The product of balls where the map $\psi_i$ is $C^{k-i+(\alpha)}$. -/
-def dom (ψ : Chart k α l s U) (i : Fin (l + 1)) : Set (E × ψ.subspace i) :=
-  ball 0 (ψ.radiusLeft i) ×ˢ ball 0 (ψ.radiusRight i)
+end ImplicitFunctionData
 
-theorem isOpen_dom (ψ : Chart k α l s U) (i : Fin (l + 1)) : IsOpen (ψ.dom i) :=
-  .prod isOpen_ball isOpen_ball
+@[simp]
+theorem ContinuousLinearMap.range_eq_bot {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    {f : M →L[R] N} :
+    LinearMap.range f = ⊥ ↔ f = 0 :=
+  (f : M →ₗ[R] N).range_eq_bot.trans <| by norm_cast -- TODO: make `simp` solve it too
 
-theorem dom_nonempty (ψ : Chart k α l s U) (i : Fin (l + 1)) : (ψ.dom i).Nonempty :=
-  .prod (nonempty_ball.2 <| ψ.radiusLeft_pos i) (nonempty_ball.2 <| ψ.radiusRight_pos i)
+@[simp]
+theorem ContinuousLinearMap.ker_prodMap {R M N M' N' : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    [AddCommMonoid M'] [Module R M'] [TopologicalSpace M']
+    [AddCommMonoid N'] [Module R N'] [TopologicalSpace N']
+    (f : M →L[R] N) (g : M' →L[R] N') :
+    LinearMap.ker (f.prodMap g) = (LinearMap.ker f).prod (LinearMap.ker g) := by
+  ext ⟨_, _⟩; simp
 
-theorem holderSet_subset_dom (ψ : Chart k α l s U) (i : Fin (l + 1)) :
-    ψ.holderSet i ⊆ ψ.dom i := by
-  induction i using Fin.cases with
-  | zero => exact ψ.holderSet_subset_dom_zero
-  | succ i => exact (ψ.contDiffMoreiraHolderOn_toFunSnd i).subset
+@[simp]
+theorem ContinuousLinearMap.range_prodMap {R M N M' N' : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    [AddCommMonoid M'] [Module R M'] [TopologicalSpace M']
+    [AddCommMonoid N'] [Module R N'] [TopologicalSpace N']
+    (f : M →L[R] N) (g : M' →L[R] N') :
+    LinearMap.range (f.prodMap g) = (LinearMap.range f).prod (LinearMap.range g) := by
+  ext ⟨_, _⟩; simp
 
-theorem mapsTo_dom (ψ : Chart k α l s U) (i : Fin l) :
-    MapsTo (ψ i) (ψ.dom i.succ) (ψ.dom i.castSucc) := by
-  rintro ⟨x, y⟩ ⟨hx, hy⟩
-  exact ⟨ball_subset_ball (ψ.radiusLeft_anti i.castSucc_le_succ) hx, ψ.toFunSnd_mem_ball i hx hy⟩
+@[simp]
+theorem ContinuousLinearMap.finrank_range_add_finrank_ker {R M N : Type*} [DivisionRing R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] [FiniteDimensional R M]
+    [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (f : M →L[R] N) :
+    Module.finrank R (LinearMap.range f) + Module.finrank R (LinearMap.ker f) =
+      Module.finrank R M :=
+  f.toLinearMap.finrank_range_add_finrank_ker
 
-theorem mapsTo_holderSet (ψ : Chart k α l s U) (i : Fin l) :
-    MapsTo (ψ i) (ψ.holderSet i.succ) (ψ.holderSet i.castSucc) :=
-  ψ.mapsTo_holderSet' i
+@[simp]
+theorem ContinuousLinearMap.range_id {R M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M] :
+    LinearMap.range (ContinuousLinearMap.id R M) = ⊤ := by
+  ext; simp
 
-theorem contDiffMoreiraHolderOn (ψ : Chart k α l s U) (i : Fin l) :
-    ContDiffMoreiraHolderOn (k - i) α (ψ i) (ψ.holderSet i.succ) (ψ.dom i.succ) :=
-  .prodMk (.fst (ψ.holderSet_subset_dom _) (ψ.isOpen_dom _)) (ψ.contDiffMoreiraHolderOn_toFunSnd i)
+namespace Submodule
 
-theorem fderiv_comp_eq_zero (ψ : Chart k α l s U) (i : Fin l) {f : E × ψ.subspace i.castSucc → G}
-    (hf : ContDiffMoreiraHolderOn (k - i) α f (ψ.holderSet i.castSucc) (ψ.dom i.castSucc))
-    (hf₀ : ∀ x ∈ ψ.holderSet i.castSucc, f x = 0) {x : E × ψ.subspace i.succ}
-    (hx : x ∈ ψ.holderSet i.succ) : fderiv ℝ (f ∘ ψ i ∘ .mk x.1) x.2 = 0 := by
-  suffices ∀ g : G →L[ℝ] ℝ, g.comp (fderiv ℝ (f ∘ ψ i ∘ .mk x.1) x.2) = 0 by
-    ext y
-    -- TODO: add `SeparatingDual.ext`
-    by_contra hy
-    obtain ⟨g, hg⟩ := SeparatingDual.exists_ne_zero (R := ℝ) hy
-    exact hg (DFunLike.congr_fun (this g) y)
-  intro g
-  rw [← g.fderiv, ← fderiv_comp]
-  · refine ψ.fderiv_comp_eq_zero' i (fun a b ↦ g (f (a, b))) ?_ ?_ x.1 x.2 hx
-    · exact hf.continuousLinearMap_comp g
-    · simp +contextual [hf₀]
-  · exact g.differentiableAt
-  · apply ContDiffAt.differentiableAt (n := (k - i : ℕ)) _ (by norm_cast; omega)
-    apply ((hf.contDiffOn.comp (ψ.contDiffMoreiraHolderOn i).contDiffOn _).contDiffAt _).comp
-    · refine contDiffAt_const.prodMk contDiffAt_id
-    · exact ψ.mapsTo_dom _
-    · exact (ψ.isOpen_dom _).mem_nhds <| ψ.holderSet_subset_dom _ hx
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
 
-def compUpTo (ψ : Chart k α l s U) (i : Fin (l + 1)) : E × ψ.subspace i → E × F :=
-  i.induction (fun xy ↦ (xy.1, xy.2.1) + ψ.center) fun j ↦ (· ∘ ψ j)
+def prodEquiv
+    (s : Submodule R M) (t : Submodule R N) : s.prod t ≃ₗ[R] s × t :=
+  { (Equiv.Set.prod (s : Set M) (t : Set N)) with
+    map_add' _ _ := rfl
+    map_smul' _ _ := rfl }
 
-theorem compUpTo_zero (ψ : Chart k α l s U) :
-    ψ.compUpTo 0 = fun xy ↦ (xy.1, xy.2.1) + ψ.center :=
-  rfl
+@[simp]
+theorem rank_prod_eq_lift [StrongRankCondition R] (s : Submodule R M) (t : Submodule R N)
+    [Module.Free R s] [Module.Free R t] :
+    Module.rank R (s.prod t) = (Module.rank R s).lift + (Module.rank R t).lift := by
+  simp [(s.prodEquiv t).rank_eq]
 
-theorem compUpTo_succ (ψ : Chart k α l s U) (i : Fin l) :
-    ψ.compUpTo i.succ = ψ.compUpTo i.castSucc ∘ ψ i :=
-  rfl
+@[simp]
+theorem finrank_prod [StrongRankCondition R] (s : Submodule R M) (t : Submodule R N)
+    [Module.Free R s] [Module.Free R t] [Module.Finite R s] [Module.Finite R t] :
+    Module.finrank R (s.prod t) = Module.finrank R s + Module.finrank R t := by
+  simp [(s.prodEquiv t).finrank_eq]
 
-theorem contDiffMoreiraHolderOn_compUpTo (ψ : Chart k α l s U) (i : Fin (l + 1)) :
-    ContDiffMoreiraHolderOn (k + 1 - i) α (ψ.compUpTo i) (ψ.holderSet i) (ψ.dom i) := by
-  induction i using Fin.induction with
-  | zero =>
-    simp only [compUpTo_zero]
-    refine ContDiffOn.contDiffMoreiraHolderOn (.add ?_ contDiffOn_const)
-      (ψ.holderSet_subset_dom _) (ψ.isOpen_dom _) (WithTop.coe_lt_top _) _
-    exact contDiffOn_fst.prodMk ((ψ.subspace 0).subtypeL.contDiff.comp_contDiffOn contDiffOn_snd)
-  | succ i ih =>
-    dsimp only [compUpTo_succ]
-    refine (ih.of_le ?_).comp ((ψ.contDiffMoreiraHolderOn _).of_le ?_) ?_ ?_ ?_
-    · dsimp; omega
-    · simp
-    · exact ψ.mapsTo_dom _
-    · exact ψ.mapsTo_holderSet _
-    · omega
+end Submodule
 
-theorem mapsTo_compUpTo_dom (ψ : Chart k α l s U) (i : Fin (l + 1)) :
-    MapsTo (ψ.compUpTo i) (ψ.dom i) U := by
-  induction i using Fin.induction with
-  | zero => exact ψ.mapsTo_dom_zero
-  | succ i ih => exact ih.comp <| ψ.mapsTo_dom _
+namespace Moreira2001
 
-theorem compUpTo_fst (ψ : Chart k α l s U) (i : Fin (l + 1)) (x : E × ψ.subspace i) :
-    (ψ.compUpTo i x).1 = x.1 + ψ.center.1 := by
-  induction i using Fin.induction with
-  | zero => rfl
-  | succ i ih => simp [ih, compUpTo_succ, apply_fst]
+variable {E F : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {k : ℕ} {α : I} {s : Set (E × F)} {a : E × F}  {f : E × F → ℝ}
 
-theorem dist_le_compUpTo (ψ : Chart k α l s U) (i : Fin (l + 1)) {x : E}
-    (hx : x ∈ ball 0 (ψ.radiusLeft i)) {y₁ y₂ : ψ.subspace i}
-    (hy₁ : y₁ ∈ ball 0 (ψ.radiusRight i)) (hy₂ : y₂ ∈ ball 0 (ψ.radiusRight i)) :
-    dist y₁ y₂ ≤ dist (ψ.compUpTo i (x, y₁)) (ψ.compUpTo i (x, y₂)) := by
-  induction i using Fin.induction with
-  | zero => simp [compUpTo_zero, Subtype.dist_eq]
-  | succ i ih =>
-    have H₁ := ψ.mapsTo_dom i (x := (x, y₁)) ⟨hx, hy₁⟩
-    have H₂ := ψ.mapsTo_dom i (x := (x, y₂)) ⟨hx, hy₂⟩
-    exact (ψ.dist_le_toFunSnd hx hy₁ hy₂).trans <| ih H₁.1 H₁.2 H₂.2
+-- This def almost hits the max heartbeats limit. In fact, I've adjusted the proof to avoid it.
+-- Idk what makes the proof so slow.
+@[irreducible]
+noncomputable def chartImplicitData (f : E × F → ℝ) (a : E × F)
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    ImplicitFunctionData ℝ (E × F) ℝ (E × LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)) where
+  leftFun := f
+  leftDeriv := fderiv ℝ f a
+  left_has_deriv := hfa.contDiffAt.hasStrictFDerivAt <| by
+    simpa only [Nat.one_le_cast, Nat.one_le_iff_ne_zero]
+  rightFun := _
+  rightDeriv := .prodMap (.id _ _) (Submodule.ClosedComplemented.of_finiteDimensional _).choose
+  right_has_deriv := ContinuousLinearMap.hasStrictFDerivAt _
+  pt := a
+  left_range := by
+    refine IsSimpleOrder.eq_bot_or_eq_top _ |>.resolve_left ?_
+    rw [ContinuousLinearMap.range_eq_bot]
+    contrapose! hdf
+    rw [hdf, ContinuousLinearMap.zero_comp]
+  right_range := by
+    have : LinearMap.range (Submodule.ClosedComplemented.of_finiteDimensional <|
+        LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)).choose = ⊤ :=
+      LinearMap.range_eq_of_proj (Exists.choose_spec (_ : Submodule.ClosedComplemented _))
+    rw [ContinuousLinearMap.range_prodMap, this]
+    simp
+  isCompl_ker := by
+    have H : (LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)).ClosedComplemented :=
+      .of_finiteDimensional _
+    constructor
+    · suffices ∀ x y, fderiv ℝ f a (x, y) = 0 → x = 0 → H.choose y = 0 → y = 0 by
+        simpa +contextual only [Subtype.forall, LinearMap.mem_ker, ContinuousLinearMap.coe_comp',
+          comp_apply, ContinuousLinearMap.inr_apply, ContinuousLinearMap.ker_prodMap,
+          Submodule.disjoint_def, Submodule.mem_prod, ContinuousLinearMap.coe_id', id_eq, and_imp,
+          Prod.forall, Prod.mk_eq_zero, true_and]
+      rintro _ y hdf rfl hy
+      lift y to LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F) using by simp [hdf]
+      simpa only [H.choose_spec, ZeroMemClass.coe_eq_zero] using hy
+    · rw [Submodule.codisjoint_iff_exists_add_eq]
+      rintro ⟨x, y⟩
+      obtain ⟨z, hz⟩ : ∃ z : F, fderiv ℝ f a (x, z) = 0 := by
+        have : LinearMap.range (fderiv ℝ f a ∘L .inr ℝ _ _) = ⊤ := by
+          refine IsSimpleOrder.eq_bot_or_eq_top _ |>.resolve_left ?_
+          rwa [ContinuousLinearMap.range_eq_bot]
+        rw [Submodule.eq_top_iff'] at this
+        refine this (-fderiv ℝ f a (x, 0)) |>.imp fun z hz ↦ ?_
+        rw [← (x, z).fst_add_snd, map_add]
+        simpa [eq_neg_iff_add_eq_zero, add_comm] using hz
+      rcases Submodule.codisjoint_iff_exists_add_eq.mp
+        (LinearMap.isCompl_of_proj H.choose_spec).codisjoint (y - z)
+        with ⟨w, t, hw, ht, hsub⟩
+      refine ⟨(x, w + z), (0, t), ?ker, by simpa using ht, ?add⟩
+      case ker =>
+        rwa [← zero_add x, ← Prod.mk_add_mk, LinearMap.mem_ker, map_add, hz, add_zero]
+      case add =>
+        rw [Prod.mk_add_mk, add_zero, add_right_comm w z t, hsub, sub_add_cancel]
 
-end Chart
+@[simp]
+theorem chartImplicitData_leftFun {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    (chartImplicitData f a hfa hk hdf).leftFun = f := by
+  simp [chartImplicitData]
+
+@[simp]
+theorem chartImplicitData_leftDeriv {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    (chartImplicitData f a hfa hk hdf).leftDeriv = fderiv ℝ f a := by
+  simp [chartImplicitData]
+
+@[simp]
+theorem chartImplicitData_pt {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    (chartImplicitData f a hfa hk hdf).pt = a := by
+  simp [chartImplicitData]
+
+theorem chartImplicitData_rightDeriv_apply_ker {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0)
+    (x : E) {y : F} (hy : fderiv ℝ f a (0, y) = 0) :
+    (chartImplicitData f a hfa hk hdf).rightDeriv (x, y) = (x, ⟨y, by simpa⟩) := by
+  simpa [chartImplicitData] using
+    Submodule.ClosedComplemented.of_finiteDimensional (LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F))
+      |>.choose_spec ⟨y, by simpa⟩
+
+theorem fderiv_implicitFunction_chartImplicitData_apply_mk_zero {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0)
+    (y : LinearMap.ker ((fderiv ℝ f a).comp (ContinuousLinearMap.inr ℝ E F))) :
+    fderiv ℝ ((chartImplicitData f a hfa hk hdf).implicitFunction (f a))
+      ((chartImplicitData f a hfa hk hdf).rightFun a) (0, y) = (0, y.1) := by
+  convert (chartImplicitData f a hfa hk hdf).fderiv_implicitFunction_apply_eq_iff.mpr _
+  · simp
+  · simp
+  · simp
+  · constructor
+    · cases y with | mk y hy => simpa using hy
+    · apply chartImplicitData_rightDeriv_apply_ker
+      cases y with | mk y hy => simpa using hy
+
+@[simp]
+theorem fderiv_implicitFunction_chartImplicitData_comp_inr {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    fderiv ℝ ((chartImplicitData f a hfa hk hdf).implicitFunction (f a))
+      ((chartImplicitData f a hfa hk hdf).rightFun a) ∘L .inr ℝ E _ =
+      .inr ℝ E F ∘L Submodule.subtypeL _ := by
+  ext1 x
+  simp [fderiv_implicitFunction_chartImplicitData_apply_mk_zero]
+
+theorem fst_implicitFunction_chartImplicitData_eventuallyEq {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    Prod.fst ∘ (chartImplicitData f a hfa hk hdf).implicitFunction (f a)
+      =ᶠ[𝓝 ((chartImplicitData f a hfa hk hdf).rightFun a)] Prod.fst := by
+  sorry
+
+theorem exists_chart_ker
+    (hfk : ∀ᶠ x in 𝓝[s] a, ContDiffMoreiraHolderAt k α f x) (hf₀ : f =ᶠ[𝓝[s] a] 0)
+    (hk : k ≠ 0) (has : a ∈ s) :
+    ∃ p : Submodule ℝ F, p = LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F) ∧
+      ∃ (g : E × p → F) (t : Set (E × p)) (b : E × p),
+        (𝓝[t] b).map (Pi.prod Prod.fst g) = 𝓝[s] a ∧
+        (∀ᶠ x in 𝓝[t] b, ContDiffMoreiraHolderAt k α g x) ∧
+        fderiv ℝ g b ∘L .inr ℝ E p = p.subtypeL := by
+  by_cases hdf : fderiv ℝ f a ∘L .inr ℝ E F = 0
+  · set p : Submodule ℝ F := ⊤
+    refine ⟨p, by ext; simp [p, hdf], p.subtypeL ∘L .snd ℝ _ _,
+      (Prod.map id (↑)) ⁻¹' s, (a.1, ⟨a.2, by simp [p]⟩), ?_, ?_, ?_⟩
+    · rw [Topology.IsInducing.map_nhdsWithin_eq]
+      · simp [Set.image, Prod.ext_iff, p]
+      · exact .prodMap .id .subtypeVal
+    · refine .of_forall fun x ↦ ?_
+      refine ContDiffAt.contDiffMoreiraHolderAt (n := ⊤) ?_ (by simp) α
+      exact ((⊤ : Submodule ℝ F).subtypeL ∘L .snd ℝ E (⊤ : Submodule ℝ F)).contDiff.contDiffAt
+    · rw [ContinuousLinearMap.fderiv]
+      ext
+      simp
+  · set p := LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)
+    use p, rfl
+    set ψ := chartImplicitData f a (hfk.self_of_nhdsWithin has) hk hdf
+    set b : E × p := ψ.rightFun a
+    set g : E × p → F := Prod.snd ∘ ψ.implicitFunction 0
+    have hfa₀ : f a = 0 := hf₀.self_of_nhdsWithin has
+    have hg_eq : Pi.prod Prod.fst g =ᶠ[𝓝 b] ψ.implicitFunction 0 := by
+      refine fst_implicitFunction_chartImplicitData_eventuallyEq
+        (hfk.self_of_nhdsWithin has) hk hdf |>.symm |>.mono fun x hx ↦ ?_
+      simpa [Prod.ext_iff, b, g, ψ, hfa₀] using hx
+    have hnhds : 𝓝[Pi.prod Prod.fst g ⁻¹' s] b = 𝓝[ψ.implicitFunction 0 ⁻¹' s] b := by
+      sorry
+    refine ⟨g, (Pi.prod Prod.fst g) ⁻¹' s, b, ?_, ?_, ?_⟩
+    · sorry
+    · sorry
+    · simp only [g]
+      rw [fderiv_comp, fderiv_snd, ContinuousLinearMap.comp_assoc, ← hfa₀,
+        fderiv_implicitFunction_chartImplicitData_comp_inr]
+      · ext; simp [p]
+      · fun_prop
+      · simpa [ψ, hfa₀] using ψ.differentiableAt_implicitFunction
