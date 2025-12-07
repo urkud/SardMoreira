@@ -13,6 +13,11 @@ variable {n : WithTop ℕ∞} {k : ℕ} {a : E}
 
 protected alias UniqueDiffOn.univ := uniqueDiffOn_univ
 
+theorem ContinuousLinearMap.IsInvertible.eventually [CompleteSpace E] {α : Type*} {l : Filter α}
+    {f₀ : E →L[𝕜] F} {f : α → E →L[𝕜] F} (hf₀ : f₀.IsInvertible) (hf : Tendsto f l (𝓝 f₀)) :
+    ∀ᶠ x in l, (f x).IsInvertible :=
+  hf.eventually <| ContinuousLinearEquiv.isOpen.mem_nhds hf₀
+
 @[simp]
 theorem ContinuousLinearMap.IsInvertible.self_comp_inverse {f : E →L[𝕜] F} (hf : f.IsInvertible) :
     f ∘L f.inverse = .id _ _ := by
@@ -112,6 +117,12 @@ theorem iteratedFDerivWithin_comp_of_eventually
     hu (mem_of_mem_nhdsWithin ha hau) |>.trans ?_
   refine iteratedFDerivWithin_congr_set (hus.eventuallyLE.antisymm ?_) _
   exact set_eventuallyLE_iff_mem_inf_principal.mpr hau
+
+theorem ContDiffAt.eventually_isInvertible_fderiv [CompleteSpace E] (hf : ContDiffAt 𝕜 n f a)
+    (ha : (fderiv 𝕜 f a).IsInvertible) (hn : n ≠ 0) :
+    ∀ᶠ x in 𝓝 a, (fderiv 𝕜 f x).IsInvertible := by
+  apply ha.eventually
+  exact hf.continuousAt_fderiv hn
 
 end NWithTopENat
 

@@ -151,11 +151,20 @@ theorem comp {g : F → G} {f : E → F} {a : E} {k : ℕ} {α : I}
     (hk : k ≠ 0) : ContDiffMoreiraHolderAt k α (g ∘ f) a :=
   hg.comp' hf (.inl <| hg.differentiableAt hk)
 
+theorem _root_.ContinuousLinearMap.contDiffMoreiraHolderAt
+    (f : E →L[ℝ] F) {a : E} {k : ℕ} {α : I} :
+    ContDiffMoreiraHolderAt k α f a :=
+  f.contDiff.contDiffAt.contDiffMoreiraHolderAt (WithTop.coe_lt_top _) _
+
+theorem _root_.ContinuousLinearEquiv.contDiffMoreiraHolderAt
+    (f : E ≃L[ℝ] F) {a : E} {k : ℕ} {α : I} :
+    ContDiffMoreiraHolderAt k α f a :=
+  f.toContinuousLinearMap.contDiffMoreiraHolderAt
+
 theorem continuousLinearMap_comp {f : E → F} {a : E} {k : ℕ} {α : I}
     (hf : ContDiffMoreiraHolderAt k α f a) (g : F →L[ℝ] G) :
     ContDiffMoreiraHolderAt k α (g ∘ f) a :=
-  g.contDiff.contDiffAt.contDiffMoreiraHolderAt (WithTop.coe_lt_top _) _ |>.comp' hf <|
-    .inl g.differentiableAt
+  g.contDiffMoreiraHolderAt.comp' hf <| .inl g.differentiableAt
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.contDiffMoreiraHolderAt_left_comp
