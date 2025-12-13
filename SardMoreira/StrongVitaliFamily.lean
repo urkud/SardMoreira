@@ -57,14 +57,6 @@ def IsUnifLocDoublingMeasure.strongVitaliFamily (μ : Measure X) [IsUnifLocDoubl
     exact (Vitali.strongVitaliFamily μ _ _).enlarge _ _ |>.exists_covering_of_measure_zero'
 -/
 
-instance (priority := 100) Besicovitch.isUnifLocDoublingMeasure
-    [SecondCountableTopology X] [OpensMeasurableSpace X] [HasBesicovitchCovering X]
-    (μ : Measure X) [SFinite μ] [μ.OuterRegular] :
-    IsUnifLocDoublingMeasure μ where
-  exists_measure_closedBall_le_mul'' := by
-    rcases HasBesicovitchCovering.no_satelliteConfig (α := X) with ⟨N, τ, hτ, hN⟩
-    have := exist_disjoint_covering_families (α := X) hτ hN
-
 def Besicovitch.strongVitaliFamily [SecondCountableTopology X] [OpensMeasurableSpace X]
     [HasBesicovitchCovering X] (μ : Measure X) [SFinite μ] [μ.OuterRegular] :
     StrongVitaliFamily μ where
