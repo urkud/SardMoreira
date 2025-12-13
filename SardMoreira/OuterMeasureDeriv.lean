@@ -66,6 +66,45 @@ lemma outerMeasure_le_mul {μ : Measure α} [SigmaFinite μ] [μ.OuterRegular]
     _ = 0 * μ s := by simp
   · exact outerMeasure_le_mul_of_sfinite hsC (.inl hC) h
 
+/-- Suppose that `ν (s ∩ closedBall x r) = O(μ (closedBall x r))` at all points of a set `s`
+and `ν (s ∩ closedBall x r) = o(μ (closedBall x r))` at a.e. points of the set.
+Then `ν s = 0`.
+
+The actual statement can't use `Asymptotics.IsBigO` and `Asymptotics.IsLittleO`,
+because the LHS and the RHS are in `ℝ≥0∞`, not `ℝ`.
+
+Note that we do not assume measurability of `s` or `C`. -/
+lemma outerMeasure_null_of_forall_le_mul_ae_null {μ : Measure α} [SigmaFinite μ] [μ.OuterRegular]
+    {ν : OuterMeasure α} {C : α → ℝ≥0} {s : Set α} (hC : ∀ᵐ x ∂μ, x ∈ s → C x = 0)
+    (h : ∀ x ∈ s, ∃ᶠ εr : ℝ≥0∞ × ℝ in 𝓝[>] 0 ×ˢ 𝓝[>] 0,
+      ν (s ∩ closedBall x εr.2) ≤ (C x + εr.1) * μ (closedBall x εr.2)) :
+    ν s = 0 := by
+  grw [← nonpos_iff_eq_zero, measure_le_inter_add_diff (t := {x | C x = 0})]
+  apply add_nonpos
+  · calc
+      ν (s ∩ {x | C x = 0}) ≤ 0 * μ (s ∩ {x | C x = 0}) := by
+        refine outerMeasure_le_mul (by simp) fun x hx ↦ ?_
+        grw [inter_subset_left]
+        simpa [hx.2.out] using h x hx.1
+      _ = 0 := zero_mul _
+  · set t := s \ {x | C x = 0}
+    have hμt : μ t = 0 := by simpa [t, ae_iff] using hC
+    calc
+      ν t = ν (⋃ n : ℕ, {x ∈ t | C x ≤ n}) := by
+        congr with x
+        simp [exists_nat_ge]
+      _ ≤ ∑' n : ℕ, ν {x ∈ t | C x ≤ n} := measure_iUnion_le _
+      _ ≤ ∑' n : ℕ, n * μ {x ∈ t | C x ≤ n} := by
+        gcongr with n
+        apply outerMeasure_le_mul
+        · simp
+        · intro x hx
+          simp only [t]
+          grw [sep_subset, diff_subset, ← (mod_cast hx.2 : (C x : ℝ≥0∞) ≤ n)]
+          exact h x hx.1.1
+      _ ≤ ∑' n : ℕ, n * μ t := by gcongr; apply Set.sep_subset
+      _ ≤ 0 := by simp [hμt]
+
 /-- Let `f : α → β` be a map from a space with Besicovitch property to any space.
 Let `μ` be a σ-finite outer regular measure on `α`, let `ν` be an outer measure on `β`,
 let `s` be a set in the domain, let `C` be a constant such that `μ s ≠ 0` or `C ≠ ∞`.

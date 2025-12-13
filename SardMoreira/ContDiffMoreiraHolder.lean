@@ -30,6 +30,7 @@ theorem iteratedFDeriv_apply_congr_order {k l : ℕ} (h : k = l) (f : E → F) (
   subst l
   simp
 
+@[mk_iff]
 structure ContDiffMoreiraHolderAt (k : ℕ) (α : I) (f : E → F) (a : E) : Prop where
   contDiffAt : ContDiffAt ℝ k f a
   isBigO : (iteratedFDeriv ℝ k f · - iteratedFDeriv ℝ k f a) =O[𝓝 a] (‖· - a‖ ^ (α : ℝ))
@@ -58,6 +59,15 @@ theorem zero_exponent_iff {k : ℕ} {f : E → F} {a : E} :
     ContDiffMoreiraHolderAt k 0 f a ↔ ContDiffAt ℝ k f a := by
   refine ⟨contDiffAt, fun h ↦ ⟨h, ?_⟩⟩
   simpa using ((h.continuousAt_iteratedFDeriv le_rfl).sub_const _).norm.isBoundedUnder_le
+
+theorem zero_left_iff {α : I} {f : E → F} {a : E} :
+    ContDiffMoreiraHolderAt 0 α f a ↔
+      ContDiffAt ℝ 0 f a ∧ (f · - f a) =O[𝓝 a] (‖· - a‖ ^ (α : ℝ)) := by
+  simp only [contDiffMoreiraHolderAt_iff, Nat.cast_zero, and_congr_right_iff]
+  intro hfc
+  simp only [iteratedFDeriv_zero_eq_comp, Function.comp_def, ← map_sub]
+  rw [← isBigO_norm_left]
+  simp_rw [LinearIsometryEquiv.norm_map, isBigO_norm_left]
 
 theorem of_exponent_le {k : ℕ} {f : E → F} {a : E} {α β : I}
     (hf : ContDiffMoreiraHolderAt k α f a) (hle : β ≤ α) : ContDiffMoreiraHolderAt k β f a where
@@ -178,6 +188,9 @@ theorem _root_.LinearIsometryEquiv.contDiffMoreiraHolderAt_left_comp
     {f : E → F} {a : E} {k : ℕ} {α : I} (g : F ≃ₗᵢ[ℝ] G) :
     ContDiffMoreiraHolderAt k α (g ∘ f) a ↔ ContDiffMoreiraHolderAt k α f a :=
   g.toContinuousLinearEquiv.contDiffMoreiraHolderAt_left_comp
+
+protected theorem id {k : ℕ} {α : I} {a : E} : ContDiffMoreiraHolderAt k α id a :=
+  ContinuousLinearMap.id ℝ E |>.contDiffMoreiraHolderAt
 
 protected theorem fderiv {f : E → F} {a : E} {k l : ℕ} {α : I}
     (hf : ContDiffMoreiraHolderAt k α f a) (hl : l + 1 ≤ k) :
