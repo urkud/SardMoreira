@@ -101,6 +101,9 @@ theorem of_contDiffOn_holderWith {f : E → F} {s : Set E} {k : ℕ} {α : I} {a
 theorem fst {k : ℕ} {α : I} {a : E × F} : ContDiffMoreiraHolderAt k α Prod.fst a :=
   contDiffAt_fst.contDiffMoreiraHolderAt (WithTop.coe_lt_top _) α
 
+theorem snd {k : ℕ} {α : I} {a : E × F} : ContDiffMoreiraHolderAt k α Prod.snd a :=
+  contDiffAt_snd.contDiffMoreiraHolderAt (WithTop.coe_lt_top _) α
+
 theorem prodMk {k : ℕ} {α : I} {f : E → F} {g : E → G} {a : E}
     (hf : ContDiffMoreiraHolderAt k α f a) (hg : ContDiffMoreiraHolderAt k α g a) :
     ContDiffMoreiraHolderAt k α (fun x ↦ (f x, g x)) a where
@@ -191,6 +194,10 @@ theorem _root_.LinearIsometryEquiv.contDiffMoreiraHolderAt_left_comp
 
 protected theorem id {k : ℕ} {α : I} {a : E} : ContDiffMoreiraHolderAt k α id a :=
   ContinuousLinearMap.id ℝ E |>.contDiffMoreiraHolderAt
+
+protected theorem const {k : ℕ} {α : I} {a : E} {b : F} :
+    ContDiffMoreiraHolderAt k α (Function.const E b) a :=
+  contDiffAt_const.contDiffMoreiraHolderAt (WithTop.coe_lt_top _) α
 
 protected theorem fderiv {f : E → F} {a : E} {k l : ℕ} {α : I}
     (hf : ContDiffMoreiraHolderAt k α f a) (hl : l + 1 ≤ k) :

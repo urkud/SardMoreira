@@ -30,6 +30,15 @@ theorem ContinuousLinearMap.IsInvertible.inverse_comp_self {f : E →L[𝕜] F} 
   rcases hf with ⟨e, rfl⟩
   simp
 
+theorem ContinuousLinearMap.IsInvertible.bijective_inverse {f : E →L[𝕜] F} (hf : f.IsInvertible) :
+    Bijective f.inverse := by
+  rcases hf with ⟨e, rfl⟩
+  simp [ContinuousLinearEquiv.bijective]
+
+theorem ContinuousLinearMap.IsInvertible.injective_inverse {f : E →L[𝕜] F} (hf : f.IsInvertible) :
+    Injective f.inverse :=
+  hf.bijective_inverse.injective
+
 theorem ContinuousLinearMap.isBigO_inverse_sub_inverse
     {α : Type*} {l : Filter α} {f g : α → E →L[𝕜] F}
     (hf_inv : ∀ᶠ a in l, (f a).IsInvertible)
@@ -312,12 +321,28 @@ theorem ContinuousLinearMap.IsInvertible.hasFDerivAt {f : E → F} {x : E}
   rw [h.choose_spec]
   exact differentiableAt_of_isInvertible_fderiv h |>.hasFDerivAt
 
+theorem OpenPartialHomeomorph.hasFDerivAt_symm_inverse (f : OpenPartialHomeomorph E F) {y : F}
+    (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
+    HasFDerivAt f.symm (fderiv 𝕜 f (f.symm y)).inverse y := by
+  rw [ContinuousLinearMap.inverse, dif_pos hf']
+  exact hf'.hasFDerivAt.of_local_left_inverse (f.symm.continuousAt hy)
+    <| f.eventually_right_inverse hy
+
 theorem OpenPartialHomeomorph.fderiv_symm (f : OpenPartialHomeomorph E F) {y : F}
     (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
-    fderiv 𝕜 f.symm y = (fderiv 𝕜 f (f.symm y)).inverse := by
-  rw [ContinuousLinearMap.inverse, dif_pos hf']
-  exact (hf'.hasFDerivAt.of_local_left_inverse (f.symm.continuousAt hy)
-    <| f.eventually_right_inverse hy).fderiv
+    fderiv 𝕜 f.symm y = (fderiv 𝕜 f (f.symm y)).inverse :=
+  f.hasFDerivAt_symm_inverse hy hf' |>.fderiv
+
+theorem OpenPartialHomeomorph.bijective_fderiv_symm (f : OpenPartialHomeomorph E F) {y : F}
+    (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
+    Bijective (fderiv 𝕜 f.symm y) := by
+  rw [f.fderiv_symm hy hf']
+  exact hf'.bijective_inverse
+
+theorem OpenPartialHomeomorph.injective_fderiv_symm (f : OpenPartialHomeomorph E F) {y : F}
+    (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
+    Injective (fderiv 𝕜 f.symm y) :=
+  f.bijective_fderiv_symm hy hf' |>.injective
 
 theorem OpenPartialHomeomorph.contDiffAt_symm' [CompleteSpace E] (f : OpenPartialHomeomorph E F)
     {a : F} (ha : a ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm a)).IsInvertible)

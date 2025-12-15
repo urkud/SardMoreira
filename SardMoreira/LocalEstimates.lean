@@ -2,6 +2,7 @@ import Mathlib.Analysis.Calculus.DiffContOnCl
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import SardMoreira.LebesgueDensity
+import SardMoreira.ContDiff
 
 open scoped Topology NNReal ENNReal unitInterval
 open Asymptotics Filter MeasureTheory AffineMap Set Metric
@@ -9,6 +10,11 @@ open Asymptotics Filter MeasureTheory AffineMap Set Metric
 lemma MeasureTheory.Measure.ae_ne {α : Type*} {_ : MeasurableSpace α} {μ : Measure α}
     [NoAtoms μ] (a : α) : ∀ᵐ x ∂μ, x ≠ a :=
   (countable_singleton a).ae_notMem μ
+
+theorem UniformSpace.Completion.hasFDerivAt_coe {𝕜 E : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {a : E} :
+    HasFDerivAt ((↑) : E → Completion E) (toComplL : E →L[𝕜] Completion E) a := by
+  simpa using (toComplL (𝕜 := 𝕜) (E := E)).hasFDerivAt
 
 section NormedField
 
@@ -42,11 +48,9 @@ lemma dist_le_integral_of_norm_deriv_le_of_le {f : ℝ → E} {B : ℝ → ℝ} 
       UniformSpace.Completion.toComplL.differentiable.comp_differentiableOn hfd
     have hdg : ∀ t ∈ Set.Ioo a b, deriv g t = deriv f t := by
       intro t ht
-      have : HasFDerivAt (𝕜 := ℝ) (↑) UniformSpace.Completion.toComplL (f t) := by
-        rw [← UniformSpace.Completion.coe_toComplL (𝕜 := ℝ)]
-        exact (UniformSpace.Completion.toComplL (E := E) (𝕜 := ℝ)).hasFDerivAt
       have hdft : HasDerivAt f (deriv f t) t := hfd.hasDerivAt <| Ioo_mem_nhds ht.1 ht.2
-      rw [hg, (this.comp_hasDerivAt t hdft).deriv, UniformSpace.Completion.coe_toComplL]
+      rw [hg, (UniformSpace.Completion.hasFDerivAt_coe.comp_hasDerivAt t hdft).deriv,
+        UniformSpace.Completion.coe_toComplL]
     have hgn : ∀ᵐ t, t ∈ Ioo a b → ‖deriv g t‖ ≤ B t :=
       hfB.mono fun t htB ht ↦ by
         simpa only [hdg t ht, UniformSpace.Completion.norm_coe] using htB ht
@@ -155,13 +159,58 @@ theorem sub_isBigO_norm_rpow_add_one_of_fderiv {f : E → F} {a : E} {r : ℝ} (
   · simp
   · simp [dist_eq_norm_sub]
 
+theorem isBigO_norm_rpow_add_one_of_fderiv_of_apply_eq_zero {f : E → F} {a : E} {r : ℝ} (hr : 0 ≤ r)
+    (hdf : ∀ᶠ x in 𝓝 a, DifferentiableAt ℝ f x) (hderiv : fderiv ℝ f =O[𝓝 a] (‖· - a‖ ^ r))
+    (hf₀ : f a = 0) : f =O[𝓝 a] (‖· - a‖ ^ (r + 1)) := by
+  simpa [hf₀] using sub_isBigO_norm_rpow_add_one_of_fderiv hr hdf hderiv
+
+open UniformSpace (Completion) in
 theorem sub_isLittleO_norm_rpow_add_one_of_fderiv_of_density_point [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] {f : E → F} {a : E} {r : ℝ}
-    {μ : Measure E} [μ.IsAddHaarMeasure] {s : Set E} (hsm : MeasurableSet s)
+    {μ : Measure E} [μ.IsAddHaarMeasure] {s : Set E}
     (hr : 0 ≤ r) (hdf : ∀ᶠ x in 𝓝 a, DifferentiableAt ℝ f x)
-    (hderiv : fderiv ℝ f =O[𝓝 a] (‖· - a‖ ^ r)) (hs : ∀ᶠ x in 𝓝[s] a, fderiv ℝ f x = 0)
+    (hderiv : fderiv ℝ f =O[𝓝 a] (‖· - a‖ ^ r))
+    (hs : fderiv ℝ f =ᶠ[𝓝[s] a] 0)
     (hmeas : Tendsto (fun r ↦ μ (s ∩ closedBall a r) / μ (closedBall a r)) (𝓝[>] 0) (𝓝 1)) :
     (f · - f a) =o[𝓝 a] (‖· - a‖ ^ (r + 1)) := by
+  wlog hF : CompleteSpace F generalizing F
+  · set e : F →L[ℝ] Completion F := Completion.toComplL
+    set g := e ∘ f
+    have hdg_eq : fderiv ℝ g =ᶠ[𝓝 a] (e ∘L fderiv ℝ f ·) :=
+      hdf.mono fun x hx ↦ (e.hasFDerivAt.comp _ hx.hasFDerivAt).fderiv
+    have hdg : ∀ᶠ x in 𝓝 a, DifferentiableAt ℝ g x :=
+      hdf.mono fun x hx ↦ e.differentiableAt.comp _ hx
+    have hg_deriv : fderiv ℝ g =O[𝓝 a] fun x ↦ ‖x - a‖ ^ r := by
+      calc
+        fderiv ℝ g =ᶠ[𝓝 a] (e ∘L fderiv ℝ f ·) := hdg_eq
+        _ =O[𝓝 a] (‖e‖ * ‖fderiv ℝ f ·‖) :=
+          .of_norm_le fun _ ↦ ContinuousLinearMap.opNorm_comp_le _ _
+        _ =O[𝓝 a] fderiv ℝ f := by
+          refine .of_norm_right <| .const_mul_left (isBigO_refl _ _) _
+        _ =O[𝓝 a] (‖· - a‖ ^ r) := by
+          exact hderiv
+    have hg₀ : fderiv ℝ g =ᶠ[𝓝[s] a] 0 := by
+      filter_upwards [mem_nhdsWithin_of_mem_nhds hdg_eq, hs] with x hx₁ hx₂
+      simp [hx₁, hx₂]
+    refine IsBigO.trans_isLittleO (.of_norm_right ?_) (this hdg hg_deriv hg₀ inferInstance)
+    simp_rw [g, Function.comp_apply, ← map_sub, e, Completion.coe_toComplL, Completion.norm_coe]
+    exact (isBigO_refl _ _).norm_right
+  wlog hsm : MeasurableSet s generalizing s
+  · -- TODO: I'm getting a timeout without this line. Test with the latest Mathlib
+    have aux : MeasurableSingletonClass (E →L[ℝ] F) :=
+      OpensMeasurableSpace.toMeasurableSingletonClass
+    apply @this (toMeasurable μ s ∩ {x | fderiv ℝ f x = 0})
+    · refine hmeas.congr' ?_
+      rw [EventuallyEq, eventually_nhdsWithin_iff] at hs
+      rcases Metric.eventually_nhds_iff_ball.mp hs with ⟨r, hr₀, hr⟩
+      filter_upwards [Ioo_mem_nhdsGT hr₀] with δ ⟨hδ₀, hδr⟩
+      rw [inter_assoc, Measure.measure_toMeasurable_inter_of_sFinite, ← inter_assoc,
+        inter_right_comm, inter_eq_self_of_subset_left (_ : s ∩ _ ⊆ _)]
+      · refine fun y hy ↦ hr _ (closedBall_subset_ball hδr hy.2) hy.1
+      · exact (measurableSet_eq.preimage (measurable_fderiv _ _)).inter measurableSet_closedBall
+    · exact eventually_mem_nhdsWithin.mono fun x hx ↦ hx.2
+    · refine measurableSet_toMeasurable _ _ |>.inter ?_
+      refine measurableSet_eq.preimage (measurable_fderiv _ _)
   rw [isLittleO_iff]
   intro c hc
   lift c to ℝ≥0 using hc.le
@@ -183,7 +232,7 @@ theorem sub_isLittleO_norm_rpow_add_one_of_fderiv_of_density_point [FiniteDimens
     rw [ENNReal.sub_mul, one_mul] at hr
     exacts [hr.le, fun _ _ ↦ measure_closedBall_lt_top.ne]
   rw [eventually_nhds_iff_ball]
-  rw [eventually_nhdsWithin_iff] at hs
+  rw [EventuallyEq, eventually_nhdsWithin_iff] at hs
   rcases eventually_nhds_iff_ball.mp (hdf.and <| hs.and hC) with ⟨ε, hε₀, hε⟩
   choose hdf hdfs hdfr using hε
   rw [(nhdsGT_basis (0 : ℝ)).eventually_iff] at hmeas
@@ -256,3 +305,14 @@ theorem sub_isLittleO_norm_rpow_add_one_of_fderiv_of_density_point [FiniteDimens
   apply le_of_eq
   field_simp
   ring
+
+theorem isLittleO_norm_rpow_add_one_of_fderiv_of_density_point_of_apply_eq_zero
+   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {f : E → F} {a : E} {r : ℝ}
+    {μ : Measure E} [μ.IsAddHaarMeasure] {s : Set E}
+    (hr : 0 ≤ r) (hdf : ∀ᶠ x in 𝓝 a, DifferentiableAt ℝ f x)
+    (hderiv : fderiv ℝ f =O[𝓝 a] (‖· - a‖ ^ r)) (hs : ∀ᶠ x in 𝓝[s] a, fderiv ℝ f x = 0)
+    (hmeas : Tendsto (fun r ↦ μ (s ∩ closedBall a r) / μ (closedBall a r)) (𝓝[>] 0) (𝓝 1))
+    (hf₀ : f a = 0) :
+    f =o[𝓝 a] (‖· - a‖ ^ (r + 1)) := by
+  simpa [hf₀]
+    using sub_isLittleO_norm_rpow_add_one_of_fderiv_of_density_point hr hdf hderiv hs hmeas
