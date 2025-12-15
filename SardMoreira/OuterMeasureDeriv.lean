@@ -1,16 +1,115 @@
 import Mathlib.MeasureTheory.Covering.Besicovitch
+import SardMoreira.UnifDoublingCover
 
-namespace Besicovitch
+namespace MeasureTheory.Measure
 
 open scoped ENNReal NNReal Topology
 open Metric Set Filter Fin MeasureTheory TopologicalSpace Besicovitch.TauPackage
 
 universe u
 
-variable {α : Type*} [MetricSpace α] {β : Type u} [SecondCountableTopology α] [MeasurableSpace α]
-  [OpensMeasurableSpace α] [HasBesicovitchCovering α]
+variable {α : Type*} [MetricSpace α] {β : Type u} [MeasurableSpace α]
 
-lemma outerMeasure_le_mul_of_sfinite {μ : Measure α} [SFinite μ] [μ.OuterRegular]
+class ClosedBallCoveringMeasure {α : Type*} [MetricSpace α] [MeasurableSpace α]
+    (μ : Measure α) : Prop where
+  exists_closedBall_covering_tsum_measure_le {ε : ℝ≥0∞} (hε : ε ≠ 0) (f : α → Set ℝ) (s : Set α)
+    (hf : ∀ x ∈ s, ∀ δ > 0, (f x ∩ Ioo 0 δ).Nonempty) :
+    ∃ (t : Set α) (r : α → ℝ), t.Countable ∧ t ⊆ s ∧ (∀ x ∈ t, r x ∈ f x) ∧
+      (s ⊆ ⋃ x ∈ t, closedBall x (r x)) ∧ (∑' x : t, μ (closedBall x (r x))) ≤ μ s + ε
+
+theorem exists_closedBall_covering_tsum_measure_le (μ : Measure α) [ClosedBallCoveringMeasure μ]
+    {ε : ℝ≥0∞} (hε : ε ≠ 0) (f : α → Set ℝ) (s : Set α)
+    (hf : ∀ x ∈ s, ∀ δ > 0, (f x ∩ Ioo 0 δ).Nonempty) :
+    ∃ (t : Set α) (r : α → ℝ), t.Countable ∧ t ⊆ s ∧ (∀ x ∈ t, r x ∈ f x) ∧
+      (s ⊆ ⋃ x ∈ t, closedBall x (r x)) ∧ (∑' x : t, μ (closedBall x (r x))) ≤ μ s + ε :=
+  ClosedBallCoveringMeasure.exists_closedBall_covering_tsum_measure_le hε f s hf
+
+instance [SecondCountableTopology α] [OpensMeasurableSpace α] [HasBesicovitchCovering α]
+    (μ : Measure α) [SFinite μ] [μ.OuterRegular] : ClosedBallCoveringMeasure μ :=
+  ⟨Besicovitch.exists_closedBall_covering_tsum_measure_le μ⟩
+
+open IsUnifLocDoublingMeasure in
+instance [BorelSpace α] [SecondCountableTopology α]
+    (μ : Measure α) [IsLocallyFiniteMeasure μ] [IsUnifLocDoublingMeasure μ] :
+    ClosedBallCoveringMeasure μ where
+  exists_closedBall_covering_tsum_measure_le := by
+    intro ε hε₀ f s hf
+    rcases s.exists_isOpen_le_add μ (ENNReal.half_pos hε₀).ne' with ⟨U, hUs, hUo, hμU⟩
+    set t : Set (α × ℝ) :=
+      {(c, r) : α × ℝ | c ∈ s ∧ r ∈ f c ∩ Ioo 0 (scalingScaleOf μ 3) ∧ closedBall c r ⊆ U}
+    obtain ⟨u, hus, huc, hud, hμ⟩ : ∃ u ⊆ t, u.Countable ∧
+        u.PairwiseDisjoint (fun a ↦ closedBall a.1 a.2) ∧
+        μ (s \ ⋃ a ∈ u, closedBall a.1 a.2) = 0 := by
+      apply Vitali.exists_disjoint_covering_ae μ s t (scalingConstantOf μ 3) Prod.snd Prod.fst
+      · exact fun _ _ ↦ Subset.rfl
+      · exact fun x hx ↦ measure_mul_le_scalingConstantOf_mul _ (by simp) hx.2.1.2.2.le
+      · intro x hx
+        grw [← ball_subset_interior_closedBall, nonempty_ball]
+        exact hx.2.1.2.1
+      · exact fun _ _ ↦ isClosed_closedBall
+      · intro x hx ε hε
+        rcases Metric.nhds_basis_closedBall.mem_iff.mp (hUo.mem_nhds (hUs hx)) with ⟨δ, hδ₀, hδU⟩
+        rcases hf x hx (ε ⊓ δ ⊓ scalingScaleOf μ 3)
+          (lt_min (lt_min hε hδ₀) (scalingScaleOf_pos _ _)) with ⟨r, hrf, hr₀, hrε⟩
+        rw [lt_min_iff, lt_min_iff] at hrε
+        refine ⟨(x, r), ⟨hx, ⟨hrf, hr₀, hrε.2⟩, ?_⟩, hrε.1.1.le, rfl⟩
+        grw [hrε.1.2, hδU]
+    rcases exists_closedBall_covering_tsum_measure_le_of_measure_zero μ (ENNReal.half_pos hε₀).ne'
+      f _ hμ (fun x hx δ hδ ↦ hf x hx.1 δ hδ) with ⟨v, r', hvc, hv_sub, hrf, hs_sub, hv_tsum⟩
+    set goodR : α → ℝ := Function.extend (fun x : u ↦ x.1.1) (fun cr ↦ cr.1.2) r'
+    have hinj : u.InjOn Prod.fst := by
+      rintro ⟨x, δ₁⟩ h₁ ⟨x₂, δ₂⟩ h₂ (rfl : x = x₂)
+      apply (hud.eq_or_disjoint h₁ h₂).resolve_right ?_
+      rw [Set.not_disjoint_iff]
+      use x
+      simp [(hus h₁).2.1.2.1.le, (hus h₂).2.1.2.1.le]
+    have hgoodR_fst_u : ∀ x ∈ u, goodR x.1 = x.2 := by
+      intro x hx
+      lift x to u using hx
+      simp only [goodR]
+      apply hinj.injective.extend_apply
+    have hgoodR_not_u : ∀ x ∉ Prod.fst '' u, goodR x = r' x := by
+      intro x hx
+      apply Function.extend_apply'
+      simpa using hx
+    refine ⟨Prod.fst '' u ∪ v, goodR, ?_, ?_, ?_, ?_, ?_⟩
+    · exact huc.image _ |>.union hvc
+    · rintro x (⟨y, hy, rfl⟩ | hx)
+      · exact (hus hy).1
+      · exact (hv_sub hx).1
+    · intro x hx
+      rcases em (x ∈ Prod.fst '' u) with ⟨y, hy, rfl⟩ | hx'
+      · rw [hgoodR_fst_u y hy]
+        exact (hus hy).2.1.1
+      · rw [hgoodR_not_u x hx']
+        exact hrf _ (hx.resolve_left hx')
+    · intro x hxs
+      simp only [mem_iUnion, exists_prop, mem_union, mem_image]
+      by_cases hx : x ∈ ⋃ a ∈ u, closedBall a.1 a.2
+      · rw [mem_iUnion₂] at hx
+        rcases hx with ⟨y, hyu, hy⟩
+        refine ⟨y.1, .inl ⟨y, hyu, rfl⟩, ?_⟩
+        rwa [hgoodR_fst_u y hyu]
+      · have := hs_sub ⟨hxs, hx⟩
+        rcases mem_iUnion₂.mp this with ⟨c, hc, hcx⟩
+        refine ⟨c, .inr hc, ?_⟩
+        rwa [hgoodR_not_u]
+        rintro ⟨y, hy, rfl⟩
+        refine (hv_sub hc).2 <| mem_iUnion₂_of_mem hy ?_
+        simp [(hus hy).2.1.2.1.le]
+    · rw [tsum_congr_set_coe (fun x ↦ μ (closedBall x (goodR x))) Set.union_diff_self.symm]
+      grw [ENNReal.tsum_union_le (fun x ↦ μ (closedBall x (goodR x)))]
+      rw [tsum_image (fun x ↦ μ (closedBall x (goodR x))) hinj]
+      simp only [hgoodR_fst_u _ (Subtype.prop _),
+        fun x : ↑(v \ Prod.fst '' u) ↦ hgoodR_not_u x x.2.2]
+      grw [← measure_biUnion huc hud (fun _ _ ↦ measurableSet_closedBall),
+        ENNReal.tsum_mono_subtype (fun x ↦ μ (closedBall x (r' x))) diff_subset, ← ε.add_halves,
+        ← add_assoc, hv_tsum, ← hμU]
+      gcongr
+      refine iUnion₂_subset fun x hx ↦ ?_
+      exact (hus hx).2.2
+
+lemma outerMeasure_le_mul' {μ : Measure α} [ClosedBallCoveringMeasure μ]
     {ν : OuterMeasure α} {C : ℝ≥0∞} {s : Set α} (hsC : μ s ≠ 0 ∨ C ≠ ∞) (hCs : C ≠ 0 ∨ μ s ≠ ∞)
     (h : ∀ x ∈ s, ∃ᶠ εr : ℝ≥0∞ × ℝ in 𝓝[>] 0 ×ˢ 𝓝[>] 0,
       ν (s ∩ closedBall x εr.2) ≤ (C + εr.1) * μ (closedBall x εr.2)) :
@@ -49,7 +148,7 @@ lemma outerMeasure_le_mul_of_sfinite {μ : Measure α} [SFinite μ] [μ.OuterReg
     _ ≤ ∑' x : t, (C + ε) * μ (closedBall x (r x)) := by gcongr with i; exact hνμ i i.2
     _ ≤ (C + ε) * (μ s + ε) := by rw [ENNReal.tsum_mul_left]; gcongr
 
-lemma outerMeasure_le_mul {μ : Measure α} [SigmaFinite μ] [μ.OuterRegular]
+lemma outerMeasure_le_mul {μ : Measure α} [SigmaFinite μ] [ClosedBallCoveringMeasure μ]
     {ν : OuterMeasure α} {C : ℝ≥0∞} {s : Set α} (hsC : μ s ≠ 0 ∨ C ≠ ∞)
     (h : ∀ x ∈ s, ∃ᶠ εr : ℝ≥0∞ × ℝ in 𝓝[>] 0 ×ˢ 𝓝[>] 0,
       ν (s ∩ closedBall x εr.2) ≤ (C + εr.1) * μ (closedBall x εr.2)) :
@@ -60,11 +159,11 @@ lemma outerMeasure_le_mul {μ : Measure α} [SigmaFinite μ] [μ.OuterRegular]
     _ ≤ ∑' n, ν (s ∩ spanningSets μ n) := measure_iUnion_le _
     _ ≤ ∑' n, 0 * μ (s ∩ spanningSets μ n) := by
       gcongr with n
-      refine outerMeasure_le_mul_of_sfinite (by simp) (.inr ?_) fun x hx ↦ (h x hx.1).mono ?_
+      refine outerMeasure_le_mul' (by simp) (.inr ?_) fun x hx ↦ (h x hx.1).mono ?_
       · exact (measure_mono inter_subset_right).trans_lt (measure_spanningSets_lt_top ..) |>.ne
       · exact fun _ ↦ le_trans <| by gcongr; apply inter_subset_left
     _ = 0 * μ s := by simp
-  · exact outerMeasure_le_mul_of_sfinite hsC (.inl hC) h
+  · exact outerMeasure_le_mul' hsC (.inl hC) h
 
 /-- Suppose that `ν (s ∩ closedBall x r) = O(μ (closedBall x r))` at all points of a set `s`
 and `ν (s ∩ closedBall x r) = o(μ (closedBall x r))` at a.e. points of the set.
@@ -74,7 +173,8 @@ The actual statement can't use `Asymptotics.IsBigO` and `Asymptotics.IsLittleO`,
 because the LHS and the RHS are in `ℝ≥0∞`, not `ℝ`.
 
 Note that we do not assume measurability of `s` or `C`. -/
-lemma outerMeasure_null_of_forall_le_mul_ae_null {μ : Measure α} [SigmaFinite μ] [μ.OuterRegular]
+lemma outerMeasure_null_of_forall_le_mul_ae_null {μ : Measure α} [SigmaFinite μ]
+    [ClosedBallCoveringMeasure μ]
     {ν : OuterMeasure α} {C : α → ℝ≥0} {s : Set α} (hC : ∀ᵐ x ∂μ, x ∈ s → C x = 0)
     (h : ∀ x ∈ s, ∃ᶠ εr : ℝ≥0∞ × ℝ in 𝓝[>] 0 ×ˢ 𝓝[>] 0,
       ν (s ∩ closedBall x εr.2) ≤ (C x + εr.1) * μ (closedBall x εr.2)) :
@@ -118,7 +218,8 @@ provided that a similar estimate holds for sufficiently small ball around each p
 
 See also `Besicovitch.measure_image_le_mul`.
 -/
-lemma outerMeasure_image_le_mul {f : α → β} {μ : Measure α} [SigmaFinite μ] [μ.OuterRegular]
+lemma outerMeasure_image_le_mul {f : α → β} {μ : Measure α} [SigmaFinite μ]
+    [ClosedBallCoveringMeasure μ]
     {ν : OuterMeasure β} {C : ℝ≥0∞} {s : Set α} (hsC : μ s ≠ 0 ∨ C ≠ ∞)
     (h : ∀ x ∈ s, ∃ᶠ εr : ℝ≥0∞ × ℝ in 𝓝[>] 0 ×ˢ 𝓝[>] 0,
       ν (f '' (s ∩ closedBall x εr.2)) ≤ (C + εr.1) * μ (closedBall x εr.2)) :
@@ -140,16 +241,8 @@ provided that a similar estimate holds for sufficiently small ball around each p
 See also `Besicovitch.outerMeasure_image_le_mul`.
 -/
 lemma measure_image_le_mul {_ : MeasurableSpace β} {f : α → β} {μ : Measure α} [SigmaFinite μ]
-    [μ.OuterRegular] {ν : Measure β} {C : ℝ≥0∞} {s : Set α} (hsC : μ s ≠ 0 ∨ C ≠ ∞)
+    [ClosedBallCoveringMeasure μ] {ν : Measure β} {C : ℝ≥0∞} {s : Set α} (hsC : μ s ≠ 0 ∨ C ≠ ∞)
     (h : ∀ x ∈ s, ∃ᶠ εr : ℝ≥0∞ × ℝ in 𝓝[>] 0 ×ˢ 𝓝[>] 0,
       ν (f '' (s ∩ closedBall x εr.2)) ≤ (C + εr.1) * μ (closedBall x εr.2)) :
     ν (f '' s) ≤ C * μ s :=
   outerMeasure_image_le_mul hsC h
-
-lemma outerMeasure_le_lintegral {μ : Measure α} [SigmaFinite μ] [μ.OuterRegular]
-    {ν : OuterMeasure α} {g : α → ℝ≥0} {s : Set α}
-    (hg : Measurable g)
-    (h : ∀ x ∈ s, ∀ C > g x, ∃ᶠ r : ℝ in 𝓝[>] 0,
-      ν (s ∩ closedBall x r) ≤ C * μ (closedBall x r)) :
-    ν s ≤ ∫⁻ x in s, g x ∂μ := by
-  sorry
