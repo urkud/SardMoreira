@@ -3,6 +3,7 @@ import SardMoreira.ContDiffMoreiraHolder
 import SardMoreira.ImplicitFunction
 import SardMoreira.LinearAlgebra
 import SardMoreira.ChartEstimates
+import SardMoreira.WithRPowDist
 
 open scoped unitInterval NNReal Topology ENNReal
 open MeasureTheory Measure Metric
@@ -105,14 +106,14 @@ theorem mkMetric'Pre_image_piProd_fst_null_of_isBigO_of_null
     [MeasurableSpace F] [BorelSpace F]
     [MeasurableSpace G] [BorelSpace G]
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [FiniteDimensional ℝ G]
-    {μ : Measure (E × F)} [μ.IsAddHaarMeasure]
     {f : E × F → G} {s : Set (E × F)} {n : ℕ} (hsm : MeasurableSet s) (hk : k ≠ 0) (hnp : dim E < n)
     (hn : dim E + dim F ≤ n)
     (h_contDiff : ∃ U ∈ 𝓝ˢ s, ContDiffOn ℝ 1 f U)
     (h_isBigO : ∀ x ∈ s, (fun y ↦ f (x.1, y) - f x) =O[𝓝 x.2] (fun y ↦ ‖y - x.2‖ ^ (k + α : ℝ)))
-    (hμ₀ : μ s = 0) {r : ℝ≥0∞} (hr : 0 < r) :
+    (hμ₀ : μH[dim E].prod (μH[dim F]) s = 0) {r : ℝ≥0∞} (hr : 0 < r) :
     (OuterMeasure.mkMetric'.pre (fun s ↦ EMetric.diam s ^ (sardMoreiraBound n k α (dim E) : ℝ)) r)
       (Pi.prod Prod.fst f '' s) = 0 := by
+
   sorry
 
 theorem mkMetric'Pre_image_piProd_fst_null_of_isLittleO
@@ -129,8 +130,6 @@ theorem mkMetric'Pre_image_piProd_fst_null_of_isLittleO
     (OuterMeasure.mkMetric'.pre (fun s ↦ EMetric.diam s ^ (sardMoreiraBound n k α (dim E) : ℝ)) r)
       (Pi.prod Prod.fst f '' s) = 0 := by
   sorry
-
-
 
 theorem hausdorffMeasure_image_piProd_fst_null_of_isBigO_isLittleO
     [MeasurableSpace E] [BorelSpace E]
@@ -150,6 +149,7 @@ theorem hausdorffMeasure_image_piProd_fst_null_of_isBigO_isLittleO
     simpa only [hausdorffMeasure, ← toOuterMeasure_apply, mkMetric_toOuterMeasure,
       OuterMeasure.mkMetric, OuterMeasure.mkMetric', OuterMeasure.iSup_apply, ENNReal.iSup_eq_zero]
   intro r hr
+  sorry
   -- wlog hs : Bornology.IsBounded s generalizing s
   -- · rw [← Set.inter_univ s, ← iUnion_ball_nat 0, Set.inter_iUnion, Set.image_iUnion,
   --     measure_iUnion_null_iff]
@@ -160,18 +160,6 @@ theorem hausdorffMeasure_image_piProd_fst_null_of_isBigO_isLittleO
   --     gcongr
   --     exact Set.inter_subset_left
   --   · exact fun x hx ↦ (h_isBigO x hx.1)
-
-
-theorem hausdorffMeasure_image_piProd_fst_null_of_fderiv_comp_inr_zero_of_bound
-    [MeasurableSpace E] [BorelSpace E] [MeasurableSpace G] [BorelSpace G]
-    [Nontrivial F] [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [FiniteDimensional ℝ G]
-    {f : E × F → G} {s U : Set (E × F)} {N : ℕ} (hk : k ≠ 0) (hN : N ≠ 0)
-    (hs_fderiv : ∀ x ∈ s, fderiv ℝ f x ∘L .inr ℝ E F = 0)
-    (hU : IsOpen U) (hfU : ContDiffOn ℝ k f U) (hs_ball : ∀ x ∈ s, ball x (1 / N) ⊆ U)
-    (hs_le : ∀ x ∈ s, ∀ y ∈ ball x (1 / N),
-      ‖iteratedFDeriv ℝ k f y - iteratedFDeriv ℝ k f x‖ ≤ N * ‖y - x‖ ^ (α : ℝ))
-    : μH[sardMoreiraBound (dim E + dim F) k α (dim E)]
-        (Pi.prod Prod.fst f '' s) = 0 := by
 
 
 theorem hausdorffMeasure_image_piProd_fst_null_of_fderiv_comp_inr_zero
@@ -197,12 +185,6 @@ theorem hausdorffMeasure_image_piProd_fst_null_of_fderiv_comp_inr_zero
   set g := Pi.prod Prod.fst (f ∘ ψ)
   suffices μH[sardMoreiraBound (dim E + dim F) (k + 1) α (dim E)] (g '' ψ.set) = 0 by
     simpa [g] using this
-  -- suffices μH[sardMoreiraBound (dim E + dim ψ.Dom) (k + 1) α (dim E)] (g '' ψ.set) = 0 by
-  --   rw [← nonpos_iff_eq_zero, ← this]
-  --   simp only [g, Function.comp_def, Pi.prod, Chart.fst_apply]
-  --   apply hausdorffMeasure_mono
-  --   gcongr
-  --   exact ψ.finrank_le
   apply hausdorffMeasure_image_piProd_fst_null_of_isBigO_isLittleO
   · simp
   · simp [Module.finrank_pos]
@@ -221,8 +203,8 @@ theorem hausdorffMeasure_image_piProd_fst_null_of_fderiv_comp_inr_zero
     apply Atlas.isLittleO_main_sub_of_fderiv_zero_right hψ hψx
     · filter_upwards [eventually_mem_nhdsWithin] with y hy using hf.contDiffMoreiraHolderAt hy
     · filter_upwards [eventually_mem_nhdsWithin] using hs
-    ·
-
+    · convert hx
+      simp [Set.indicator_of_mem (subset_closure hψx)]
 
 theorem hausdorffMeasure_image_piProd_fst_null_of_finrank_eq
     [MeasurableSpace E] [BorelSpace E] [MeasurableSpace G] [BorelSpace G]
