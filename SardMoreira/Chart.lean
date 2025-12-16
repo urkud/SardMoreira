@@ -217,18 +217,18 @@ def chartImplicitData (f : E × F → ℝ) (a : E × F)
     ImplicitFunctionData ℝ (E × F) ℝ (E × LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)) where
   leftFun := f
   leftDeriv := fderiv ℝ f a
-  left_has_deriv := hfa.contDiffAt.hasStrictFDerivAt <| by
+  hasStrictFDerivAt_leftFun := hfa.contDiffAt.hasStrictFDerivAt <| by
     simpa only [Nat.one_le_cast, Nat.one_le_iff_ne_zero]
   rightFun := _
   rightDeriv := .prodMap (.id _ _) (Submodule.ClosedComplemented.of_finiteDimensional _).choose
-  right_has_deriv := ContinuousLinearMap.hasStrictFDerivAt _
+  hasStrictFDerivAt_rightFun := ContinuousLinearMap.hasStrictFDerivAt _
   pt := a
-  left_range := by
+  range_leftDeriv := by
     refine IsSimpleOrder.eq_bot_or_eq_top _ |>.resolve_left ?_
     rw [ContinuousLinearMap.range_eq_bot]
     contrapose! hdf
     rw [hdf, ContinuousLinearMap.zero_comp]
-  right_range := by
+  range_rightDeriv := by
     have : LinearMap.range (Submodule.ClosedComplemented.of_finiteDimensional <|
         LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)).choose = ⊤ :=
       LinearMap.range_eq_of_proj (Exists.choose_spec (_ : Submodule.ClosedComplemented _))

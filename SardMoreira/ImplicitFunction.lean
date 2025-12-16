@@ -34,8 +34,8 @@ def implicitFunctionDataOfComplementedKerRange (f : E → F) (f' : E →L[𝕜] 
     { __ := φ,
       rightFun := hker.choose
       rightDeriv := hker.choose
-      right_range := LinearMap.range_eq_of_proj (Classical.choose_spec hker)
-      right_has_deriv := hker.choose.hasStrictFDerivAt
+      range_rightDeriv := LinearMap.range_eq_of_proj (Classical.choose_spec hker)
+      hasStrictFDerivAt_rightFun := hker.choose.hasStrictFDerivAt
       isCompl_ker := ?_ }
   simpa only [φ, implicitFunctionDataOfComplemented, hker_eq]
     using LinearMap.isCompl_of_proj hker.choose_spec

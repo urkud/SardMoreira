@@ -28,11 +28,11 @@ theorem mk_comp_val : (mk : X → WithRPowDist X α hα₀ hα₁) ∘ val = id 
 
 theorem image_mk_eq_preimage (s : Set X) :
     (mk '' s : Set (WithRPowDist X α hα₀ hα₁)) = val ⁻¹' s :=
-  (equiv X α hα₀ hα₁).symm.image_eq_preimage _
+  (equiv X α hα₀ hα₁).symm.image_eq_preimage_symm _
 
 theorem image_val_eq_preimage (s : Set (WithRPowDist X α hα₀ hα₁)) :
     val '' s = mk ⁻¹' s :=
-  (equiv X α hα₀ hα₁).image_eq_preimage _
+  (equiv X α hα₀ hα₁).image_eq_preimage_symm _
 
 @[simp]
 theorem image_mk_image_val (s : Set (WithRPowDist X α hα₀ hα₁)) :
@@ -298,8 +298,10 @@ variable [PseudoMetricSpace X]
 instance : PseudoMetricSpace (WithRPowDist X α hα₀ hα₁) :=
   letI aux : PseudoMetricSpace (WithRPowDist X α hα₀ hα₁) :=
     PseudoEMetricSpace.toPseudoMetricSpaceOfDist dist
-      (by rintro ⟨x⟩ ⟨y⟩; simp [hα₀, hα₀.le, edist_ne_top])
-      (by rintro ⟨x⟩ ⟨y⟩; simp [ENNReal.toReal_rpow, dist_edist])
+      (by rintro ⟨x⟩ ⟨y⟩; rw [dist_mk_mk]; positivity)
+      (by
+        rintro ⟨x⟩ ⟨y⟩
+        rw [edist_mk_mk, dist_mk_mk, ← ENNReal.ofReal_rpow_of_nonneg, ← edist_dist] <;> positivity)
   aux.replaceBornology fun s ↦ by
     rw [← isBounded_preimage_mk_iff, Metric.isBounded_iff, Metric.isBounded_iff]
     constructor
