@@ -593,12 +593,31 @@ theorem hausdorffMeasure_image_null_of_finrank_eq [MeasurableSpace F] [BorelSpac
 
 end Moreira2001
 
+open UniformSpace in
 theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
-    [MeasurableSpace F] [BorelSpace F] [CompleteSpace F]
+    [MeasurableSpace F] [BorelSpace F]
     (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s U : Set E}
     (hf : ContDiffMoreiraHolderOn k α f s U)
     (hs : ∀ x ∈ s, dim (LinearMap.range <| fderiv ℝ f x) ≤ p) :
     μH[sardMoreiraBound (dim E) k α p] (f '' s) = 0 := by
+  wlog hF : CompleteSpace F generalizing F
+  · borelize (Completion F)
+    set e : F →ₗᵢ[ℝ] Completion F := Completion.toComplₗᵢ
+    rw [← e.isometry.hausdorffMeasure_image, Set.image_image]
+    apply this
+    · exact hf.continuousLinearMap_comp e.toContinuousLinearMap
+    · intro x hx
+      grw [fderiv_comp', ← hs x hx]
+      · change dim (LinearMap.range ((fderiv ℝ e (f x)).toLinearMap ∘ₗ
+          (fderiv ℝ f x).toLinearMap)) ≤ _
+        rw [LinearMap.range_comp, ← LinearMap.range_domRestrict, LinearMap.finrank_range_of_inj]
+        · rfl
+        · simp [LinearMap.domRestrict, e, Function.Injective,
+            show fderiv ℝ (↑) (f x) = e.toContinuousLinearMap from e.toContinuousLinearMap.fderiv]
+      · exact e.toContinuousLinearMap.differentiableAt
+      · exact (hf.contDiffMoreiraHolderAt hx).differentiableAt hk
+    · infer_instance
+    · left; positivity
   -- Apply the Moreira2001 theorem to each of the sets where the rank is exactly `p' ≤ p`.
   have h_apply : ∀ p' ≤ p,
       μH[sardMoreiraBound (dim E) k α p']
@@ -622,7 +641,7 @@ theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
   apply hausdorffMeasure_mono
   exact monotone_sardMoreiraBound _ hk _ hp'
 
-theorem dimH_image_le_sardMoreiraBound_of_finrank_le [CompleteSpace F]
+theorem dimH_image_le_sardMoreiraBound_of_finrank_le
     (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s U : Set E}
     (hf : ContDiffMoreiraHolderOn k α f s U)
     (hs : ∀ x ∈ s, dim (LinearMap.range <| fderiv ℝ f x) ≤ p) :
