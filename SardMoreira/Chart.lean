@@ -367,22 +367,6 @@ theorem IsLargeAt.fderiv_comp_inr_eq_zero (h : IsLargeAt k α s a) {f : E × F �
     simp_all
   · simp [fderiv_zero_of_not_differentiableAt hfa]
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [FiniteDimensional ℝ G] in
-theorem IsLargeAt.comp_continuousLinearEquiv (h : IsLargeAt k α s a) (e : G ≃L[ℝ] F) :
-    IsLargeAt k α (Prod.map id e ⁻¹' s) (Prod.map id e.symm a) := by
-  intro f hfk hf₀
-  set e' := (ContinuousLinearEquiv.refl ℝ E).prodCongr e
-  specialize h (f ∘ e'.symm) ?_ ?_
-  · rw [← e'.apply_symm_apply a, ← e'.map_nhdsWithin_preimage_eq, eventually_map]
-    filter_upwards [hfk] with x hfx
-    rw [← e'.symm_apply_apply x] at hfx
-    exact hfx.comp' e'.symm.contDiffMoreiraHolderAt (.inr e'.symm.differentiableAt)
-  · rw [← e'.apply_symm_apply a, ← e'.map_nhdsWithin_preimage_eq, eventuallyEq_map]
-    filter_upwards [hf₀]
-    simp
-  · rw [e'.symm.comp_right_fderiv] at h
-    simpa [DFunLike.ext_iff, e.symm.surjective.forall, e'] using h
-
 structure Chart (k : ℕ) (α : I) (s : Set (E × F)) where
   Dom : Type v
   [instNormedAddCommGroupDom : NormedAddCommGroup Dom]
@@ -586,27 +570,6 @@ def restr (f : Chart k α s) (t : Set (E × f.Dom)) : Chart k α s where
 def ofLE (ψ : Chart k α s) (l : ℕ) (hl : l ≤ k) : Chart l α s where
   __ := ψ
   contDiffMoreiraHolderAt hx := ψ.contDiffMoreiraHolderAt hx |>.of_le hl
-
--- TODO: add IsTheta, if we actually need this
-theorem isBigO_sub_rev (ψ : Chart k α s) (hk : k ≠ 0) {x : E × ψ.Dom} (hx : x ∈ ψ.set) :
-    (fun y ↦ y.1 - y.2) =O[𝓝 (x, x)] (fun y ↦ ψ y.1 - ψ y.2) := by
-  set ψ' := fderiv ℝ ψ x
-  rcases ψ'.antilipschitz_of_injective_of_isClosed_range (ψ.injective_fderiv hx)
-    (LinearMap.coe_range ψ' ▸ Submodule.closed_of_finiteDimensional _) with ⟨C, hC⟩
-  have : (fun y ↦ y.1 - y.2) =O[𝓝 (x, x)] (fun y ↦ ψ' (y.1 - y.2)) := by
-    refine .of_bound C <| .of_forall fun y ↦ ?_
-    convert ZeroHomClass.bound_of_antilipschitz ψ' hC (y.1 - y.2)
-  refine this.trans ?_
-  refine ψ.contDiffMoreiraHolderAt hx |>.contDiffAt.hasStrictFDerivAt
-    (by simpa [Nat.one_le_iff_ne_zero])
-    |>.isLittleO |>.trans_isBigO this |>.right_isBigO_add |>.congr (fun _ ↦ rfl) ?_
-  simp [ψ']
-
-theorem isBigO_sub_rev_of_tendsto {β : Type*} {l : Filter β} (ψ : Chart k α s)
-    (hk : k ≠ 0) {x : E × ψ.Dom} (hx : x ∈ ψ.set) {f g : β → E × ψ.Dom}
-    (hf : Tendsto f l (𝓝 x)) (hg : Tendsto g l (𝓝 x)) :
-    (fun y ↦ f y - g y) =O[l] (fun y ↦ ψ (f y) - ψ (g y)) := by
-  exact ψ.isBigO_sub_rev hk hx |>.comp_tendsto (hf.prodMk_nhds hg)
 
 end Chart
 
