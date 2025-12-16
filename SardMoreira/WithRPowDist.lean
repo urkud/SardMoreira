@@ -82,6 +82,9 @@ instance [T0Space X] : T0Space (WithRPowDist X α hα₀ hα₁) :=
 instance [T2Space X] : T2Space (WithRPowDist X α hα₀ hα₁) :=
   homeomorph.symm.t2Space
 
+instance [SecondCountableTopology X] : SecondCountableTopology (WithRPowDist X α hα₀ hα₁) :=
+  homeomorph.secondCountableTopology
+
 end TopologicalSpace
 
 section Bornology
@@ -310,6 +313,11 @@ instance : PseudoMetricSpace (WithRPowDist X α hα₀ hα₁) :=
       grw [← hC hx hy, dist_mk_mk, Real.rpow_rpow_inv (by positivity) hα₀.ne']
 
 open Metric
+
+@[simp]
+theorem dist_val_val (x y : WithRPowDist X α hα₀ hα₁) : dist x.val y.val = dist x y ^ α⁻¹ := by
+  cases x; cases y
+  rw [dist_mk_mk, Real.rpow_rpow_inv dist_nonneg hα₀.ne']
 
 @[simp]
 theorem preimage_val_ball (x : X) {r : ℝ} (hr : 0 ≤ r) :
