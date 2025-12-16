@@ -6,52 +6,61 @@ open Function Asymptotics Filter Set
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-  {f : E → F} {s : Set E} {n : WithTop ℕ∞} {k : ℕ} {a : E}
+  {f : E → F} {s : Set E}
+
+section NWithTopENat
+variable {n : WithTop ℕ∞} {k : ℕ} {a : E}
 
 protected alias UniqueDiffOn.univ := uniqueDiffOn_univ
 
-theorem ContinuousLinearEquiv.isBigO_symm_sub_symm {α : Type*} {l : Filter α} {f g : α → E ≃L[𝕜] F}
-    (hf : (fun a ↦ (f a).symm : α → F →L[𝕜] E) =O[l] (fun _ ↦ (1 : ℝ)))
-    (hg : (fun a ↦ (g a).symm : α → F →L[𝕜] E) =O[l] (fun _ ↦ (1 : ℝ))) :
-    (fun a ↦ ((f a).symm - (g a).symm : F →L[𝕜] E)) =O[l] (fun a ↦ (f a - g a : E →L[𝕜] F)) := by
-  rw [Asymptotics.isBigO_iff'] at *;
-  -- Using the identity `A⁻¹ - B⁻¹ = A⁻¹(B - A)B⁻¹`, we can bound the difference of the inverses.
-  have h_diff_inv : ∀ a, ‖((f a).symm : F →L[𝕜] E) - ((g a).symm : F →L[𝕜] E)‖ ≤ ‖((f a).symm : F →L[𝕜] E)‖ * ‖((g a) : E →L[𝕜] F) - ((f a) : E →L[𝕜] F)‖ * ‖((g a).symm : F →L[𝕜] E)‖ := by
-    -- Using the identity `A⁻¹ - B⁻¹ = A⁻¹(B - A)B⁻¹`, we can bound the difference of the inverses by the product of the norms of the inverses and the difference of the maps.
-    have h_diff_inv : ∀ a, ((f a).symm : F →L[𝕜] E) - ((g a).symm : F →L[𝕜] E) = ((f a).symm : F →L[𝕜] E) ∘L (((g a) : E →L[𝕜] F) - ((f a) : E →L[𝕜] F)) ∘L ((g a).symm : F →L[𝕜] E) := by
-      -- By definition of composition of linear maps, we can expand the right-hand side.
-      intro a
-      ext x
-      simp
-    -- Substitute h_diff_inv into the goal.
-    intro a
-    rw [h_diff_inv a];
-    simpa only [ mul_assoc ] using ContinuousLinearMap.opNorm_comp_le _ _ |> le_trans <| mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) <| norm_nonneg _;
-  simp +zetaDelta at *;
-  -- Using the constants from hf and hg, we can construct the constant c.
-  obtain ⟨c1, hc1_pos, hc1⟩ := hf
-  obtain ⟨c2, hc2_pos, hc2⟩ := hg
-  use c1 * c2;
-  refine' ⟨ mul_pos hc1_pos hc2_pos, _ ⟩;
-  -- By combining the inequalities from h_diff_inv and the bounds from hc1 and hc2, we can conclude the proof.
-  have h_combined : ∀ᶠ x in l, ‖((f x).symm : F →L[𝕜] E) - ((g x).symm : F →L[𝕜] E)‖ ≤ c1 * ‖((g x) : E →L[𝕜] F) - ((f x) : E →L[𝕜] F)‖ * c2 := by
-    filter_upwards [ hc1, hc2 ] with x hx1 hx2 using le_trans (h_diff_inv x) (by gcongr);
-  filter_upwards [ h_combined ] with x hx using by simpa only [ mul_assoc, mul_comm, mul_left_comm, norm_sub_rev ] using hx;
+theorem ContinuousLinearMap.IsInvertible.eventually [CompleteSpace E] {α : Type*} {l : Filter α}
+    {f₀ : E →L[𝕜] F} {f : α → E →L[𝕜] F} (hf₀ : f₀.IsInvertible) (hf : Tendsto f l (𝓝 f₀)) :
+    ∀ᶠ x in l, (f x).IsInvertible :=
+  hf.eventually <| ContinuousLinearEquiv.isOpen.mem_nhds hf₀
 
-/-
-If `f` and `g` are families of continuous linear equivalences such that both the maps and their inverses are bounded, then the difference of their inverses is `Θ` of the difference of the maps.
--/
-theorem ContinuousLinearEquiv.isTheta_symm_sub_symm {α : Type*} {l : Filter α} {f g : α → E ≃L[𝕜] F}
-    (hf_symm : (fun a ↦ (f a).symm : α → F →L[𝕜] E) =O[l] (fun _ ↦ (1 : ℝ)))
-    (hg_symm : (fun a ↦ (g a).symm : α → F →L[𝕜] E) =O[l] (fun _ ↦ (1 : ℝ)))
-    (hf : (fun a ↦ (f a).toContinuousLinearMap) =O[l] (fun _ ↦ (1 : ℝ)))
-    (hg : (fun a ↦ (g a).toContinuousLinearMap) =O[l] (fun _ ↦ (1 : ℝ))) :
-    (fun a ↦ (f a).symm.toContinuousLinearMap - (g a).symm.toContinuousLinearMap) =Θ[l]
-      (fun a ↦ (f a).toContinuousLinearMap - (g a).toContinuousLinearMap) := by
-  refine' ⟨ _, _ ⟩;
-  · exact isBigO_symm_sub_symm hf_symm hg_symm
-  · convert isBigO_symm_sub_symm (f := fun a => (f a).symm) (g := fun a => (g a).symm) _ _
-      using 1 <;> aesop
+@[simp]
+theorem ContinuousLinearMap.IsInvertible.self_comp_inverse {f : E →L[𝕜] F} (hf : f.IsInvertible) :
+    f ∘L f.inverse = .id _ _ := by
+  rcases hf with ⟨e, rfl⟩
+  simp
+
+@[simp]
+theorem ContinuousLinearMap.IsInvertible.inverse_comp_self {f : E →L[𝕜] F} (hf : f.IsInvertible) :
+    f.inverse ∘L f = .id _ _ := by
+  rcases hf with ⟨e, rfl⟩
+  simp
+
+theorem ContinuousLinearMap.IsInvertible.bijective_inverse {f : E →L[𝕜] F} (hf : f.IsInvertible) :
+    Bijective f.inverse := by
+  rcases hf with ⟨e, rfl⟩
+  simp [ContinuousLinearEquiv.bijective]
+
+theorem ContinuousLinearMap.IsInvertible.injective_inverse {f : E →L[𝕜] F} (hf : f.IsInvertible) :
+    Injective f.inverse :=
+  hf.bijective_inverse.injective
+
+theorem ContinuousLinearMap.isBigO_inverse_sub_inverse
+    {α : Type*} {l : Filter α} {f g : α → E →L[𝕜] F}
+    (hf_inv : ∀ᶠ a in l, (f a).IsInvertible)
+    (hf_bdd : IsBoundedUnder (· ≤ ·) l (fun a ↦ ‖(f a).inverse‖))
+    (hg_inv : ∀ᶠ a in l, (g a).IsInvertible)
+    (hg_bdd : IsBoundedUnder (· ≤ ·) l (fun a ↦ ‖(g a).inverse‖)) :
+    (fun a ↦ (f a).inverse - (g a).inverse) =O[l] (fun a ↦ f a - g a) := calc
+  _ =ᶠ[l] fun a ↦ (f a).inverse ∘L (g a - f a) ∘L (g a).inverse := by
+    filter_upwards [hf_inv, hg_inv] with a hfa hga
+    simp [hfa, hga, ← comp_assoc]
+  _ =O[l] fun a ↦ ‖(f a).inverse‖ * ‖g a - f a‖ * ‖(g a).inverse‖ := .of_norm_le fun a ↦ by
+    grw [opNorm_comp_le, opNorm_comp_le, mul_assoc]
+  _ =O[l] (fun a ↦ f a - g a) := by
+    simpa [norm_sub_rev] using (hf_bdd.isBigO_one ℝ).norm_left.mul
+      (isBigO_refl (fun a ↦ ‖g a - f a‖) _) |>.mul (hg_bdd.isBigO_one ℝ).norm_left
+
+theorem ContinuousLinearEquiv.isBigO_symm_sub_symm {α : Type*} {l : Filter α} {f g : α → E ≃L[𝕜] F}
+    (hf : IsBoundedUnder (· ≤ ·) l fun a ↦ (‖((f a).symm : F →L[𝕜] E)‖))
+    (hg : IsBoundedUnder (· ≤ ·) l fun a ↦ (‖((g a).symm : F →L[𝕜] E)‖)) :
+    (fun a ↦ ((f a).symm - (g a).symm : F →L[𝕜] E)) =O[l] (fun a ↦ (f a - g a : E →L[𝕜] F)) := by
+  simp only [← ContinuousLinearMap.inverse_equiv] at *
+  simpa using ContinuousLinearMap.isBigO_inverse_sub_inverse (by simp) hf (by simp) hg
 
 protected theorem UniqueDiffOn.frequently_smallSets {s : Set E} (hs : UniqueDiffOn 𝕜 s) (a : E) :
     ∃ᶠ t in (𝓝[s] a).smallSets, t ∈ 𝓝[s] a ∧ UniqueDiffOn 𝕜 t := by
@@ -117,6 +126,14 @@ theorem iteratedFDerivWithin_comp_of_eventually
     hu (mem_of_mem_nhdsWithin ha hau) |>.trans ?_
   refine iteratedFDerivWithin_congr_set (hus.eventuallyLE.antisymm ?_) _
   exact set_eventuallyLE_iff_mem_inf_principal.mpr hau
+
+theorem ContDiffAt.eventually_isInvertible_fderiv [CompleteSpace E] (hf : ContDiffAt 𝕜 n f a)
+    (ha : (fderiv 𝕜 f a).IsInvertible) (hn : n ≠ 0) :
+    ∀ᶠ x in 𝓝 a, (fderiv 𝕜 f x).IsInvertible := by
+  apply ha.eventually
+  exact hf.continuousAt_fderiv hn
+
+end NWithTopENat
 
 namespace OrderedFinpartition
 
@@ -241,6 +258,35 @@ theorem norm_compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_le
       apply norm_compAlongOrderedFinpartitionL_apply_le
     · exact c.norm_compAlongOrderedFinpartition_le (f₁ - f₂) g₂
 
+theorem compContinuousLinearMap_compAlongOrderedFinpartition_left
+    {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+    (f : F [×c.length]→L[𝕜] G) (g : ∀ i, E [×c.partSize i]→L[𝕜] F) (h : H →L[𝕜] E) :
+    (c.compAlongOrderedFinpartition f g).compContinuousLinearMap (fun _ ↦ h) =
+      c.compAlongOrderedFinpartition f fun i ↦ (g i).compContinuousLinearMap fun _ ↦ h := by
+  ext
+  simp [applyOrderedFinpartition_apply, Function.comp_def]
+
+variable
+    {α : Type*} {l : Filter α} {p₁ p₂ : α → F [×c.length]→L[𝕜] G}
+    {q₁ q₂ : α → ∀ m, E [×c.partSize m]→L[𝕜] F} {B : α → ℝ} {i : ℕ}
+
+theorem compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_isBigO
+    (hp_bdd : l.IsBoundedUnder (· ≤ ·) (‖p₁ ·‖))
+    (hpB : (fun x ↦ p₁ x - p₂ x) =O[l] B)
+    (hq₁_bdd : ∀ m, l.IsBoundedUnder (· ≤ ·) (‖q₁ · m‖))
+    (hq₂_bdd : ∀ m, l.IsBoundedUnder (· ≤ ·) (‖q₂ · m‖))
+    (hqB : ∀ m, (fun x ↦ q₁ x m - q₂ x m) =O[l] B) :
+    (fun x ↦ (c.compAlongOrderedFinpartition (p₁ x) fun m ↦ q₁ x m) -
+        c.compAlongOrderedFinpartition (p₂ x) fun m ↦ q₂ x m) =O[l] B := by
+  refine .trans (.of_norm_le fun _ ↦
+    c.norm_compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_le ..) ?_
+  refine .add ?_ ?_
+  · simp only [← isBigO_one_iff ℝ, ← isBigO_pi] at *
+    have H := ((hq₁_bdd.prod_left hq₂_bdd).norm_left.pow (c.length - 1)).mul hqB.norm_left
+    simpa [mul_assoc] using hp_bdd.norm_left.mul <| H.const_mul_left c.length
+  · have H₂ : ∀ i, (q₂ · i) =O[l] (1 : α → ℝ) := fun i ↦ (hq₂_bdd i).isBigO_one ℝ
+    simpa using hpB.norm_left.mul <| .finsetProd fun i _ ↦ (H₂ i).norm_left
+
 end OrderedFinpartition
 
 namespace FormalMultilinearSeries
@@ -263,15 +309,45 @@ theorem taylorLeftInv_coeff_zero (p : FormalMultilinearSeries 𝕜 E F) (x : E) 
 
 end FormalMultilinearSeries
 
+variable {n : WithTop ℕ∞}
+
 @[simp]
 theorem ftaylorSeries_id (x : E) : ftaylorSeries 𝕜 id x = .id 𝕜 E x := by
   unfold ftaylorSeries
   ext (_ | _ | n) v <;> simp [iteratedFDeriv_succ_apply_right, FormalMultilinearSeries.id]
 
+theorem ContinuousLinearMap.IsInvertible.hasFDerivAt {f : E → F} {x : E}
+    (h : (fderiv 𝕜 f x).IsInvertible) : HasFDerivAt f (h.choose : E →L[𝕜] F) x := by
+  rw [h.choose_spec]
+  exact differentiableAt_of_isInvertible_fderiv h |>.hasFDerivAt
+
+theorem OpenPartialHomeomorph.hasFDerivAt_symm_inverse (f : OpenPartialHomeomorph E F) {y : F}
+    (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
+    HasFDerivAt f.symm (fderiv 𝕜 f (f.symm y)).inverse y := by
+  rw [ContinuousLinearMap.inverse, dif_pos hf']
+  exact hf'.hasFDerivAt.of_local_left_inverse (f.symm.continuousAt hy)
+    <| f.eventually_right_inverse hy
+
 theorem OpenPartialHomeomorph.fderiv_symm (f : OpenPartialHomeomorph E F) {y : F}
-    (hy : y ∈ f.target) (f' : E ≃L[𝕜] F) (hf' : HasFDerivAt f (f' : E →L[𝕜] F) (f.symm y)) :
-    fderiv 𝕜 f.symm y = f'.symm :=
-  (hf'.of_local_left_inverse (f.symm.continuousAt hy) <| f.eventually_right_inverse hy).fderiv
+    (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
+    fderiv 𝕜 f.symm y = (fderiv 𝕜 f (f.symm y)).inverse :=
+  f.hasFDerivAt_symm_inverse hy hf' |>.fderiv
+
+theorem OpenPartialHomeomorph.bijective_fderiv_symm (f : OpenPartialHomeomorph E F) {y : F}
+    (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
+    Bijective (fderiv 𝕜 f.symm y) := by
+  rw [f.fderiv_symm hy hf']
+  exact hf'.bijective_inverse
+
+theorem OpenPartialHomeomorph.injective_fderiv_symm (f : OpenPartialHomeomorph E F) {y : F}
+    (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
+    Injective (fderiv 𝕜 f.symm y) :=
+  f.bijective_fderiv_symm hy hf' |>.injective
+
+theorem OpenPartialHomeomorph.contDiffAt_symm' [CompleteSpace E] (f : OpenPartialHomeomorph E F)
+    {a : F} (ha : a ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm a)).IsInvertible)
+    (hf : ContDiffAt 𝕜 n f (f.symm a)) : ContDiffAt 𝕜 n f.symm a := by
+  exact f.contDiffAt_symm ha hf'.hasFDerivAt hf
 
 -- TODO: add before `HasFDerivAt.of_local_left_inverse`
 theorem HasFDerivWithinAt.of_local_leftInverse {f : E → F} {f' : E ≃L[𝕜] F} {g : F → E} {a : F}
@@ -297,18 +373,22 @@ theorem iteratedFDeriv_one_eq (f : E → F) (x : E) :
     iteratedFDeriv 𝕜 1 f x = (continuousMultilinearCurryFin1 𝕜 E F).symm (fderiv 𝕜 f x) := by
   ext; simp
 
-theorem OpenPartialHomeomorph.iteratedFDeriv_symm_eq_taylorLeftInv [CompleteSpace E]
+theorem OpenPartialHomeomorph.iteratedFDeriv_symm_eq_rec [CompleteSpace E]
     (f : OpenPartialHomeomorph E F) {y : F} (hy : y ∈ f.target) (hf : ContDiffAt 𝕜 n f (f.symm y))
     {i : ℕ} (hi : i ≤ n) (hf' : 0 < i → (fderiv 𝕜 f (f.symm y)).IsInvertible) :
     iteratedFDeriv 𝕜 i f.symm y =
-      (ftaylorSeries 𝕜 f (f.symm y)).taylorLeftInv (f.symm y) i := by
+      (FormalMultilinearSeries.id 𝕜 E (f.symm y) i -
+        ∑ c ≠ OrderedFinpartition.atomic i,
+          c.compAlongOrderedFinpartition (iteratedFDeriv 𝕜 c.length f.symm y)
+            (fun m ↦ iteratedFDeriv 𝕜 (c.partSize m) f (f.symm y))).compContinuousLinearMap
+      fun _ ↦ fderiv 𝕜 f.symm y := by
   rcases i.eq_zero_or_pos with rfl | hi₀
-  · ext; simp
+  · ext
+    simp
   · specialize hf' hi₀
     rcases hf' with ⟨f', hf'⟩
     replace hf' : HasFDerivAt f (f' : E →L[𝕜] F) (f.symm y) :=
       hf' ▸ (hf.of_le hi |>.differentiableAt <| mod_cast hi₀).hasFDerivAt
-    fun_induction FormalMultilinearSeries.taylorLeftInv with | case1 i ih => ?_
     have H₁ : f.source ∈ 𝓝 (f.symm y) := f.open_source.mem_nhds <| f.symm_mapsTo hy
     have H₂ : ContDiffAt 𝕜 n f.symm (f (f.symm y)) := by
       rw [f.rightInvOn hy]
@@ -322,19 +402,29 @@ theorem OpenPartialHomeomorph.iteratedFDeriv_symm_eq_taylorLeftInv [CompleteSpac
         filter_upwards [H₁] using f.leftInvOn
       _ = FormalMultilinearSeries.id 𝕜 E (f.symm y) i := by
         rw [← ftaylorSeries_id, ftaylorSeries]
-    conv_rhs =>
-      congr; congr; rfl; congr; rfl; intro c; congr
-      exact (ih c (le_trans (mod_cast le_of_lt c.2) hi) (by simpa)).symm
     simp only [← H₃, FormalMultilinearSeries.taylorComp,
       FormalMultilinearSeries.compAlongOrderedFinpartition]
-    have H₄ (c : OrderedFinpartition i) :
-        c ∈ ({OrderedFinpartition.atomic i}ᶜ : Finset (OrderedFinpartition i)) ↔ c.length < i := by
-      simp [OrderedFinpartition.length_lt_iff]
-    rw [Fintype.sum_eq_add_sum_compl (OrderedFinpartition.atomic i),
-      Finset.sum_subtype (F := inferInstance) _ H₄]
+    rw [Fintype.sum_eq_add_sum_compl (OrderedFinpartition.atomic i), Finset.compl_singleton]
     ext v
     simp +unfoldPartialApp [OrderedFinpartition.applyOrderedFinpartition, ftaylorSeries, hf'.fderiv,
-      Function.comp_def, iteratedFDeriv_one_eq]
+      (f.hasFDerivAt_symm hy hf').fderiv, Function.comp_def]
+
+theorem OpenPartialHomeomorph.iteratedFDeriv_symm_eq_taylorLeftInv [CompleteSpace E]
+    (f : OpenPartialHomeomorph E F) {y : F} (hy : y ∈ f.target) (hf : ContDiffAt 𝕜 n f (f.symm y))
+    {i : ℕ} (hi : i ≤ n) (hf' : 0 < i → (fderiv 𝕜 f (f.symm y)).IsInvertible) :
+    iteratedFDeriv 𝕜 i f.symm y =
+      (ftaylorSeries 𝕜 f (f.symm y)).taylorLeftInv (f.symm y) i := by
+  fun_induction FormalMultilinearSeries.taylorLeftInv with | case1 i ih => ?_
+  have H (c : OrderedFinpartition i) :
+      c ∈ Finset.univ.erase (OrderedFinpartition.atomic i) ↔ c.length < i := by
+    simp [OrderedFinpartition.length_lt_iff]
+  rw [f.iteratedFDeriv_symm_eq_rec hy hf hi hf', Finset.sum_subtype (F := inferInstance) _ H]
+  congr 3 with c : 1
+  rw [ih]
+  · simp [ftaylorSeries]
+  · exact le_trans (mod_cast c.2.le) hi
+  · exact fun hc ↦ hf' <| hc.trans c.2
+  · simp [ftaylorSeries, iteratedFDeriv_one_eq, f.fderiv_symm hy (hf' c.pos)]
 
 namespace FormalMultilinearSeries
 
@@ -351,23 +441,9 @@ theorem compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_isBigO
     (c : OrderedFinpartition n) :
     (fun x ↦ (p₁ x).compAlongOrderedFinpartition (q₁ x) c -
       (p₂ x).compAlongOrderedFinpartition (q₂ x) c) =O[l] B := by
-  refine .trans (.of_norm_le fun _ ↦
-    c.norm_compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_le ..) ?_
-  refine .add ?_ ?_
-  · have H₁ : (p₁ · c.length) =O[l] (1 : α → ℝ) := (hp_bdd _ c.length_le).isBigO_one ℝ
-    have H₂ : ∀ m, (q₁ · (c.partSize m)) =O[l] (1 : α → ℝ) := fun m ↦
-      (hq₁_bdd _ <| c.partSize_le _).isBigO_one ℝ
-    have H₃ : ∀ m, (q₂ · (c.partSize m)) =O[l] (1 : α → ℝ) := fun m ↦
-      (hq₂_bdd _ <| c.partSize_le _).isBigO_one ℝ
-    have H₄ : ∀ m, (fun x ↦ q₁ x (c.partSize m) - q₂ x (c.partSize m)) =O[l] B := fun m ↦
-      hqB _ <| c.partSize_le _
-    rw [← isBigO_pi] at H₂ H₃ H₄
-    have H₅ := ((H₂.prod_left H₃).norm_left.pow (c.length - 1)).mul H₄.norm_left
-    simpa [mul_assoc] using H₁.norm_left.mul <| H₅.const_mul_left c.length
-  · have H₁ : (fun x ↦ p₁ x c.length - p₂ x c.length) =O[l] B := hpB _ c.length_le
-    have H₂ : ∀ i, (q₂ · (c.partSize i)) =O[l] (1 : α → ℝ) := fun i ↦
-      (hq₂_bdd _ <| c.partSize_le i).isBigO_one ℝ
-    simpa using H₁.norm_left.mul <| .finsetProd fun i _ ↦ (H₂ i).norm_left
+  apply c.compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_isBigO
+  exacts [hp_bdd _ c.length_le, hpB _ c.length_le, fun _ ↦ hq₁_bdd _ (c.partSize_le _),
+    fun _ ↦ hq₂_bdd _ (c.partSize_le _), fun _ ↦ hqB _ (c.partSize_le _)]
 
 theorem taylorComp_sub_taylorComp_isBigO
     (hp_bdd : ∀ k ≤ n, l.IsBoundedUnder (· ≤ ·) (‖p₁ · k‖))

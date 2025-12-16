@@ -1,167 +1,684 @@
-import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Analysis.LocallyConvex.SeparatingDual
-import Mathlib.Order.BourbakiWitt
-import Mathlib.Topology.GDelta.MetrizableSpace
-import SardMoreira.ContDiffMoreiraHolder
+import Mathlib
+import SardMoreira.ImplicitFunction
+import SardMoreira.LocalEstimates
+
+noncomputable section
 
 open scoped unitInterval Topology NNReal
 open Asymptotics Filter Set Metric Function
 
-namespace MoreiraSard
+local notation "dim" => Module.finrank ℝ
 
-variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+theorem fderiv_comp_prodMk {𝕜 : Type*} {E F G : Type*}
+    [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {f : E × F → G} {a : E} {b : F} (hdf : DifferentiableAt 𝕜 f (a, b)) :
+    fderiv 𝕜 (fun y ↦ f (a, y)) b = fderiv 𝕜 f (a, b) ∘L .inr 𝕜 E F :=
+  hdf.hasFDerivAt.comp b (.prodMk (hasFDerivAt_const _ _) (hasFDerivAt_id _)) |>.fderiv
 
-structure Chart (k : ℕ) (α : I) (l : Fin (k + 1)) (s U : Set (E × F)) where
-  subspace : Fin (l + 1) → Submodule ℝ F
-  subspace_anti : Antitone subspace
-  center : E × F
-  radiusLeft : Fin (l + 1) → ℝ
-  radiusLeft_anti : Antitone radiusLeft
-  radiusLeft_pos i : 0 < radiusLeft i
-  radiusRight : Fin (l + 1) → ℝ
-  radiusRight_pos i : 0 < radiusRight i
-  toFunSnd (i : Fin l) : E → subspace i.succ → subspace i.castSucc
-  holderSet (i : Fin (l + 1)) : Set (E × subspace i)
-  holderSet_subset_dom_zero : holderSet 0 ⊆ ball 0 (radiusLeft 0) ×ˢ ball 0 (radiusRight 0)
-  mapsTo_holderSet_zero' : MapsTo (fun xy ↦ (xy.1, xy.2.1) + center) (holderSet 0) s
-  mapsTo_dom_zero : MapsTo (fun xy ↦ (xy.1, xy.2.1) + center)
-    (ball 0 (radiusLeft 0) ×ˢ ball (0 : subspace 0) (radiusRight 0)) U
-  mapsTo_holderSet' (i : Fin l) :
-    MapsTo (fun xy ↦ (xy.1, toFunSnd i xy.1 xy.2)) (holderSet i.succ) (holderSet i.castSucc)
-  toFunSnd_mem_ball (i : Fin l) {x : E} {y : subspace i.succ} :
-    x ∈ ball 0 (radiusLeft i.succ) → y ∈ ball 0 (radiusRight i.succ) →
-      toFunSnd i x y ∈ ball 0 (radiusRight i.castSucc)
-  contDiffMoreiraHolderOn_toFunSnd (i : Fin l) :
-    ContDiffMoreiraHolderOn (k - i) α (toFunSnd i).uncurry (holderSet i.succ)
-      (ball 0 (radiusLeft i.succ) ×ˢ ball 0 (radiusRight i.succ))
-  dist_le_toFunSnd {i : Fin l} {x : E} {y₁ y₂ : subspace i.succ} :
-    x ∈ ball 0 (radiusLeft i.succ) → y₁ ∈ ball 0 (radiusRight i.succ) →
-      y₂ ∈ ball 0 (radiusRight i.succ) → dist y₁ y₂ ≤ dist (toFunSnd i x y₁) (toFunSnd i x y₂)
-  fderiv_comp_eq_zero' (i : Fin l) (f : E → (subspace i.castSucc) → ℝ) :
-    ContDiffMoreiraHolderOn (k - i) α f.uncurry (holderSet i.castSucc)
-      (ball 0 (radiusLeft i.castSucc) ×ˢ ball 0 (radiusRight i.castSucc)) →
-    (∀ p ∈ holderSet i.castSucc, f p.1 p.2 = 0) →
-    ∀ x y, (x, y) ∈ holderSet i.succ → fderiv ℝ (f x ∘ toFunSnd i x) y = 0
+theorem fderiv_comp_prodMk' {𝕜 : Type*} {E F G : Type*}
+    [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {f : E × F → G} {a : E × F} (hdf : DifferentiableAt 𝕜 f a) :
+    fderiv 𝕜 (fun y ↦ f (a.fst, y)) a.snd = fderiv 𝕜 f a ∘L .inr 𝕜 E F :=
+  fderiv_comp_prodMk hdf
+
+theorem fderiv_curry {𝕜 : Type*} {E F G : Type*}
+    [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {f : E × F → G} {a : E} {b : F} (hdf : DifferentiableAt 𝕜 f (a, b)) :
+    fderiv 𝕜 (curry f a) b = fderiv 𝕜 f (a, b) ∘L .inr 𝕜 E F :=
+  fderiv_comp_prodMk hdf
+
+@[simps! -fullyApplied apply_coe symm_apply_coe_coe]
+def Submodule.continuousEquivSubtypeMap {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [TopologicalSpace M] (p : Submodule R M) (q : Submodule R p) :
+    q ≃L[R] q.map p.subtype where
+  toLinearEquiv := p.equivSubtypeMap q
+  continuous_toFun := .codRestrict (continuous_subtype_val.comp continuous_subtype_val) _
+  continuous_invFun := .codRestrict (.codRestrict continuous_subtype_val _) _
+
+@[simps!]
+def Submodule.topContinuousEquiv {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [TopologicalSpace M] :
+    (⊤ : Submodule R M) ≃L[R] M where
+  toLinearEquiv := topEquiv
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+theorem ContinuousLinearEquiv.map_nhdsWithin_eq {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    (e : M ≃L[R] N) (s : Set M) (x : M) :
+    (𝓝[s] x).map e = 𝓝[e '' s] (e x) :=
+  e.toHomeomorph.isInducing.map_nhdsWithin_eq _ _
+
+theorem ContinuousLinearEquiv.map_nhdsWithin_preimage_eq {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    (e : M ≃L[R] N) (s : Set N) (x : M) :
+    (𝓝[e ⁻¹' s] x).map e = 𝓝[s] (e x) := by
+  rw [e.map_nhdsWithin_eq, e.surjective.image_preimage]
+
+namespace ImplicitFunctionData
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
+
+theorem differentiableAt_implicitFunction (φ : ImplicitFunctionData 𝕜 E F G) :
+    DifferentiableAt 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) :=
+  φ.hasStrictFDerivAt.to_localInverse.comp (φ.rightFun φ.pt)
+    ((hasStrictFDerivAt_const _ _).prodMk (hasStrictFDerivAt_id _))
+    |>.hasFDerivAt |>.differentiableAt
+
+theorem fderiv_implicitFunction_apply_eq_iff (φ : ImplicitFunctionData 𝕜 E F G) {x : G} {y : E} :
+    fderiv 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) x = y ↔
+      φ.leftDeriv y = 0 ∧ φ.rightDeriv y = x := by
+  unfold implicitFunction Function.curry toOpenPartialHomeomorph
+  simp only [← HasStrictFDerivAt.localInverse_def]
+  rw [φ.hasStrictFDerivAt.to_localInverse.comp (φ.rightFun φ.pt)
+    ((hasStrictFDerivAt_const _ _).prodMk (hasStrictFDerivAt_id _)) |>.hasFDerivAt |>.fderiv]
+  simp [ContinuousLinearEquiv.symm_apply_eq, @eq_comm _ (φ.leftDeriv _),
+    @eq_comm _ (φ.rightDeriv _)]
+
+@[simp]
+theorem leftDeriv_fderiv_implicitFunction (φ : ImplicitFunctionData 𝕜 E F G) (x : G) :
+    φ.leftDeriv (fderiv 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) x) = 0 := by
+  exact φ.fderiv_implicitFunction_apply_eq_iff.mp rfl |>.left
+
+@[simp]
+theorem rightDeriv_fderiv_implicitFunction (φ : ImplicitFunctionData 𝕜 E F G) (x : G) :
+    φ.rightDeriv (fderiv 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) x) = x := by
+  exact φ.fderiv_implicitFunction_apply_eq_iff.mp rfl |>.right
+
+theorem map_implicitFunction_nhdsWithin_preimage (φ : ImplicitFunctionData 𝕜 E F G)
+    (s : Set E) :
+    (𝓝[φ.implicitFunction (φ.leftFun φ.pt) ⁻¹' s] (φ.rightFun φ.pt)).map
+      (φ.implicitFunction (φ.leftFun φ.pt)) = 𝓝[s ∩ φ.leftFun ⁻¹' {φ.leftFun φ.pt}] φ.pt := by
+  have H : φ.implicitFunction (φ.leftFun φ.pt) =
+      φ.toOpenPartialHomeomorph.symm ∘ (φ.leftFun φ.pt, ·) := rfl
+  rw [H, ← Filter.map_map, (isInducing_prodMkRight _).map_nhdsWithin_eq, ← singleton_prod,
+    OpenPartialHomeomorph.map_nhdsWithin_eq, ← prodFun_apply, ← toOpenPartialHomeomorph_coe,
+    φ.toOpenPartialHomeomorph.leftInvOn φ.pt_mem_toOpenPartialHomeomorph_source,
+    OpenPartialHomeomorph.image_source_inter_eq']
+  · conv_rhs =>
+      rw [← φ.toOpenPartialHomeomorph.nhdsWithin_source_inter
+        φ.pt_mem_toOpenPartialHomeomorph_source]
+    congr 1
+    ext x
+    suffices x ∈ φ.toOpenPartialHomeomorph.source → φ.leftFun x = φ.leftFun φ.pt →
+        (φ.toOpenPartialHomeomorph.symm (φ.leftFun φ.pt, φ.rightFun x) ∈ s ↔ x ∈ s) by
+      simpa [@and_comm (_ = _)]
+    intro hxs hx_eq
+    rw [← hx_eq, ← prodFun_apply, ← toOpenPartialHomeomorph_coe,
+      φ.toOpenPartialHomeomorph.leftInvOn hxs]
+  · exact φ.toOpenPartialHomeomorph.mapsTo φ.pt_mem_toOpenPartialHomeomorph_source
+
+end ImplicitFunctionData
+
+@[simp]
+theorem ContinuousLinearMap.range_eq_bot {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    {f : M →L[R] N} :
+    LinearMap.range f = ⊥ ↔ f = 0 :=
+  (f : M →ₗ[R] N).range_eq_bot.trans <| by norm_cast -- TODO: make `simp` solve it too
+
+@[simp]
+theorem ContinuousLinearMap.ker_prodMap {R M N M' N' : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    [AddCommMonoid M'] [Module R M'] [TopologicalSpace M']
+    [AddCommMonoid N'] [Module R N'] [TopologicalSpace N']
+    (f : M →L[R] N) (g : M' →L[R] N') :
+    LinearMap.ker (f.prodMap g) = (LinearMap.ker f).prod (LinearMap.ker g) := by
+  ext ⟨_, _⟩; simp
+
+@[simp]
+theorem ContinuousLinearMap.range_prodMap {R M N M' N' : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    [AddCommMonoid M'] [Module R M'] [TopologicalSpace M']
+    [AddCommMonoid N'] [Module R N'] [TopologicalSpace N']
+    (f : M →L[R] N) (g : M' →L[R] N') :
+    LinearMap.range (f.prodMap g) = (LinearMap.range f).prod (LinearMap.range g) := by
+  ext ⟨_, _⟩; simp
+
+@[simp]
+theorem ContinuousLinearMap.finrank_range_add_finrank_ker {R M N : Type*} [DivisionRing R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] [FiniteDimensional R M]
+    [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (f : M →L[R] N) :
+    Module.finrank R (LinearMap.range f) + Module.finrank R (LinearMap.ker f) =
+      Module.finrank R M :=
+  f.toLinearMap.finrank_range_add_finrank_ker
+
+@[simp]
+theorem ContinuousLinearMap.range_id {R M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M] :
+    LinearMap.range (ContinuousLinearMap.id R M) = ⊤ := by
+  ext; simp
+
+@[simp]
+theorem ContinuousLinearMap.snd_comp_inr {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N] :
+    snd R M N ∘L inr R M N = .id R N :=
+  rfl
+
+namespace Submodule
+
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+def prodEquiv
+    (s : Submodule R M) (t : Submodule R N) : s.prod t ≃ₗ[R] s × t :=
+  { (Equiv.Set.prod (s : Set M) (t : Set N)) with
+    map_add' _ _ := rfl
+    map_smul' _ _ := rfl }
+
+@[simp]
+theorem rank_prod_eq_lift [StrongRankCondition R] (s : Submodule R M) (t : Submodule R N)
+    [Module.Free R s] [Module.Free R t] :
+    Module.rank R (s.prod t) = (Module.rank R s).lift + (Module.rank R t).lift := by
+  simp [(s.prodEquiv t).rank_eq]
+
+@[simp]
+theorem finrank_prod [StrongRankCondition R] (s : Submodule R M) (t : Submodule R N)
+    [Module.Free R s] [Module.Free R t] [Module.Finite R s] [Module.Finite R t] :
+    Module.finrank R (s.prod t) = Module.finrank R s + Module.finrank R t := by
+  simp [(s.prodEquiv t).finrank_eq]
+
+end Submodule
+
+namespace Moreira2001
+
+section
+universe x u v w
+variable {E : Type u} {F : Type v} {G : Type w}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+  {k : ℕ} {α : I} {s : Set (E × F)} {a : E × F}  {f : E × F → ℝ}
+
+-- This def almost hits the max heartbeats limit. In fact, I've adjusted the proof to avoid it.
+-- Idk what makes the proof so slow.
+@[irreducible]
+def chartImplicitData (f : E × F → ℝ) (a : E × F)
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    ImplicitFunctionData ℝ (E × F) ℝ (E × LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)) where
+  leftFun := f
+  leftDeriv := fderiv ℝ f a
+  left_has_deriv := hfa.contDiffAt.hasStrictFDerivAt <| by
+    simpa only [Nat.one_le_cast, Nat.one_le_iff_ne_zero]
+  rightFun := _
+  rightDeriv := .prodMap (.id _ _) (Submodule.ClosedComplemented.of_finiteDimensional _).choose
+  right_has_deriv := ContinuousLinearMap.hasStrictFDerivAt _
+  pt := a
+  left_range := by
+    refine IsSimpleOrder.eq_bot_or_eq_top _ |>.resolve_left ?_
+    rw [ContinuousLinearMap.range_eq_bot]
+    contrapose! hdf
+    rw [hdf, ContinuousLinearMap.zero_comp]
+  right_range := by
+    have : LinearMap.range (Submodule.ClosedComplemented.of_finiteDimensional <|
+        LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)).choose = ⊤ :=
+      LinearMap.range_eq_of_proj (Exists.choose_spec (_ : Submodule.ClosedComplemented _))
+    rw [ContinuousLinearMap.range_prodMap, this]
+    simp
+  isCompl_ker := by
+    have H : (LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)).ClosedComplemented :=
+      .of_finiteDimensional _
+    constructor
+    · suffices ∀ x y, fderiv ℝ f a (x, y) = 0 → x = 0 → H.choose y = 0 → y = 0 by
+        simpa +contextual only [Subtype.forall, LinearMap.mem_ker, ContinuousLinearMap.coe_comp',
+          comp_apply, ContinuousLinearMap.inr_apply, ContinuousLinearMap.ker_prodMap,
+          Submodule.disjoint_def, Submodule.mem_prod, ContinuousLinearMap.coe_id', id_eq, and_imp,
+          Prod.forall, Prod.mk_eq_zero, true_and]
+      rintro _ y hdf rfl hy
+      lift y to LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F) using by simp [hdf]
+      simpa only [H.choose_spec, ZeroMemClass.coe_eq_zero] using hy
+    · rw [Submodule.codisjoint_iff_exists_add_eq]
+      rintro ⟨x, y⟩
+      obtain ⟨z, hz⟩ : ∃ z : F, fderiv ℝ f a (x, z) = 0 := by
+        have : LinearMap.range (fderiv ℝ f a ∘L .inr ℝ _ _) = ⊤ := by
+          refine IsSimpleOrder.eq_bot_or_eq_top _ |>.resolve_left ?_
+          rwa [ContinuousLinearMap.range_eq_bot]
+        rw [Submodule.eq_top_iff'] at this
+        refine this (-fderiv ℝ f a (x, 0)) |>.imp fun z hz ↦ ?_
+        rw [← (x, z).fst_add_snd, map_add]
+        simpa [eq_neg_iff_add_eq_zero, add_comm] using hz
+      rcases Submodule.codisjoint_iff_exists_add_eq.mp
+        (LinearMap.isCompl_of_proj H.choose_spec).codisjoint (y - z)
+        with ⟨w, t, hw, ht, hsub⟩
+      refine ⟨(x, w + z), (0, t), ?ker, by simpa using ht, ?add⟩
+      case ker =>
+        rwa [← zero_add x, ← Prod.mk_add_mk, LinearMap.mem_ker, map_add, hz, add_zero]
+      case add =>
+        rw [Prod.mk_add_mk, add_zero, add_right_comm w z t, hsub, sub_add_cancel]
+
+@[simp]
+theorem chartImplicitData_leftFun {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    (chartImplicitData f a hfa hk hdf).leftFun = f := by
+  simp [chartImplicitData]
+
+@[simp]
+theorem chartImplicitData_leftDeriv {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    (chartImplicitData f a hfa hk hdf).leftDeriv = fderiv ℝ f a := by
+  simp [chartImplicitData]
+
+@[simp]
+theorem fst_rightFun_chartImplicitData {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0)
+    (x : E × F) : ((chartImplicitData f a hfa hk hdf).rightFun x).1 = x.1 := by
+  simp [chartImplicitData]
+
+@[simp]
+theorem chartImplicitData_pt {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    (chartImplicitData f a hfa hk hdf).pt = a := by
+  simp [chartImplicitData]
+
+theorem chartImplicitData_rightDeriv_apply_ker {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0)
+    (x : E) {y : F} (hy : fderiv ℝ f a (0, y) = 0) :
+    (chartImplicitData f a hfa hk hdf).rightDeriv (x, y) = (x, ⟨y, by simpa⟩) := by
+  simpa [chartImplicitData] using
+    Submodule.ClosedComplemented.of_finiteDimensional (LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F))
+      |>.choose_spec ⟨y, by simpa⟩
+
+theorem fderiv_implicitFunction_chartImplicitData_apply_mk_zero {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0)
+    (y : LinearMap.ker ((fderiv ℝ f a).comp (ContinuousLinearMap.inr ℝ E F))) :
+    fderiv ℝ ((chartImplicitData f a hfa hk hdf).implicitFunction (f a))
+      ((chartImplicitData f a hfa hk hdf).rightFun a) (0, y) = (0, y.1) := by
+  convert (chartImplicitData f a hfa hk hdf).fderiv_implicitFunction_apply_eq_iff.mpr _
+  · simp
+  · simp
+  · simp
+  · constructor
+    · cases y with | mk y hy => simpa using hy
+    · apply chartImplicitData_rightDeriv_apply_ker
+      cases y with | mk y hy => simpa using hy
+
+@[simp]
+theorem fderiv_implicitFunction_chartImplicitData_comp_inr {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    fderiv ℝ ((chartImplicitData f a hfa hk hdf).implicitFunction (f a))
+      ((chartImplicitData f a hfa hk hdf).rightFun a) ∘L .inr ℝ E _ =
+      .inr ℝ E F ∘L Submodule.subtypeL _ := by
+  ext1 x
+  simp [fderiv_implicitFunction_chartImplicitData_apply_mk_zero]
+
+theorem fst_implicitFunction_chartImplicitData_eventuallyEq {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
+    Prod.fst ∘ (chartImplicitData f a hfa hk hdf).implicitFunction (f a)
+      =ᶠ[𝓝 ((chartImplicitData f a hfa hk hdf).rightFun a)] Prod.fst := by
+  have := (continuousAt_const.prodMk continuousAt_id).eventually
+    (chartImplicitData f a hfa hk hdf).right_map_implicitFunction
+  rw [chartImplicitData_pt] at this
+  filter_upwards [this] with x hx
+  simpa using congr($hx |>.1)
+
+theorem map_implicitFunction_chartImplicitData_nhdsWithin_preimage {f : E × F → ℝ} {a : E × F}
+    (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0)
+    (s : Set (E × F)) (hfs : f =ᶠ[𝓝[s] a] 0) (ha : a ∈ s) :
+    letI ψ := chartImplicitData f a hfa hk hdf
+    (𝓝[ψ.implicitFunction 0 ⁻¹' s] (ψ.rightFun a)).map (ψ.implicitFunction 0) = 𝓝[s] a := by
+  set ψ := chartImplicitData f a hfa hk hdf
+  convert ψ.map_implicitFunction_nhdsWithin_preimage s using 1
+  · simp [ψ, hfs.self_of_nhdsWithin ha]
+  · rw [nhdsWithin_inter', inf_of_le_left]
+    · congr 1
+      simp [ψ]
+    · rw [le_principal_iff, chartImplicitData_pt]
+      filter_upwards [hfs] with x hx
+      simp [ψ, hx, hfs.self_of_nhdsWithin ha]
+
+def IsLargeAt (k : ℕ) (α : I) (s : Set (E × G)) (a : E × G) : Prop :=
+  ∀ f : E × G → ℝ, (∀ᶠ x in 𝓝[s] a, ContDiffMoreiraHolderAt k α f x) → f =ᶠ[𝓝[s] a] 0 →
+    fderiv ℝ f a ∘L .inr ℝ E G = 0
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [FiniteDimensional ℝ G] in
+/-- Definition of `IsLargeAt` talks about `f : E × F → ℝ` only,
+but it implies a similar statement for any codomain. -/
+theorem IsLargeAt.fderiv_comp_inr_eq_zero (h : IsLargeAt k α s a) {f : E × F → G}
+    (hf : ∀ᶠ x in 𝓝[s] a, ContDiffMoreiraHolderAt k α f x) (hf₀ : f =ᶠ[𝓝[s] a] 0) :
+    fderiv ℝ f a ∘L .inr ℝ E F = 0 := by
+  by_cases hfa : DifferentiableAt ℝ f a
+  · unfold IsLargeAt at h
+    contrapose! h
+    rcases ContinuousLinearMap.exists_ne_zero h with ⟨x, hx⟩
+    rcases exists_dual_vector ℝ _ hx with ⟨g, hg₁, hgx⟩
+    refine ⟨g ∘ f, hf.mono fun x hx ↦ hx.continuousLinearMap_comp g,
+      hf₀.mono <| by simp +contextual, ?_⟩
+    rw [fderiv_comp _ (by fun_prop) hfa]
+    apply ne_of_apply_ne (· x)
+    simp_all
+  · simp [fderiv_zero_of_not_differentiableAt hfa]
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [FiniteDimensional ℝ G] in
+theorem IsLargeAt.comp_continuousLinearEquiv (h : IsLargeAt k α s a) (e : G ≃L[ℝ] F) :
+    IsLargeAt k α (Prod.map id e ⁻¹' s) (Prod.map id e.symm a) := by
+  intro f hfk hf₀
+  set e' := (ContinuousLinearEquiv.refl ℝ E).prodCongr e
+  specialize h (f ∘ e'.symm) ?_ ?_
+  · rw [← e'.apply_symm_apply a, ← e'.map_nhdsWithin_preimage_eq, eventually_map]
+    filter_upwards [hfk] with x hfx
+    rw [← e'.symm_apply_apply x] at hfx
+    exact hfx.comp' e'.symm.contDiffMoreiraHolderAt (.inr e'.symm.differentiableAt)
+  · rw [← e'.apply_symm_apply a, ← e'.map_nhdsWithin_preimage_eq, eventuallyEq_map]
+    filter_upwards [hf₀]
+    simp
+  · rw [e'.symm.comp_right_fderiv] at h
+    simpa [DFunLike.ext_iff, e.symm.surjective.forall, e'] using h
+
+structure Chart (k : ℕ) (α : I) (s : Set (E × F)) where
+  Dom : Type v
+  [instNormedAddCommGroupDom : NormedAddCommGroup Dom]
+  [instNormedSpaceDom : NormedSpace ℝ Dom]
+  [instFiniteDimensional : FiniteDimensional ℝ Dom]
+  toFun : E × Dom → E × F
+  set : Set (E × Dom)
+  fst_apply (x) : (toFun x).fst = x.fst
+  contDiffMoreiraHolderAt {x} : x ∈ set → ContDiffMoreiraHolderAt k α toFun x
+  injective_fderiv {x} : x ∈ set → Injective (fderiv ℝ toFun x)
+  finrank_le : dim Dom ≤ dim F
+  mapsTo : MapsTo toFun set s
 
 namespace Chart
 
-variable {k : ℕ} {l : Fin (k + 1)} {α : I} {s U : Set (E × F)}
+attribute [instance] instNormedAddCommGroupDom instNormedSpaceDom instFiniteDimensional
+attribute [coe] toFun
+attribute [simp] fst_apply
 
-@[coe]
-def toFun (ψ : Chart k α l s U) (i : Fin l) :
-    E × ψ.subspace i.succ → E × ψ.subspace i.castSucc :=
-  fun xy ↦ (xy.1, ψ.toFunSnd i xy.1 xy.2)
+instance : CoeFun (Chart k α s) fun ψ ↦ E × ψ.Dom → E × F where
+  coe := toFun
 
-instance instCoeFun : CoeFun (Chart k α l s U) fun ψ ↦ ∀ i : Fin l,
-    E × ψ.subspace i.succ → E × ψ.subspace i.castSucc :=
-  ⟨toFun⟩
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+@[simp] theorem prodMk_fst_snd_apply (φ : Chart k α s) (x : E × φ.Dom) :
+    (x.1, (φ x).2) = φ x := by
+  ext <;> simp
 
-theorem apply_fst (ψ : Chart k α l s U) (i : Fin l) (x : E × ψ.subspace i.succ) :
-    (ψ i x).1 = x.1 :=
-  rfl
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+@[simp] theorem prodMk_snd_apply_mk (φ : Chart k α s) (x : E) (y : φ.Dom) :
+    (x, (φ (x, y)).snd) = φ (x, y) := by
+  ext <;> simp
 
-/-- The product of balls where the map $\psi_i$ is $C^{k-i+(\alpha)}$. -/
-def dom (ψ : Chart k α l s U) (i : Fin (l + 1)) : Set (E × ψ.subspace i) :=
-  ball 0 (ψ.radiusLeft i) ×ˢ ball 0 (ψ.radiusRight i)
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+theorem continuousAt (f : Chart k α s) {x : E × f.Dom} (hx : x ∈ f.set) :
+    ContinuousAt f x :=
+  f.contDiffMoreiraHolderAt hx |>.continuousAt
 
-theorem isOpen_dom (ψ : Chart k α l s U) (i : Fin (l + 1)) : IsOpen (ψ.dom i) :=
-  .prod isOpen_ball isOpen_ball
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+theorem contDiffAt (f : Chart k α s) {x : E × f.Dom} (hx : x ∈ f.set) :
+    ContDiffAt ℝ k f x :=
+  f.contDiffMoreiraHolderAt hx |>.contDiffAt
 
-theorem dom_nonempty (ψ : Chart k α l s U) (i : Fin (l + 1)) : (ψ.dom i).Nonempty :=
-  .prod (nonempty_ball.2 <| ψ.radiusLeft_pos i) (nonempty_ball.2 <| ψ.radiusRight_pos i)
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+theorem eventually_differentiableAt (f : Chart k α s) {x : E × f.Dom} (hx : x ∈ f.set)
+      (hk : k ≠ 0) :
+    ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y :=
+  f.contDiffAt hx |>.eventually (by simp) |>.mono fun y hy ↦
+    hy.differentiableAt (by simpa [Nat.one_le_iff_ne_zero])
 
-theorem holderSet_subset_dom (ψ : Chart k α l s U) (i : Fin (l + 1)) :
-    ψ.holderSet i ⊆ ψ.dom i := by
-  induction i using Fin.cases with
-  | zero => exact ψ.holderSet_subset_dom_zero
-  | succ i => exact (ψ.contDiffMoreiraHolderOn_toFunSnd i).subset
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+theorem differentiableAt (f : Chart k α s) (hk : k ≠ 0) {x : E × f.Dom} (hx : x ∈ f.set) :
+    DifferentiableAt ℝ f x :=
+  f.contDiffMoreiraHolderAt hx |>.differentiableAt hk
 
-theorem mapsTo_dom (ψ : Chart k α l s U) (i : Fin l) :
-    MapsTo (ψ i) (ψ.dom i.succ) (ψ.dom i.castSucc) := by
-  rintro ⟨x, y⟩ ⟨hx, hy⟩
-  exact ⟨ball_subset_ball (ψ.radiusLeft_anti i.castSucc_le_succ) hx, ψ.toFunSnd_mem_ball i hx hy⟩
+/-
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+@[simp]
+theorem fst_fderiv_apply (f : Chart k α s) (hk : k ≠ 0) {x : E × f.Dom} (hx :  :
+    (fderiv ℝ f f.pt x).fst = x.fst := by
+  simpa [fderiv_comp, f.differentiableAt_pt hk, fderiv_fst]
+    using congr($(f.fst_comp_toFun_eventuallyEq.fderiv_eq (𝕜 := ℝ)) x)
 
-theorem mapsTo_holderSet (ψ : Chart k α l s U) (i : Fin l) :
-    MapsTo (ψ i) (ψ.holderSet i.succ) (ψ.holderSet i.castSucc) :=
-  ψ.mapsTo_holderSet' i
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+@[simp]
+theorem fderiv_mk_zero {ha} (f : Chart k α s a ha) (x : f.dom) :
+    fderiv ℝ f f.pt (0, x) = (0, x.1) := by
+  ext
+  · by_cases hdf : DifferentiableAt ℝ f f.pt
+    · simpa [fderiv_comp, hdf, fderiv_fst]
+        using congr($(f.fst_comp_toFun_eventuallyEq.fderiv_eq (𝕜 := ℝ)) (0, x))
+    · simp [fderiv_zero_of_not_differentiableAt hdf]
+  · simpa using congr($(f.snd_comp_fderiv_comp_inr) x)
+-/
 
-theorem contDiffMoreiraHolderOn (ψ : Chart k α l s U) (i : Fin l) :
-    ContDiffMoreiraHolderOn (k - i) α (ψ i) (ψ.holderSet i.succ) (ψ.dom i.succ) :=
-  .prodMk (.fst (ψ.holderSet_subset_dom _) (ψ.isOpen_dom _)) (ψ.contDiffMoreiraHolderOn_toFunSnd i)
+@[simps -fullyApplied]
+protected def id : Chart k α s where
+  Dom := F
+  toFun := id
+  set := s
+  fst_apply _ := rfl
+  contDiffMoreiraHolderAt _ := .id
+  injective_fderiv := by simp [injective_id]
+  finrank_le := le_rfl
+  mapsTo := mapsTo_id _
 
-theorem fderiv_comp_eq_zero (ψ : Chart k α l s U) (i : Fin l) {f : E × ψ.subspace i.castSucc → G}
-    (hf : ContDiffMoreiraHolderOn (k - i) α f (ψ.holderSet i.castSucc) (ψ.dom i.castSucc))
-    (hf₀ : ∀ x ∈ ψ.holderSet i.castSucc, f x = 0) {x : E × ψ.subspace i.succ}
-    (hx : x ∈ ψ.holderSet i.succ) : fderiv ℝ (f ∘ ψ i ∘ .mk x.1) x.2 = 0 := by
-  suffices ∀ g : G →L[ℝ] ℝ, g.comp (fderiv ℝ (f ∘ ψ i ∘ .mk x.1) x.2) = 0 by
-    ext y
-    -- TODO: add `SeparatingDual.ext`
-    by_contra hy
-    obtain ⟨g, hg⟩ := SeparatingDual.exists_ne_zero (R := ℝ) hy
-    exact hg (DFunLike.congr_fun (this g) y)
-  intro g
-  rw [← g.fderiv, ← fderiv_comp]
-  · refine ψ.fderiv_comp_eq_zero' i (fun a b ↦ g (f (a, b))) ?_ ?_ x.1 x.2 hx
-    · exact hf.continuousLinearMap_comp g
-    · simp +contextual [hf₀]
-  · exact g.differentiableAt
-  · apply ContDiffAt.differentiableAt (n := (k - i : ℕ)) _ (by norm_cast; omega)
-    apply ((hf.contDiffOn.comp (ψ.contDiffMoreiraHolderOn i).contDiffOn _).contDiffAt _).comp
-    · refine contDiffAt_const.prodMk contDiffAt_id
-    · exact ψ.mapsTo_dom _
-    · exact (ψ.isOpen_dom _).mem_nhds <| ψ.holderSet_subset_dom _ hx
+instance : Inhabited (Chart k α s) := ⟨.id⟩
 
-def compUpTo (ψ : Chart k α l s U) (i : Fin (l + 1)) : E × ψ.subspace i → E × F :=
-  i.induction (fun xy ↦ (xy.1, xy.2.1) + ψ.center) fun j ↦ (· ∘ ψ j)
+theorem exists_dim_lt_map_nhdsWithin_eq (hs : ¬IsLargeAt k α s a)
+    (hk : k ≠ 0) (has : a ∈ s) :
+    ∃ (ψ : Chart k α s) (pt : E × ψ.Dom),
+      dim ψ.Dom < dim F ∧ pt ∈ ψ.set ∧ map ψ (𝓝[ψ.set] pt) = 𝓝[s] a := by
+  unfold IsLargeAt at hs
+  push_neg at hs
+  rcases hs with ⟨f, hfk, hf₀, hdf⟩
+  set ψ := chartImplicitData f a (hfk.self_of_nhdsWithin has) hk hdf
+  set g := ψ.implicitFunction 0
+  have hae : a ∈ ψ.toOpenPartialHomeomorph.source := by
+    simpa [ψ] using ψ.pt_mem_toOpenPartialHomeomorph_source
+  have hfa₀ : f a = 0 := hf₀.self_of_nhdsWithin has
+  have hfka : ContDiffMoreiraHolderAt k α f a := hfk.self_of_nhdsWithin has
+  have hga : g (ψ.rightFun a) = a := by
+    simpa [g, ψ, hfa₀] using ψ.implicitFunction_apply_image.self_of_nhds
+  have hg_tendsto : Tendsto g (𝓝 (ψ.rightFun a)) (𝓝 a) := by
+    convert ψ.differentiableAt_implicitFunction.continuousAt.tendsto
+    · simp [ψ, hfa₀]
+    · simp [ψ]
+    · simpa [ψ] using ψ.implicitFunction_apply_image.self_of_nhds.symm
+  have Hmem_target : ∀ᶠ x in 𝓝 (ψ.rightFun a), (0, x) ∈ ψ.toOpenPartialHomeomorph.target := by
+    refine (ψ.toOpenPartialHomeomorph.open_target.preimage (by fun_prop)).eventually_mem ?_
+    simpa [ψ, hfa₀] using ψ.toOpenPartialHomeomorph.mapsTo hae
+  have Hfst : ∀ᶠ x in 𝓝 (ψ.rightFun a), (g x).fst = x.fst := by
+    simpa [g, ψ, EventuallyEq, hfa₀]
+      using fst_implicitFunction_chartImplicitData_eventuallyEq hfka hk hdf
+  have Hcomp_inr : ∀ᶠ x in 𝓝 (ψ.rightFun a), fderiv ℝ f (g x) ∘L .inr ℝ E F ≠ 0 := by
+    apply Filter.Tendsto.eventually_ne _ hdf
+    refine (ContinuousLinearMap.precomp _ (.inr ℝ E F)).continuous.tendsto _ |>.comp ?_
+    refine (hfka.contDiffAt.continuousAt_fderiv (mod_cast hk)).tendsto.comp hg_tendsto
+  have HisInvertible : ∀ᶠ x in 𝓝 (ψ.rightFun a), (fderiv ℝ ψ.prodFun (g x)).IsInvertible := by
+    suffices (fderiv ℝ ψ.prodFun ψ.pt).IsInvertible by
+      simp only [ψ, chartImplicitData_pt] at this
+      apply this.eventually
+      refine (ContDiffAt.continuousAt_fderiv ?_ (n := k) (mod_cast hk)).tendsto.comp hg_tendsto
+      simp +unfoldPartialApp only [ψ, ImplicitFunctionData.prodFun, chartImplicitData]
+      exact hfka.contDiffAt.prodMk (by fun_prop)
+    rw [ψ.hasStrictFDerivAt.hasFDerivAt.fderiv]
+    apply ContinuousLinearMap.isInvertible_equiv
+  have HcontDiff : ∀ᶠ x in 𝓝 (ψ.rightFun a), (g x ∈ s → ContDiffMoreiraHolderAt k α g x) := by
+    rw [← map_implicitFunction_chartImplicitData_nhdsWithin_preimage hfka hk hdf s hf₀ has,
+      eventually_map, eventually_nhdsWithin_iff] at hfk
+    filter_upwards [Hmem_target, HisInvertible, hfk] with x hx₁ hx₂ hx₃ hgx
+    suffices ContDiffMoreiraHolderAt k α ψ.toOpenPartialHomeomorph.symm (0, x) from
+      this.comp (.prodMk .const .id) hk
+    apply OpenPartialHomeomorph.contDiffMoreiraHolderAt_symm _ hx₁ hx₂
+    convert (hx₃ hgx).prodMk _ using 4
+    · simp [ψ]
+    · simp only [ψ, chartImplicitData]
+      apply ContinuousLinearMap.contDiffMoreiraHolderAt
+  rcases _root_.eventually_nhds_iff.mp (Hmem_target.and <| Hfst.and <| Hcomp_inr.and <|
+    HisInvertible.and HcontDiff) with ⟨U, hU, hUo, hUmem⟩
+  choose hU_target hU_fst hUcomp_inr hUinv hUk using hU
+  refine ⟨⟨_, fun x ↦ (x.1, (g x).2), U ∩ g ⁻¹' s, fun _ ↦ rfl, ?_, ?_, ?_, ?_⟩, ψ.rightFun a,
+    ?_, ?_, ?_⟩
+  · rintro x ⟨hxU, hxs⟩
+    exact .prodMk .fst <| .comp .snd (hUk _ hxU hxs) hk
+  · rintro x ⟨hxU, hgx⟩
+    have : (fun y ↦ (y.1, (g y).2)) =ᶠ[𝓝 x] g := by
+      filter_upwards [hUo.eventually_mem hxU] with y hyU
+      rw [← hU_fst y hyU]
+    rw [this.fderiv_eq]
+    have : fderiv ℝ g x = _ :=
+      ψ.toOpenPartialHomeomorph.hasFDerivAt_symm_inverse (hU_target x hxU) (hUinv x hxU)
+      |>.comp x (ContinuousLinearMap.inr ℝ ℝ
+        (E × LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F))).hasFDerivAt |>.fderiv
+    rw [this, ContinuousLinearMap.coe_comp']
+    apply Injective.comp
+    · exact (hUinv _ hxU).injective_inverse
+    · simp [Injective]
+  · exact Submodule.finrank_le _
+  · rintro x ⟨hxU, hgx⟩
+    simpa only [← hU_fst x hxU]
+  · apply Submodule.finrank_lt
+    simpa [SetLike.ext_iff, DFunLike.ext_iff] using hdf
+  · simp [*]
+  · simp only
+    rw [← map_implicitFunction_chartImplicitData_nhdsWithin_preimage hfka hk hdf _ hf₀ has,
+      nhdsWithin_inter_of_mem]
+    · apply Filter.map_congr
+      filter_upwards [mem_nhdsWithin_of_mem_nhds <| hUo.mem_nhds hUmem] with x hxU
+      rw [← hU_fst x hxU]
+    · exact mem_nhdsWithin_of_mem_nhds <| hUo.mem_nhds hUmem
 
-theorem compUpTo_zero (ψ : Chart k α l s U) :
-    ψ.compUpTo 0 = fun xy ↦ (xy.1, xy.2.1) + ψ.center :=
-  rfl
+@[simps -fullyApplied]
+protected def comp (g : Chart k α s) (f : Chart k α g.set) (hk : k ≠ 0) :
+    Chart k α s where
+  Dom := f.Dom
+  toFun := g ∘ f
+  set := f.set
+  fst_apply := by simp
+  contDiffMoreiraHolderAt {x} hx :=
+    g.contDiffMoreiraHolderAt (f.mapsTo hx) |>.comp (f.contDiffMoreiraHolderAt hx) hk
+  injective_fderiv {x} hx := by
+    rw [fderiv_comp]
+    · exact (g.injective_fderiv (f.mapsTo hx)).comp <| f.injective_fderiv hx
+    · exact g.differentiableAt hk (f.mapsTo hx)
+    · exact f.differentiableAt hk hx
+  finrank_le := f.finrank_le.trans g.finrank_le
+  mapsTo := g.mapsTo.comp f.mapsTo
 
-theorem compUpTo_succ (ψ : Chart k α l s U) (i : Fin l) :
-    ψ.compUpTo i.succ = ψ.compUpTo i.castSucc ∘ ψ i :=
-  rfl
-    
-theorem contDiffMoreiraHolderOn_compUpTo (ψ : Chart k α l s U) (i : Fin (l + 1)) :
-    ContDiffMoreiraHolderOn (k + 1 - i) α (ψ.compUpTo i) (ψ.holderSet i) (ψ.dom i) := by
-  induction i using Fin.induction with
-  | zero =>
-    simp only [compUpTo_zero]
-    refine ContDiffOn.contDiffMoreiraHolderOn (.add ?_ contDiffOn_const)
-      (ψ.holderSet_subset_dom _) (ψ.isOpen_dom _) (WithTop.coe_lt_top _) _
-    exact contDiffOn_fst.prodMk ((ψ.subspace 0).subtypeL.contDiff.comp_contDiffOn contDiffOn_snd)
-  | succ i ih =>
-    dsimp only [compUpTo_succ]
-    refine (ih.of_le ?_).comp ((ψ.contDiffMoreiraHolderOn _).of_le ?_) ?_ ?_ ?_
-    · dsimp; omega
-    · simp
-    · exact ψ.mapsTo_dom _
-    · exact ψ.mapsTo_holderSet _
-    · omega
+@[simps -fullyApplied]
+def restr (f : Chart k α s) (t : Set (E × f.Dom)) : Chart k α s where
+  Dom := f.Dom
+  toFun := f
+  set := f.set ∩ t
+  fst_apply := by simp
+  contDiffMoreiraHolderAt hx := f.contDiffMoreiraHolderAt hx.1
+  injective_fderiv hx := f.injective_fderiv hx.1
+  finrank_le := f.finrank_le
+  mapsTo := f.mapsTo.mono_left inter_subset_left
 
-theorem mapsTo_compUpTo_dom (ψ : Chart k α l s U) (i : Fin (l + 1)) :
-    MapsTo (ψ.compUpTo i) (ψ.dom i) U := by
-  induction i using Fin.induction with
-  | zero => exact ψ.mapsTo_dom_zero
-  | succ i ih => exact ih.comp <| ψ.mapsTo_dom _
+@[simps -fullyApplied]
+def ofLE (ψ : Chart k α s) (l : ℕ) (hl : l ≤ k) : Chart l α s where
+  __ := ψ
+  contDiffMoreiraHolderAt hx := ψ.contDiffMoreiraHolderAt hx |>.of_le hl
 
-theorem compUpTo_fst (ψ : Chart k α l s U) (i : Fin (l + 1)) (x : E × ψ.subspace i) :
-    (ψ.compUpTo i x).1 = x.1 + ψ.center.1 := by
-  induction i using Fin.induction with
-  | zero => rfl
-  | succ i ih => simp [ih, compUpTo_succ, apply_fst]
+-- TODO: add IsTheta, if we actually need this
+theorem isBigO_sub_rev (ψ : Chart k α s) (hk : k ≠ 0) {x : E × ψ.Dom} (hx : x ∈ ψ.set) :
+    (fun y ↦ y.1 - y.2) =O[𝓝 (x, x)] (fun y ↦ ψ y.1 - ψ y.2) := by
+  set ψ' := fderiv ℝ ψ x
+  rcases ψ'.antilipschitz_of_injective_of_isClosed_range (ψ.injective_fderiv hx)
+    (LinearMap.coe_range ψ' ▸ Submodule.closed_of_finiteDimensional _) with ⟨C, hC⟩
+  have : (fun y ↦ y.1 - y.2) =O[𝓝 (x, x)] (fun y ↦ ψ' (y.1 - y.2)) := by
+    refine .of_bound C <| .of_forall fun y ↦ ?_
+    convert ZeroHomClass.bound_of_antilipschitz ψ' hC (y.1 - y.2)
+  refine this.trans ?_
+  refine ψ.contDiffMoreiraHolderAt hx |>.contDiffAt.hasStrictFDerivAt
+    (by simpa [Nat.one_le_iff_ne_zero])
+    |>.isLittleO |>.trans_isBigO this |>.right_isBigO_add |>.congr (fun _ ↦ rfl) ?_
+  simp [ψ']
 
-theorem dist_le_compUpTo (ψ : Chart k α l s U) (i : Fin (l + 1)) {x : E}
-    (hx : x ∈ ball 0 (ψ.radiusLeft i)) {y₁ y₂ : ψ.subspace i}
-    (hy₁ : y₁ ∈ ball 0 (ψ.radiusRight i)) (hy₂ : y₂ ∈ ball 0 (ψ.radiusRight i)) :
-    dist y₁ y₂ ≤ dist (ψ.compUpTo i (x, y₁)) (ψ.compUpTo i (x, y₂)) := by
-  induction i using Fin.induction with
-  | zero => simp [compUpTo_zero, Subtype.dist_eq]
-  | succ i ih =>
-    have H₁ := ψ.mapsTo_dom i (x := (x, y₁)) ⟨hx, hy₁⟩
-    have H₂ := ψ.mapsTo_dom i (x := (x, y₂)) ⟨hx, hy₂⟩
-    exact (ψ.dist_le_toFunSnd hx hy₁ hy₂).trans <| ih H₁.1 H₁.2 H₂.2
+theorem isBigO_sub_rev_of_tendsto {β : Type*} {l : Filter β} (ψ : Chart k α s)
+    (hk : k ≠ 0) {x : E × ψ.Dom} (hx : x ∈ ψ.set) {f g : β → E × ψ.Dom}
+    (hf : Tendsto f l (𝓝 x)) (hg : Tendsto g l (𝓝 x)) :
+    (fun y ↦ f y - g y) =O[l] (fun y ↦ ψ (f y) - ψ (g y)) := by
+  exact ψ.isBigO_sub_rev hk hx |>.comp_tendsto (hf.prodMk_nhds hg)
 
 end Chart
+
+structure Atlas (k : ℕ) (α : I) (s : Set (E × F)) where
+  charts : Set (Chart k α s)
+  countable : charts.Countable
+  subset_biUnion_isLargeAt : s ⊆ ⋃ f ∈ charts, f '' {x ∈ f.set | IsLargeAt k α f.set x}
+
+theorem nonempty_atlas {k : ℕ} (hk : k ≠ 0) (α : I) (s : Set (E × F)) :
+    Nonempty (Atlas k α s) := by
+  induction hF : dim F using Nat.strongRecOn generalizing F with | _ n ihn
+  subst n
+  set t := {x | IsLargeAt k α s x}
+  choose! f pt hdim_lt hpt_mem hf_map
+    using fun x (hx : x ∈ s \ t) ↦ Chart.exists_dim_lt_map_nhdsWithin_eq hx.2 hk hx.1
+  have hf_mem : ∀ x ∈ s \ t, f x '' (f x).set ∈ 𝓝[s \ t] x := fun x hx ↦ by
+    apply nhdsWithin_mono _ diff_subset
+    rw [← hf_map x hx]
+    exact image_mem_map self_mem_nhdsWithin
+  rcases TopologicalSpace.countable_cover_nhdsWithin hf_mem with ⟨u, hut, huc, htu⟩
+  have Ψ : ∀ x ∈ u, Atlas k α (f x).set := fun x hx ↦
+    Classical.choice (ihn _ (hdim_lt x <| hut hx) _ rfl)
+  refine
+    ⟨insert .id (⋃ (x) (hx : x ∈ u), (fun g ↦ (f x).comp g hk) '' (Ψ x hx).charts),
+    (huc.biUnion fun x hx ↦ (Ψ x hx).countable.image _).insert _, ?_⟩
+  rw [biUnion_insert]
+  intro x hx
+  by_cases hxt : IsLargeAt k α s x
+  · left
+    simp [hx, hxt]
+  · right
+    simp only [biUnion_iUnion, biUnion_image, Chart.comp]
+    rcases mem_iUnion₂.mp (htu ⟨hx, hxt⟩) with ⟨i, hiu, y, hy, rfl⟩
+    rcases mem_iUnion₂.mp ((Ψ i hiu).subset_biUnion_isLargeAt hy) with ⟨g, hgS, z, hz, rfl⟩
+    refine mem_iUnion_of_mem i <| mem_iUnion_of_mem hiu <| mem_biUnion hgS ?_
+    apply mem_image_of_mem
+    exact hz
+
+end
+
+namespace Atlas
+
+universe x u v w
+
+def choice {E : Type u} {F : Type v}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  (k : ℕ) (α : I) (s : Set (E × F)) : Atlas (k + 1) α s :=
+  Classical.choice (nonempty_atlas k.succ_ne_zero α s)
+
+-- TODO: If the variables are still there, then Lean uses them.
+set_option linter.unusedVariables false in
+def main {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] :
+    ∀ {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    (k : ℕ) (α : I) (s : Set (E × F)), Atlas 1 α s
+  | _, _, _, _, 0, α, s => choice 0 α s
+  | _, _, _, _, k + 1, α, s =>
+    let Ψ := choice k α s
+    { charts := ⋃ ψ ∈ Ψ.charts,
+        (fun φ ↦
+          ((ψ.ofLE 1 (by simp)).restr {x | IsLargeAt (k + 1) α ψ.set x}).comp φ one_ne_zero) ''
+          (main k α {x ∈ ψ.set | IsLargeAt (k + 1) α ψ.set x}).charts
+      countable := Ψ.countable.biUnion fun _ _ ↦ (main _ _ _).countable.image _
+      subset_biUnion_isLargeAt := by
+        refine Ψ.subset_biUnion_isLargeAt.trans ?_
+        simp only [biUnion_iUnion, biUnion_image]
+        gcongr with ψ hψ
+        rintro _ ⟨x, hx, rfl⟩
+        rcases mem_iUnion₂.mp
+          ((main k α {x ∈ ψ.set | IsLargeAt (k + 1) α ψ.set x}).subset_biUnion_isLargeAt hx)
+          with ⟨φ, hφ, y, hy, rfl⟩
+        refine mem_biUnion hφ ?_
+        aesop }
+
+end Atlas
