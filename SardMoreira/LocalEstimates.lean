@@ -7,10 +7,6 @@ import SardMoreira.ContDiff
 open scoped Topology NNReal ENNReal unitInterval
 open Asymptotics Filter MeasureTheory AffineMap Set Metric
 
-lemma MeasureTheory.Measure.ae_ne {α : Type*} {_ : MeasurableSpace α} {μ : Measure α}
-    [NoAtoms μ] (a : α) : ∀ᵐ x ∂μ, x ≠ a :=
-  (countable_singleton a).ae_notMem μ
-
 theorem UniformSpace.Completion.hasFDerivAt_coe {𝕜 E : Type*}
     [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {a : E} :
     HasFDerivAt ((↑) : E → Completion E) (toComplL : E →L[𝕜] Completion E) a := by
@@ -20,14 +16,6 @@ section NormedField
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-theorem lineMap_mem_openSegment (a b : E) {t : ℝ} (ht : t ∈ Ioo 0 1) :
-    lineMap a b t ∈ openSegment ℝ a b :=
-  (openSegment_eq_image_lineMap _ _ _).superset <| mem_image_of_mem _ ht
-
-theorem DifferentiableAt.lineDifferentiableAt {f : E → F} {a b : E} (hf : DifferentiableAt ℝ f a) :
-    LineDifferentiableAt ℝ f a b :=
-  hf.hasFDerivAt.hasLineDerivAt _ |>.lineDifferentiableAt
 
 theorem openSegment_subset_ball_left {x y : E} (h : x ≠ y) :
     openSegment ℝ x y ⊆ ball x ‖y - x‖ := by
@@ -121,7 +109,7 @@ lemma dist_le_mul_volume_of_norm_fderiv_le {f : E → F} {a b : E} {C : ℝ} {s 
     ‖f b - f a‖ ≤
       C * ‖b - a‖ * volume.real {t ∈ Ioo (0 : ℝ) 1 | fderiv ℝ f (lineMap a b t) ≠ 0} := by
   have hmem_s : ∀ t ∈ Ioo (0 : ℝ) 1, lineMap a b t ∈ s := fun t ht ↦
-    hab <| lineMap_mem_openSegment a b ht
+    hab <| lineMap_mem_openSegment _ a b ht
   have hC₀ : 0 ≤ C := (norm_nonneg _).trans <| hC _ <| hmem_s (1 / 2) (by norm_num)
   have hfc : ContinuousOn f (segment ℝ a b) :=
     hf.continuousOn.mono <| segment_subset_closure_openSegment.trans <| closure_mono hab

@@ -3,16 +3,6 @@ import Mathlib.MeasureTheory.Constructions.HaarToSphere
 open MeasureTheory MeasureTheory.Measure Metric Set
 open scoped Pointwise NNReal ENNReal
 
-@[simp]
-theorem Subtype.preimage_ball {X : Type*} [PseudoMetricSpace X] {p : X → Prop}
-    (x : {x // p x}) (r : ℝ) : Subtype.val ⁻¹' (ball x.1 r) = ball x r :=
-  rfl
-
-@[simp]
-theorem Subtype.image_ball {X : Type*} [PseudoMetricSpace X] {p : X → Prop}
-    (x : {x // p x}) (r : ℝ) : Subtype.val '' (ball x r) = ball x.1 r ∩ {x | p x} := by
-  ext; simp [Subtype.dist_eq]
-
 private lemma ball_subset_sector_of_small_epsilon
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (x : E) (hx : ‖x‖ = 1) (ε : ℝ) (hε : 0 < ε) (hε2 : ε ≤ 2) :

@@ -83,18 +83,6 @@ theorem implicitToOpenPartialHomeomorphOfComplementedKerRange_apply_fst {f : E �
 
 end HasStrictFDerivAt
 
-@[simp]
-theorem OpenPartialHomeomorph.coe_restrOpen {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : OpenPartialHomeomorph X Y) {U : Set X} (hU : IsOpen U) :
-    ⇑(e.restrOpen U hU) = e :=
-  rfl
-
-@[simp]
-theorem OpenPartialHomeomorph.coe_restrOpen_symm {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] (e : OpenPartialHomeomorph X Y) {U : Set X} (hU : IsOpen U) :
-    ⇑(e.restrOpen U hU).symm = e.symm :=
-  rfl
-
 variable {E F : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]

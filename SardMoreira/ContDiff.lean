@@ -73,20 +73,6 @@ theorem ContDiffOn.continuousAt_iteratedFDerivWithin (hf : ContDiffOn 𝕜 n f s
     ContinuousAt (iteratedFDerivWithin 𝕜 k f s) a :=
   (hf.continuousOn_iteratedFDerivWithin hk hs).continuousAt ha
 
-theorem ContDiffWithinAt.continuousWithinAt_iteratedFDerivWithin (hf : ContDiffWithinAt 𝕜 n f s a)
-    (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) (hk : k ≤ n) :
-    ContinuousWithinAt (iteratedFDerivWithin 𝕜 k f s) s a :=
-  (hf.iteratedFDerivWithin_right hs (by rwa [zero_add]) ha).continuousWithinAt
-
-theorem ContDiffAt.continuousAt_iteratedFDeriv (hf : ContDiffAt 𝕜 n f a) (hk : k ≤ n) :
-    ContinuousAt (iteratedFDeriv 𝕜 k f) a := by
-  simp only [← continuousWithinAt_univ, ← iteratedFDerivWithin_univ]
-  exact hf.contDiffWithinAt.continuousWithinAt_iteratedFDerivWithin uniqueDiffOn_univ trivial hk
-
-theorem ContDiffAt.continuousAt_fderiv (hf : ContDiffAt 𝕜 n f a) (hn : n ≠ 0) :
-    ContinuousAt (fderiv 𝕜 f) a :=
-  hf.fderiv_right (show 0 + 1 ≤ n by simpa [ENat.one_le_iff_ne_zero_withTop]) |>.continuousAt
-
 theorem iteratedFDerivWithin_prodMk {f : E → F} {g : E → G} (hf : ContDiffWithinAt 𝕜 n f s a)
     (hg : ContDiffWithinAt 𝕜 n g s a) (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) {i : ℕ} (hi : i ≤ n) :
     iteratedFDerivWithin 𝕜 i (fun x ↦ (f x, g x)) s a =
@@ -237,26 +223,6 @@ theorem length_eq_iff : c.length = n ↔ c = atomic n := by
 theorem length_lt_iff : c.length < n ↔ c ≠ atomic n := by
   rw [c.length_le.lt_iff_ne]
   exact c.length_eq_iff.not
-
-theorem norm_compAlongOrderedFinpartitionL_apply_le (f : F [×c.length]→L[𝕜] G) :
-    ‖c.compAlongOrderedFinpartitionL 𝕜 E F G f‖ ≤ ‖f‖ :=
-  (ContinuousLinearMap.le_of_opNorm_le _ c.norm_compAlongOrderedFinpartitionL_le f).trans_eq
-    (one_mul _)
-
-theorem norm_compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_le
-    (f₁ f₂ : F [×c.length]→L[𝕜] G) (g₁ g₂ : ∀ i, E [×c.partSize i]→L[𝕜] F) :
-    ‖c.compAlongOrderedFinpartition f₁ g₁ - c.compAlongOrderedFinpartition f₂ g₂‖ ≤
-      ‖f₁‖ * c.length * max ‖g₁‖ ‖g₂‖ ^ (c.length - 1) * ‖g₁ - g₂‖ + ‖f₁ - f₂‖ * ∏ i, ‖g₂ i‖ := calc
-  _ ≤ ‖c.compAlongOrderedFinpartition f₁ g₁ - c.compAlongOrderedFinpartition f₁ g₂‖ +
-      ‖c.compAlongOrderedFinpartition f₁ g₂ - c.compAlongOrderedFinpartition f₂ g₂‖ :=
-    norm_sub_le_norm_sub_add_norm_sub ..
-  _ ≤ ‖f₁‖ * c.length * max ‖g₁‖ ‖g₂‖ ^ (c.length - 1) * ‖g₁ - g₂‖ + ‖f₁ - f₂‖ * ∏ i, ‖g₂ i‖ := by
-    gcongr
-    · refine ((c.compAlongOrderedFinpartitionL 𝕜 E F G f₁).norm_image_sub_le g₁ g₂).trans ?_
-      simp only [Fintype.card_fin]
-      gcongr
-      apply norm_compAlongOrderedFinpartitionL_apply_le
-    · exact c.norm_compAlongOrderedFinpartition_le (f₁ - f₂) g₂
 
 theorem compContinuousLinearMap_compAlongOrderedFinpartition_left
     {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
@@ -444,16 +410,5 @@ theorem compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_isBigO
   apply c.compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_isBigO
   exacts [hp_bdd _ c.length_le, hpB _ c.length_le, fun _ ↦ hq₁_bdd _ (c.partSize_le _),
     fun _ ↦ hq₂_bdd _ (c.partSize_le _), fun _ ↦ hqB _ (c.partSize_le _)]
-
-theorem taylorComp_sub_taylorComp_isBigO
-    (hp_bdd : ∀ k ≤ n, l.IsBoundedUnder (· ≤ ·) (‖p₁ · k‖))
-    (hpB : ∀ k ≤ n, (fun x ↦ p₁ x k - p₂ x k) =O[l] B)
-    (hq₁_bdd : ∀ k ≤ n, l.IsBoundedUnder (· ≤ ·) (‖q₁ · k‖))
-    (hq₂_bdd : ∀ k ≤ n, l.IsBoundedUnder (· ≤ ·) (‖q₂ · k‖))
-    (hqB : ∀ k ≤ n, (fun x ↦ q₁ x k - q₂ x k) =O[l] B) :
-    (fun x ↦ (p₁ x).taylorComp (q₁ x) n - (p₂ x).taylorComp (q₂ x) n) =O[l] B := by
-  simp only [FormalMultilinearSeries.taylorComp, ← Finset.sum_sub_distrib]
-  refine .sum fun c _ ↦ ?_
-  apply compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_isBigO <;> assumption
 
 end FormalMultilinearSeries
