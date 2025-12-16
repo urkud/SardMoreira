@@ -17,10 +17,5 @@ name = "checkdecls"
 scope = "PatrickMassot"
 rev = "master"
 
-[[require]]
-name = "«doc-gen4»"
-scope = "leanprover"
-rev = "main"
-
 [[lean_lib]]
 name = "SardMoreira"
