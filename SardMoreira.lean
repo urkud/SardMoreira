@@ -13,8 +13,9 @@ import SardMoreira.MeasureComap
 import SardMoreira.MeasureNNReal
 import SardMoreira.NormedSpace
 import SardMoreira.OuterMeasureDeriv
-import SardMoreira.StrongVitaliFamily
 import SardMoreira.ToMathlib.ContinuousLinearMap
+import SardMoreira.ToMathlib.PR32775
+import SardMoreira.ToMathlib.PR32986
 import SardMoreira.ToSphereBallBound
 import SardMoreira.UnifDoublingCover
 import SardMoreira.UnifDoublingProd

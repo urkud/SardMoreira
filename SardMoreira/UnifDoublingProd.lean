@@ -1,4 +1,5 @@
 import Mathlib
+import SardMoreira.ToMathlib.PR32986
 
 open scoped Topology Filter
 open MeasureTheory Measure Metric
@@ -41,16 +42,3 @@ instance IsUnifLocDoublingMeasure.volume_pi {ι : Type*} [Fintype ι] {α : ι �
     [∀ i, IsUnifLocDoublingMeasure (volume : Measure (α i))] :
     IsUnifLocDoublingMeasure (volume : Measure (∀ i, α i)) :=
   .pi _
-
-instance IsLocallyFiniteMeasure.prod {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    [MeasurableSpace X] [MeasurableSpace Y] (μ : Measure X) (ν : Measure Y)
-    [IsLocallyFiniteMeasure μ] [IsLocallyFiniteMeasure ν] :
-    IsLocallyFiniteMeasure (μ.prod ν) where
-  finiteAtNhds := by
-    rintro ⟨x, y⟩
-    -- TODO: add FiniteAtFilter _ (_ ×ˢ _)
-    rcases finiteAt_nhds μ x with ⟨s, hs, hμs⟩
-    rcases finiteAt_nhds ν y with ⟨t, ht, hνt⟩
-    use s ×ˢ t, prod_mem_nhds hs ht
-    grw [prod_prod_le]
-    exact ENNReal.mul_lt_top hμs hνt
