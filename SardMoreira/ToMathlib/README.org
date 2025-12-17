@@ -1,0 +1,3 @@
+# Files that are ready to be upstreamed to Mathlib
+
+I reviewed lemmas in these files and I consider them to be of good enough quality to be upstreamed.

@@ -2,7 +2,6 @@ import SardMoreira.Chart
 import SardMoreira.ChartEstimates
 import SardMoreira.ContDiff
 import SardMoreira.ContDiffMoreiraHolder
-import SardMoreira.ContinuousLinearMap
 import SardMoreira.ContinuousMultilinearMap
 import SardMoreira.ImplicitFunction
 import SardMoreira.LebesgueDensity
@@ -15,6 +14,7 @@ import SardMoreira.MeasureNNReal
 import SardMoreira.NormedSpace
 import SardMoreira.OuterMeasureDeriv
 import SardMoreira.StrongVitaliFamily
+import SardMoreira.ToMathlib.ContinuousLinearMap
 import SardMoreira.ToSphereBallBound
 import SardMoreira.UnifDoublingCover
 import SardMoreira.UnifDoublingProd
