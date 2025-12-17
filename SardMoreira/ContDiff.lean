@@ -1,4 +1,5 @@
 import Mathlib
+import SardMoreira.ContinuousLinearMap
 
 open scoped unitInterval Topology NNReal Classical
 open Function Asymptotics Filter Set
@@ -12,55 +13,6 @@ section NWithTopENat
 variable {n : WithTop ℕ∞} {k : ℕ} {a : E}
 
 protected alias UniqueDiffOn.univ := uniqueDiffOn_univ
-
-theorem ContinuousLinearMap.IsInvertible.eventually [CompleteSpace E] {α : Type*} {l : Filter α}
-    {f₀ : E →L[𝕜] F} {f : α → E →L[𝕜] F} (hf₀ : f₀.IsInvertible) (hf : Tendsto f l (𝓝 f₀)) :
-    ∀ᶠ x in l, (f x).IsInvertible :=
-  hf.eventually <| ContinuousLinearEquiv.isOpen.mem_nhds hf₀
-
-@[simp]
-theorem ContinuousLinearMap.IsInvertible.self_comp_inverse {f : E →L[𝕜] F} (hf : f.IsInvertible) :
-    f ∘L f.inverse = .id _ _ := by
-  rcases hf with ⟨e, rfl⟩
-  simp
-
-@[simp]
-theorem ContinuousLinearMap.IsInvertible.inverse_comp_self {f : E →L[𝕜] F} (hf : f.IsInvertible) :
-    f.inverse ∘L f = .id _ _ := by
-  rcases hf with ⟨e, rfl⟩
-  simp
-
-theorem ContinuousLinearMap.IsInvertible.bijective_inverse {f : E →L[𝕜] F} (hf : f.IsInvertible) :
-    Bijective f.inverse := by
-  rcases hf with ⟨e, rfl⟩
-  simp [ContinuousLinearEquiv.bijective]
-
-theorem ContinuousLinearMap.IsInvertible.injective_inverse {f : E →L[𝕜] F} (hf : f.IsInvertible) :
-    Injective f.inverse :=
-  hf.bijective_inverse.injective
-
-theorem ContinuousLinearMap.isBigO_inverse_sub_inverse
-    {α : Type*} {l : Filter α} {f g : α → E →L[𝕜] F}
-    (hf_inv : ∀ᶠ a in l, (f a).IsInvertible)
-    (hf_bdd : IsBoundedUnder (· ≤ ·) l (fun a ↦ ‖(f a).inverse‖))
-    (hg_inv : ∀ᶠ a in l, (g a).IsInvertible)
-    (hg_bdd : IsBoundedUnder (· ≤ ·) l (fun a ↦ ‖(g a).inverse‖)) :
-    (fun a ↦ (f a).inverse - (g a).inverse) =O[l] (fun a ↦ f a - g a) := calc
-  _ =ᶠ[l] fun a ↦ (f a).inverse ∘L (g a - f a) ∘L (g a).inverse := by
-    filter_upwards [hf_inv, hg_inv] with a hfa hga
-    simp [hfa, hga, ← comp_assoc]
-  _ =O[l] fun a ↦ ‖(f a).inverse‖ * ‖g a - f a‖ * ‖(g a).inverse‖ := .of_norm_le fun a ↦ by
-    grw [opNorm_comp_le, opNorm_comp_le, mul_assoc]
-  _ =O[l] (fun a ↦ f a - g a) := by
-    simpa [norm_sub_rev] using (hf_bdd.isBigO_one ℝ).norm_left.mul
-      (isBigO_refl (fun a ↦ ‖g a - f a‖) _) |>.mul (hg_bdd.isBigO_one ℝ).norm_left
-
-theorem ContinuousLinearEquiv.isBigO_symm_sub_symm {α : Type*} {l : Filter α} {f g : α → E ≃L[𝕜] F}
-    (hf : IsBoundedUnder (· ≤ ·) l fun a ↦ (‖((f a).symm : F →L[𝕜] E)‖))
-    (hg : IsBoundedUnder (· ≤ ·) l fun a ↦ (‖((g a).symm : F →L[𝕜] E)‖)) :
-    (fun a ↦ ((f a).symm - (g a).symm : F →L[𝕜] E)) =O[l] (fun a ↦ (f a - g a : E →L[𝕜] F)) := by
-  simp only [← ContinuousLinearMap.inverse_equiv] at *
-  simpa using ContinuousLinearMap.isBigO_inverse_sub_inverse (by simp) hf (by simp) hg
 
 protected theorem UniqueDiffOn.frequently_smallSets {s : Set E} (hs : UniqueDiffOn 𝕜 s) (a : E) :
     ∃ᶠ t in (𝓝[s] a).smallSets, t ∈ 𝓝[s] a ∧ UniqueDiffOn 𝕜 t := by
@@ -286,7 +238,7 @@ theorem OpenPartialHomeomorph.bijective_fderiv_symm (f : OpenPartialHomeomorph E
     (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
     Bijective (fderiv 𝕜 f.symm y) := by
   rw [f.fderiv_symm hy hf']
-  exact hf'.bijective_inverse
+  exact hf'.inverse.bijective
 
 theorem OpenPartialHomeomorph.injective_fderiv_symm (f : OpenPartialHomeomorph E F) {y : F}
     (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :

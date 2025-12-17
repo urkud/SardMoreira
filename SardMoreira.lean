@@ -2,6 +2,7 @@ import SardMoreira.Chart
 import SardMoreira.ChartEstimates
 import SardMoreira.ContDiff
 import SardMoreira.ContDiffMoreiraHolder
+import SardMoreira.ContinuousLinearMap
 import SardMoreira.ContinuousMultilinearMap
 import SardMoreira.ImplicitFunction
 import SardMoreira.LebesgueDensity

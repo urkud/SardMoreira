@@ -522,7 +522,7 @@ theorem exists_dim_lt_map_nhdsWithin_eq (hs : ¬IsLargeAt k α s a)
         (E × LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F))).hasFDerivAt |>.fderiv
     rw [this, ContinuousLinearMap.coe_comp']
     apply Injective.comp
-    · exact (hUinv _ hxU).injective_inverse
+    · exact (hUinv _ hxU).inverse.injective
     · simp [Injective]
   · exact Submodule.finrank_le _
   · rintro x ⟨hxU, hgx⟩
