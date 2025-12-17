@@ -73,23 +73,6 @@ theorem ContDiffOn.continuousAt_iteratedFDerivWithin (hf : ContDiffOn 𝕜 n f s
     ContinuousAt (iteratedFDerivWithin 𝕜 k f s) a :=
   (hf.continuousOn_iteratedFDerivWithin hk hs).continuousAt ha
 
-theorem iteratedFDerivWithin_prodMk {f : E → F} {g : E → G} (hf : ContDiffWithinAt 𝕜 n f s a)
-    (hg : ContDiffWithinAt 𝕜 n g s a) (hs : UniqueDiffOn 𝕜 s) (ha : a ∈ s) {i : ℕ} (hi : i ≤ n) :
-    iteratedFDerivWithin 𝕜 i (fun x ↦ (f x, g x)) s a =
-      (iteratedFDerivWithin 𝕜 i f s a).prod (iteratedFDerivWithin 𝕜 i g s a) := by
-  ext
-  · rw [← ContinuousLinearMap.iteratedFDerivWithin_comp_left _ (hf.prodMk hg) hs ha hi]
-    simp [Function.comp_def]
-  · rw [← ContinuousLinearMap.iteratedFDerivWithin_comp_left _ (hf.prodMk hg) hs ha hi]
-    simp [Function.comp_def]
-
-theorem iteratedFDeriv_prodMk {f : E → F} {g : E → G} (hf : ContDiffAt 𝕜 n f a)
-    (hg : ContDiffAt 𝕜 n g a) {i : ℕ} (hi : i ≤ n) :
-    iteratedFDeriv 𝕜 i (fun x ↦ (f x, g x)) a =
-      (iteratedFDeriv 𝕜 i f a).prod (iteratedFDeriv 𝕜 i g a) := by
-  simp only [← iteratedFDerivWithin_univ]
-  exact iteratedFDerivWithin_prodMk hf.contDiffWithinAt hg.contDiffWithinAt .univ (mem_univ _) hi
-
 theorem iteratedFDerivWithin_comp_of_eventually
     {g : F → G} {f : E → F} {t : Set F} {s : Set E} {a : E}
     (hg : ContDiffWithinAt 𝕜 n g t (f a)) (hf : ContDiffWithinAt 𝕜 n f s a)
