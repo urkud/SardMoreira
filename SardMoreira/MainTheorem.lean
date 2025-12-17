@@ -6,14 +6,12 @@ import SardMoreira.ChartEstimates
 import SardMoreira.WithRPowDist
 import SardMoreira.OuterMeasureDeriv
 import SardMoreira.UnifDoublingProd
+import SardMoreira.ToMathlib.PR32993
 
 open scoped unitInterval NNReal Topology ENNReal Pointwise
 open MeasureTheory Measure Metric
 
 local notation "dim" => Module.finrank ℝ
-
-protected theorem ENNReal.div_right_comm {a b c : ℝ≥0∞} : a / b / c = a / c / b := by
-  simp only [div_eq_mul_inv, mul_right_comm]
 
 -- TODO: generalize to semilinear maps
 protected noncomputable def ContinuousLinearMap.finrank {R M N : Type*} [Semiring R]

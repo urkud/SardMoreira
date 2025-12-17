@@ -2,6 +2,7 @@ import SardMoreira.UpperLowerSemicontinuous
 import SardMoreira.NormedSpace
 import SardMoreira.MeasureComap
 import SardMoreira.MeasureBallSemicontinuous
+import SardMoreira.Topology
 import Mathlib.Data.Real.StarOrdered
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
@@ -404,13 +405,6 @@ theorem eventually_continuousWithinAt_Ici_measure_inter_closedBall_div
     refine ENNReal.Tendsto.div ?_ (by simp_all) (hr₂ _ le_rfl) (.inl hr₁.ne)
     simp only [inter_comm s, ← Measure.restrict_apply₀' hs]
     exact hr₂ _ Measure.restrict_le_self
-
-theorem eventually_nhdsWithin_nhds {X : Type*} [TopologicalSpace X] {U : Set X} (hU : IsOpen U)
-    {p : X → Prop} {x : X} :
-    (∀ᶠ y in 𝓝[U] x, ∀ᶠ z in 𝓝 y, p z) ↔ ∀ᶠ y in 𝓝[U] x, p y := by
-  conv_rhs => rw [← eventually_eventually_nhdsWithin]
-  refine eventually_congr <| eventually_mem_nhdsWithin.mono fun y hy ↦ ?_
-  rw [hU.nhdsWithin_eq hy]
 
 /-- Let `e : X → Y` be a dense topological embedding, let `Z` be a regular space.
 For each `y : Y`, let `U y` be an open set such that `y ∈ closure (U y)`.
