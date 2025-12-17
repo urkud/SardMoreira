@@ -98,4 +98,26 @@ theorem isBigO_inverse_sub_inverse
     simpa [norm_sub_rev] using (hf_bdd.isBigO_one ℝ).norm_left.mul
       (isBigO_refl (fun a ↦ ‖g a - f a‖) _) |>.mul (hg_bdd.isBigO_one ℝ).norm_left
 
+theorem apply_sub_apply_isBigO {α 𝕜 𝕝 E F G : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕝]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕝 F]
+    [NormedAddCommGroup G]
+    {σ : 𝕜 →+* 𝕝} [RingHomIsometric σ]
+    {f₁ f₂ : α → E →SL[σ] F} {g₁ g₂ : α → E} {B : α → G} {l : Filter α}
+    (hf_bdd : l.IsBoundedUnder (· ≤ ·) (‖f₁ ·‖))
+    (hf_sub : (fun a ↦ f₁ a - f₂ a) =O[l] B)
+    (hg_bdd : l.IsBoundedUnder (· ≤ ·) (‖g₂ ·‖))
+    (hg_sub : (fun a ↦ g₁ a - g₂ a) =O[l] B) :
+    (fun a ↦ f₁ a (g₁ a) - f₂ a (g₂ a)) =O[l] B := calc
+  _ = (fun a ↦ (f₁ a (g₁ a) - f₁ a (g₂ a)) + (f₁ a (g₂ a) - f₂ a (g₂ a))) := by simp
+  _ =O[l] B := by
+    refine .add ?_ ?_
+    · simp only [← map_sub]
+      refine .trans (.of_norm_le fun _ ↦ le_opNorm _ _) ?_
+      simpa using hf_bdd.isBigO_one ℝ |>.norm_left |>.mul hg_sub.norm_norm
+    · simp only [← sub_apply]
+      refine .trans (.of_norm_le fun _ ↦ le_opNorm _ _) ?_
+      simpa using hf_sub.norm_norm.mul (hg_bdd.isBigO_one ℝ).norm_left
+
 end ContinuousLinearMap
