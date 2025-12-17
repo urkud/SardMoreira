@@ -14,9 +14,9 @@ import SardMoreira.MeasureNNReal
 import SardMoreira.NormedSpace
 import SardMoreira.OuterMeasureDeriv
 import SardMoreira.ToMathlib.ContinuousLinearMap
+import SardMoreira.ToMathlib.PR31960
 import SardMoreira.ToMathlib.PR32775
 import SardMoreira.ToMathlib.PR32986
-import SardMoreira.ToSphereBallBound
 import SardMoreira.UnifDoublingCover
 import SardMoreira.UnifDoublingProd
 import SardMoreira.UpperLowerSemicontinuous
