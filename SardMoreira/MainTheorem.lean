@@ -5,7 +5,7 @@ import SardMoreira.LinearAlgebra
 import SardMoreira.ChartEstimates
 import SardMoreira.WithRPowDist
 import SardMoreira.OuterMeasureDeriv
-import SardMoreira.UnifDoublingProd
+import SardMoreira.ToMathlib.PR33029
 import SardMoreira.ToMathlib.PR32993
 
 open scoped unitInterval NNReal Topology ENNReal Pointwise
