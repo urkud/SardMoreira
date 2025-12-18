@@ -553,7 +553,7 @@ theorem hausdorffMeasure_image_nhdsWithin_null_of_finrank_eq
     rwa [← hrange_ker, hs x hx, lt_add_iff_pos_right] at hp_dom
   have := hausdorffMeasure_image_piProd_fst_null_of_finrank_eq hg hk ?_
   · rw [hrange_ker, hs x hx] at this
-    refine measure_mono_null (Set.mapsTo_iff_image_subset.mp ?_)
+    refine measure_mono_null (Set.MapsTo.image_subset ?_)
       (epr.symm.lipschitz.hausdorffMeasure_image_null (by positivity) this)
     rintro a ⟨has, ha⟩
     rw [epr.image_symm_eq_preimage, Set.mem_preimage, Set.mem_image]
