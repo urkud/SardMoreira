@@ -19,6 +19,7 @@ import SardMoreira.ToMathlib.PR32186
 import SardMoreira.ToMathlib.PR32775
 import SardMoreira.ToMathlib.PR32986
 import SardMoreira.ToMathlib.PR32993
+import SardMoreira.ToMathlib.PR33027
 import SardMoreira.Topology
 import SardMoreira.UnifDoublingCover
 import SardMoreira.UnifDoublingProd
