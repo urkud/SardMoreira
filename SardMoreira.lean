@@ -24,5 +24,4 @@ import SardMoreira.ToMathlib.PR33029
 import SardMoreira.Topology
 import SardMoreira.UnifDoublingCover
 import SardMoreira.Unused
-import SardMoreira.UpperLowerSemicontinuous
 import SardMoreira.WithRPowDist
