@@ -1,5 +1,5 @@
 import Mathlib.Topology.Order.LowerUpperTopology
-import Mathlib.Topology.Semicontinuous
+import Mathlib.Topology.Semicontinuity.Basic
 
 open Set Filter Function TopologicalSpace
 
