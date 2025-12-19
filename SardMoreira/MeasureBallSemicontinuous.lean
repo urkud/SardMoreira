@@ -2,7 +2,7 @@ import Mathlib.Analysis.Normed.Order.Lattice
 import Mathlib.Data.Real.StarOrdered
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Measure.OpenPos
-import SardMoreira.UpperLowerSemicontinuous
+import Mathlib.Topology.Order.LowerUpperTopology
 
 open MeasureTheory Topology Filter Set Metric
 open scoped NNReal
@@ -32,8 +32,8 @@ theorem continuousWithinAt_Iic_measure_ball {X : Type*} [PseudoMetricSpace X]
 theorem lowerSemicontinuous_measure_ball_toUpper_symm {X : Type*} [PseudoMetricSpace X]
     {_ : MeasurableSpace X} {μ : Measure X} :
     LowerSemicontinuous fun xr : X × WithUpper ℝ ↦ μ (ball xr.1 (WithUpper.toUpper.symm xr.2)) := by
-  simp only [LowerSemicontinuous, Prod.forall, WithUpper.toUpper.surjective.forall,
-    LowerSemicontinuousAt, Equiv.symm_apply_apply]
+  simp only [Semicontinuous, Prod.forall, WithUpper.toUpper.surjective.forall,
+    SemicontinuousAt, Equiv.symm_apply_apply]
   intro x r m hm
   obtain ⟨r₁, hr₁, hmr₁⟩ : ∃ r₁ < r, m < μ (ball x r₁) :=
     (eventually_mem_nhdsWithin.and
@@ -52,7 +52,7 @@ theorem lowerSemicontinuous_measure_ball_toUpper_symm {X : Type*} [PseudoMetricS
 theorem lowerSemicontinuous_measure_ball {X : Type*} [PseudoMetricSpace X]
     {_ : MeasurableSpace X} {μ : Measure X} :
     LowerSemicontinuous fun xr : X × ℝ ↦ μ (ball xr.1 xr.2) :=
-  lowerSemicontinuous_measure_ball_toUpper_symm.comp_continuous <|
+  lowerSemicontinuous_measure_ball_toUpper_symm.comp <|
     continuous_id.prodMap WithUpper.continuous_toUpper
 
 @[fun_prop]
@@ -65,7 +65,7 @@ theorem Measurable.measure_ball {α X : Type*} {_ : MeasurableSpace α}
 theorem IsCompact.exists_isMinOn_measure_ball {X : Type*} [PseudoMetricSpace X]
     [MeasurableSpace X] [OpensMeasurableSpace X] (μ : Measure X) {s : Set X}
     (hs : IsCompact s) (hne : s.Nonempty) (r : ℝ) : ∃ x ∈ s, IsMinOn (μ <| ball · r) s x :=
-  ((lowerSemicontinuous_measure_ball.comp_continuous
+  ((lowerSemicontinuous_measure_ball.comp
     (continuous_id.prodMk continuous_const)).lowerSemicontinuousOn _).exists_isMinOn hne hs
 
 theorem IsCompact.exists_pos_forall_lt_measure_ball {X : Type*} [PseudoMetricSpace X]
