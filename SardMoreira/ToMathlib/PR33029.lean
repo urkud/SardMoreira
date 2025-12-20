@@ -14,8 +14,8 @@ instance IsUnifLocDoublingMeasure.prod {α β : Type*} [PseudoMetricSpace α] [M
     IsUnifLocDoublingMeasure (μ.prod ν) := by
   constructor
   use doublingConstant μ * doublingConstant ν
-  filter_upwards [exists_measure_closedBall_le_mul' μ, exists_measure_closedBall_le_mul' ν]
-    with r hμr hνr x
+  filter_upwards [eventually_measure_le_doublingConstant_mul μ,
+    eventually_measure_le_doublingConstant_mul ν] with r hμr hνr x
   rw [← closedBall_prod_same, prod_prod, ← closedBall_prod_same, prod_prod]
   grw [hμr, hνr, ENNReal.coe_mul, mul_mul_mul_comm]
 
@@ -31,7 +31,8 @@ instance IsUnifLocDoublingMeasure.pi {ι : Type*} [Fintype ι] {α : ι → Type
     [∀ i, SigmaFinite (μ i)] [∀ i, IsUnifLocDoublingMeasure (μ i)] :
     IsUnifLocDoublingMeasure (Measure.pi μ) := by
   use ∏ i, doublingConstant (μ i)
-  filter_upwards [Filter.eventually_all.mpr fun i ↦ exists_measure_closedBall_le_mul' (μ i),
+  filter_upwards [Filter.eventually_all.mpr fun i ↦
+      eventually_measure_le_doublingConstant_mul (μ i),
     eventually_mem_nhdsWithin] with r hr (hr₀ : 0 < r) x
   simpa (disch := positivity) [Finset.prod_mul_distrib, closedBall_pi, pi_pi]
     using Fintype.prod_mono' fun i ↦ hr i (x i)
