@@ -19,7 +19,6 @@ import SardMoreira.ToMathlib.PR32186
 import SardMoreira.ToMathlib.PR32775
 import SardMoreira.ToMathlib.PR32986
 import SardMoreira.ToMathlib.PR32993
-import SardMoreira.ToMathlib.PR33027
 import SardMoreira.ToMathlib.PR33029
 import SardMoreira.ToMathlib.PR33114
 import SardMoreira.Topology
