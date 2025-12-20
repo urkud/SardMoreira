@@ -240,6 +240,11 @@ theorem OpenPartialHomeomorph.bijective_fderiv_symm (f : OpenPartialHomeomorph E
   rw [f.fderiv_symm hy hf']
   exact hf'.inverse.bijective
 
+theorem OpenPartialHomeomorph.surjective_fderiv_symm (f : OpenPartialHomeomorph E F) {y : F}
+    (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
+    Surjective (fderiv 𝕜 f.symm y) :=
+  f.bijective_fderiv_symm hy hf' |>.surjective
+
 theorem OpenPartialHomeomorph.injective_fderiv_symm (f : OpenPartialHomeomorph E F) {y : F}
     (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
     Injective (fderiv 𝕜 f.symm y) :=

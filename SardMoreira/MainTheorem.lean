@@ -463,11 +463,11 @@ theorem hausdorffMeasure_image_piProd_fst_null_of_isBigO_isLittleO
 theorem hausdorffMeasure_image_piProd_fst_null_of_fderiv_comp_inr_zero
     [MeasurableSpace E] [BorelSpace E] [MeasurableSpace G] [BorelSpace G]
     [Nontrivial F] [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
-    {f : E × F → G} {s U : Set (E × F)} (hf : ContDiffMoreiraHolderOn k α f s U) (hk : k ≠ 0)
+    {f : E × F → G} {s : Set (E × F)} (hf : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x) (hk : k ≠ 0)
     (hs : ∀ x ∈ s, fderiv ℝ f x ∘L .inr ℝ E F = 0) :
     μH[sardMoreiraBound (dim E + dim F) k α (dim E)]
       (Pi.prod Prod.fst f '' s) = 0 := by
-  rcases Nat.exists_add_one_eq.mpr hk.bot_lt with ⟨k, rfl⟩
+  rcases Nat.exists_add_one_eq.mpr (pos_iff_ne_zero.mpr hk) with ⟨k, rfl⟩
   suffices ∀ ψ ∈ (Atlas.main k α s).charts,
       μH[sardMoreiraBound (dim E + dim F) (k + 1) α (dim E)]
         ((Pi.prod Prod.fst f ∘ ψ) '' ψ.set) = 0 by
@@ -489,17 +489,17 @@ theorem hausdorffMeasure_image_piProd_fst_null_of_fderiv_comp_inr_zero
   · grw [ψ.finrank_le]
   · intro x hx
     refine .comp _ ?_ (ψ.contDiffAt hx)
-    exact hf.contDiffMoreiraHolderAt (ψ.mapsTo hx) |>.contDiffAt.of_le (by simp)
+    exact hf _ (ψ.mapsTo hx) |>.contDiffAt.of_le (by simp)
   · intro x hx
     push_cast
     apply Atlas.isBigO_main_sub_of_fderiv_zero_right hψ hx
-    · filter_upwards [eventually_mem_nhdsWithin] with x hx using hf.contDiffMoreiraHolderAt hx
+    · filter_upwards [eventually_mem_nhdsWithin] with x hx using hf _ hx
     · filter_upwards [eventually_mem_nhdsWithin] using hs
   · push_cast
     filter_upwards [Besicovitch.ae_tendsto_measure_sectr_inter_closedBall_div
       (μH[dim E]) (μH[dim ψ.Dom]) (measurableSet_closure (s := ψ.set))] with x hx hψx
     apply Atlas.isLittleO_main_sub_of_fderiv_zero_right hψ hψx
-    · filter_upwards [eventually_mem_nhdsWithin] with y hy using hf.contDiffMoreiraHolderAt hy
+    · filter_upwards [eventually_mem_nhdsWithin] with y hy using hf _ hy
     · filter_upwards [eventually_mem_nhdsWithin] using hs
     · convert hx
       simp [Set.indicator_of_mem (subset_closure hψx)]
@@ -507,7 +507,7 @@ theorem hausdorffMeasure_image_piProd_fst_null_of_fderiv_comp_inr_zero
 theorem hausdorffMeasure_image_piProd_fst_null_of_finrank_eq
     [MeasurableSpace E] [BorelSpace E] [MeasurableSpace G] [BorelSpace G]
     [Nontrivial F] [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
-    {f : E × F → G} {s U : Set (E × F)} (hf : ContDiffMoreiraHolderOn k α f s U) (hk : k ≠ 0)
+    {f : E × F → G} {s : Set (E × F)} (hf : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x) (hk : k ≠ 0)
     (hs : ∀ x ∈ s, dim (LinearMap.range <| fderiv ℝ (Pi.prod Prod.fst f) x) = dim E) :
     μH[sardMoreiraBound (dim E + dim F) k α (dim E)]
       (Pi.prod Prod.fst f '' s) = 0 := by
@@ -522,66 +522,88 @@ theorem hausdorffMeasure_image_piProd_fst_null_of_finrank_eq
     rfl
   unfold Pi.prod
   rw [DifferentiableAt.fderiv_prodMk (by fun_prop), fderiv_fst]
-  exact hf.contDiffMoreiraHolderAt hx |>.differentiableAt hk
+  exact hf _ hx |>.differentiableAt hk
 
 theorem hausdorffMeasure_image_nhdsWithin_null_of_finrank_eq
     [CompleteSpace F] [MeasurableSpace F] [BorelSpace F]
-    (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s U : Set E}
-    (hf : ContDiffMoreiraHolderOn k α f s U)
-    (hs : ∀ x ∈ s, dim (LinearMap.range <| fderiv ℝ f x) = p) {x : E} (hx : x ∈ s) :
-    ∃ t ∈ 𝓝[s] x, μH[sardMoreiraBound (dim E) k α p] (f '' t) = 0 := by
+    (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s : Set E}
+    (hf : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x)
+    (hs : ∀ x ∈ s, (fderiv ℝ f x).finrank = p) {a : E} (ha : a ∈ s) :
+    ∃ t ∈ 𝓝[s] a, μH[sardMoreiraBound (dim E) k α p] (f '' t) = 0 := by
   have : FiniteDimensional ℝ E := .of_finrank_pos (by grind)
-  have hker := ContinuousLinearMap.ker_closedComplemented_of_finiteDimensional_range (fderiv ℝ f x)
-  have hrange := Submodule.ClosedComplemented.of_finiteDimensional (LinearMap.range (fderiv ℝ f x))
-  rcases hf.exists_openPartialHomeomorph_conj_piProd_fst hk hx hker hrange
-    with ⟨epq, epr, g, hx_epq, hepqU, hepq, hepq_symm, heqOn⟩
-  use s ∩ epq.source, inter_mem_nhdsWithin _ (epq.open_source.mem_nhds hx_epq)
-  set t := epq.target ∩ epq.symm ⁻¹' s
-  have heqOn_g : Set.EqOn (Prod.snd ∘ epr ∘ f ∘ epq.symm) g epq.target := heqOn.comp_left
-  have hg : ContDiffMoreiraHolderOn k α g t epq.target := by
-    refine .congr_eqOn ?_ heqOn_g
-    refine .continuousLinearMap_comp ?_
-      (.snd ℝ (LinearMap.range (fderiv ℝ f x)) (LinearMap.ker hrange.choose))
-    refine .continuousLinearMap_comp ?_ epr.toContinuousLinearMap
-    refine hf.comp hepq_symm (epq.symm_mapsTo.mono_right hepqU) ?_ hk
-    exact (Set.mapsTo_preimage _ _).mono_left Set.inter_subset_right
-  have hrange_ker :
-      dim (LinearMap.range (fderiv ℝ f x)) + dim (LinearMap.ker (fderiv ℝ f x)) = dim E :=
-    LinearMap.finrank_range_add_finrank_ker (fderiv ℝ f x : E →ₗ[ℝ] F)
-  have : Nontrivial ↥(LinearMap.ker (fderiv ℝ f x)) := by
+  obtain ⟨Ker, Range, Coker, eDom, eCod, hfin₁, hfin₂, hdimKer, hdimRange, haeDom, hinv,
+      hcdmh, hfst⟩ :
+      ∃ (Ker : Submodule ℝ E) (Range Coker : Submodule ℝ F)
+        (eDom : OpenPartialHomeomorph E (Range × Ker)) (eCod : F ≃L[ℝ] (Range × Coker)),
+        FiniteDimensional ℝ Ker ∧ FiniteDimensional ℝ Range ∧
+        dim Ker = dim E - p ∧ dim Range = p ∧ a ∈ eDom.source ∧
+        (fderiv ℝ eDom a).IsInvertible ∧
+        (∀ x ∈ s, ContDiffMoreiraHolderAt k α eDom x) ∧
+        (∀ x, (eDom x).1 = (eCod (f x)).1) := by
+    have hker : (LinearMap.ker (fderiv ℝ f a)).ClosedComplemented := .of_finiteDimensional _
+    have hrange : (LinearMap.range (fderiv ℝ f a)).ClosedComplemented := .of_finiteDimensional _
+    use LinearMap.ker (fderiv ℝ f a), LinearMap.range (fderiv ℝ f a), LinearMap.ker hrange.choose
+    have hdf := (hf a ha).contDiffAt.hasStrictFDerivAt (by simpa [Nat.one_le_iff_ne_zero])
+    set eDom := hdf.implicitToOpenPartialHomeomorphOfComplementedKerRange _ _ hker hrange
+    refine ⟨eDom,
+      .equivOfRightInverse hrange.choose (Submodule.subtypeL _) hrange.choose_spec,
+      inferInstance, inferInstance, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [← (fderiv ℝ f a).finrank_range_add_finrank_ker, ← hs a ha, ContinuousLinearMap.finrank,
+        Nat.add_sub_cancel_left]
+    · exact hs a ha
+    · simp [eDom]
+    · simpa using hdf.implicitFunctionDataOfComplementedKerRange _ _ hker hrange
+        |>.isInvertible_fderiv_prodFun
+    · intro x hx
+      rw [hdf.coe_implicitToOpenPartialHomeomorphOfComplementedKerRange hker hrange]
+      exact .prodMk (.comp (ContinuousLinearMap.contDiffMoreiraHolderAt _) (hf x hx) hk)
+        (ContinuousLinearMap.contDiffMoreiraHolderAt _)
+    · intro x
+      simp [eDom]
+  have : Nontrivial Ker := by
     apply Module.nontrivial_of_finrank_pos (R := ℝ)
-    rwa [← hrange_ker, hs x hx, lt_add_iff_pos_right] at hp_dom
-  have := hausdorffMeasure_image_piProd_fst_null_of_finrank_eq hg hk ?_
-  · rw [hrange_ker, hs x hx] at this
-    refine measure_mono_null (Set.MapsTo.image_subset ?_)
-      (epr.symm.lipschitz.hausdorffMeasure_image_null (by positivity) this)
-    rintro a ⟨has, ha⟩
-    rw [epr.image_symm_eq_preimage, Set.mem_preimage, Set.mem_image]
-    refine ⟨epq a, ⟨epq.mapsTo ha, ?_⟩, ?_⟩
-    · simp [*]
-    · rw [← heqOn (epq.mapsTo ha)]
-      simp [ha]
-  · intro a ha
-    simp only [← ContinuousLinearMap.finrank.eq_1] at *
-    rw [← (heqOn.eventuallyEq_of_mem <| epq.open_target.mem_nhds ha.1).fderiv_eq, epr.comp_fderiv,
-      epr.finrank_comp_left, fderiv_comp, ContinuousLinearMap.finrank_comp_eq_left_of_surjective,
-      hs x hx, hs _ ha.2]
-    · apply Function.LeftInverse.surjective (g := fderiv ℝ epq (epq.symm a))
-      rw [Function.leftInverse_iff_comp, ← ContinuousLinearMap.coe_comp',
-        ← ContinuousLinearMap.coe_id' (R₁ := ℝ), DFunLike.coe_fn_eq]
-      have : fderiv ℝ (epq.symm ∘ epq) (epq.symm a) = .id ℝ E := by
-        rw [(epq.leftInvOn.eqOn.eventuallyEq_of_mem _).fderiv_eq, fderiv_id]
-        exact epq.open_source.mem_nhds <| epq.symm_mapsTo ha.1
-      rwa [fderiv_comp, epq.rightInvOn ha.1] at this
-      · rw [epq.rightInvOn ha.1]
-        exact hepq_symm.contDiffMoreiraHolderAt ha |>.differentiableAt hk
-      · exact hepq.contDiffMoreiraHolderAt ⟨epq.symm_mapsTo ha.1, ha.2⟩ |>.differentiableAt hk
-    · exact hf.contDiffMoreiraHolderAt ha.2 |>.differentiableAt hk
-    · exact hepq_symm.contDiffMoreiraHolderAt ha |>.differentiableAt hk
+    grind
+  set g : (Range × Ker) → Coker := fun x ↦ (eCod <| f <| eDom.symm x).2
+  set t := eDom.target ∩ eDom.symm ⁻¹' {x ∈ s | (fderiv ℝ eDom x).IsInvertible}
+  have hgt : ∀ x ∈ t, ContDiffMoreiraHolderAt k α g x := by
+    intro x hx
+    refine .comp .snd (eCod.contDiffMoreiraHolderAt.comp (.comp ?_ ?_ hk) hk) hk
+    · exact hf _ hx.2.1
+    · exact eDom.contDiffMoreiraHolderAt_symm hx.1 hx.2.2 (hcdmh _ hx.2.1)
+  have hg_eqOn : eDom.target.EqOn (Pi.prod Prod.fst g) (eCod ∘ f ∘ eDom.symm) := by
+    intro x hx
+    ext <;> simp [← hfst, hx, g]
+  have hgdim : ∀ x ∈ t, (fderiv ℝ (Pi.prod Prod.fst g) x).finrank = dim Range := by
+    intro x hx
+    have hd : DifferentiableAt ℝ eDom.symm x :=
+      eDom.contDiffMoreiraHolderAt_symm hx.1 hx.2.2 (hcdmh _ hx.2.1) |>.differentiableAt hk
+    rw [hdimRange, hg_eqOn.eventuallyEq_of_mem (eDom.open_target.mem_nhds hx.1) |>.fderiv_eq,
+      fderiv_comp, eCod.fderiv, eCod.finrank_comp_left, fderiv_comp,
+      ContinuousLinearMap.finrank_comp_eq_left_of_surjective, hs _ hx.2.1]
+    · exact eDom.surjective_fderiv_symm hx.1 hx.2.2
+    · exact hf _ hx.2.1 |>.differentiableAt hk
+    · exact hd
+    · exact eCod.differentiableAt
+    · exact hf _ hx.2.1 |>.differentiableAt hk |>.comp _ hd
+  refine ⟨eDom.symm '' t, ?_, ?_⟩
+  · convert_to eDom.symm '' t ∈ Filter.map eDom.symm (𝓝[t] (eDom a))
+    · rw [eDom.nhdsWithin_target_inter (eDom.mapsTo haeDom),
+        eDom.symm.map_nhdsWithin_preimage_eq (eDom.mapsTo haeDom),
+        Set.setOf_and, eDom.leftInvOn haeDom, Set.setOf_mem_eq, nhdsWithin_inter_of_mem']
+      apply mem_nhdsWithin_of_mem_nhds
+      exact (hcdmh _ ha).contDiffAt.eventually_isInvertible_fderiv hinv (by positivity)
+    · exact Filter.image_mem_map self_mem_nhdsWithin
+  · have := hausdorffMeasure_image_piProd_fst_null_of_finrank_eq hgt hk hgdim
+    rw [hdimKer, hdimRange, Nat.add_sub_cancel' hp_dom.le] at this
+    convert (eCod.symm.lipschitz.hausdorffMeasure_image_null (by positivity) this) using 2
+    rw [Set.image_image, Set.image_image]
+    apply Set.EqOn.image_eq
+    intro x hx
+    simp only [hg_eqOn hx.1, Function.comp_apply, eCod.symm_apply_apply]
 
 theorem hausdorffMeasure_image_null_of_finrank_eq [MeasurableSpace F] [BorelSpace F]
-    [CompleteSpace F] (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s U : Set E}
-    (hf : ContDiffMoreiraHolderOn k α f s U)
+    [CompleteSpace F] (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s : Set E}
+    (hf : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x)
     (hs : ∀ x ∈ s, dim (LinearMap.range <| fderiv ℝ f x) = p) :
     μH[sardMoreiraBound (dim E) k α p] (f '' s) = 0 := by
   have : FiniteDimensional ℝ E := .of_finrank_pos (by grind)
@@ -594,8 +616,8 @@ end Moreira2001
 open UniformSpace in
 theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
     [MeasurableSpace F] [BorelSpace F]
-    (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s U : Set E}
-    (hf : ContDiffMoreiraHolderOn k α f s U)
+    (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s : Set E}
+    (hf : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x)
     (hs : ∀ x ∈ s, dim (LinearMap.range <| fderiv ℝ f x) ≤ p) :
     μH[sardMoreiraBound (dim E) k α p] (f '' s) = 0 := by
   wlog hF : CompleteSpace F generalizing F
@@ -603,7 +625,7 @@ theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
     set e : F →ₗᵢ[ℝ] Completion F := Completion.toComplₗᵢ
     rw [← e.isometry.hausdorffMeasure_image, Set.image_image]
     apply this
-    · exact hf.continuousLinearMap_comp e.toContinuousLinearMap
+    · exact fun x hx ↦ (hf x hx).continuousLinearMap_comp e.toContinuousLinearMap
     · intro x hx
       grw [fderiv_comp', ← hs x hx]
       · change dim (LinearMap.range ((fderiv ℝ e (f x)).toLinearMap ∘ₗ
@@ -613,7 +635,7 @@ theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
         · simp [LinearMap.domRestrict, e, Function.Injective,
             show fderiv ℝ (↑) (f x) = e.toContinuousLinearMap from e.toContinuousLinearMap.fderiv]
       · exact e.toContinuousLinearMap.differentiableAt
-      · exact (hf.contDiffMoreiraHolderAt hx).differentiableAt hk
+      · exact (hf x hx).differentiableAt hk
     · infer_instance
     · left; positivity
   -- Apply the Moreira2001 theorem to each of the sets where the rank is exactly `p' ≤ p`.
@@ -622,8 +644,9 @@ theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
         (f '' {x ∈ s | dim (LinearMap.range (fderiv ℝ f x)) = p'}) = 0 := by
     intro p' hp'
     apply Moreira2001.hausdorffMeasure_image_null_of_finrank_eq
-      (by grind) hk (U := U)
-    · exact hf.subset_left Set.inter_subset_left
+    · grind
+    · exact hk
+    · exact fun x hx ↦ hf x hx.1
     · simp
   -- Since $s$ is the union of the sets where the rank is exactly $p'$ for $p' \leq p$,
   -- we can use the countable subadditivity of the Hausdorff measure.
@@ -640,8 +663,8 @@ theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
   exact monotone_sardMoreiraBound _ hk _ hp'
 
 theorem dimH_image_le_sardMoreiraBound_of_finrank_le
-    (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s U : Set E}
-    (hf : ContDiffMoreiraHolderOn k α f s U)
+    (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s : Set E}
+    (hf : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x)
     (hs : ∀ x ∈ s, dim (LinearMap.range <| fderiv ℝ f x) ≤ p) :
     dimH (f '' s) ≤ sardMoreiraBound (dim E) k α p := by
   borelize F
