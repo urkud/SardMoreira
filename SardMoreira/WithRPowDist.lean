@@ -6,7 +6,9 @@ open Function
 
 noncomputable section
 
-section MeasurableSpace
+namespace WithRPowDist
+
+variable {X : Type*} {α : ℝ} {hα₀ : 0 < α} {hα₁ : α ≤ 1}
 
 variable [MeasurableSpace X]
 
@@ -35,8 +37,6 @@ theorem measurableEmbedding_mk : MeasurableEmbedding (mk : X → WithRPowDist X 
 
 instance [TopologicalSpace X] [BorelSpace X] : BorelSpace (WithRPowDist X α hα₀ hα₁) :=
   measurableEquiv.measurableEmbedding.borelSpace homeomorph.isInducing
-
-end MeasurableSpace
 
 end WithRPowDist
 
