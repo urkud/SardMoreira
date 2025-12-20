@@ -43,6 +43,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
 
+theorem isInvertible_fderiv_prodFun (φ : ImplicitFunctionData 𝕜 E F G) :
+    (fderiv 𝕜 φ.prodFun φ.pt).IsInvertible := by
+  rw [φ.hasStrictFDerivAt.hasFDerivAt.fderiv]
+  exact ContinuousLinearMap.isInvertible_equiv
+
 theorem differentiableAt_implicitFunction (φ : ImplicitFunctionData 𝕜 E F G) :
     DifferentiableAt 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) :=
   φ.hasStrictFDerivAt.to_localInverse.comp (φ.rightFun φ.pt)
