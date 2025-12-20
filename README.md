@@ -28,18 +28,6 @@ while maintaining a reasonable quality of code.
 However, I almost never cleaned up parts of the code that I found to be suboptimal
 *after* they were written.
 
-### `ContDiffMoreiraHolderOn`
-
-I think that we should get rid of this predicate.
-It attaches an open neighborhood to the interesting set
-for no good reason.
-
-We may want to have a predicate saying that a function is `ContDiffMoreiraHolderAt` at every point of a set.
-What would be a good name?
-
-A PR to this repo deleting `ContDiffMoreiraHolderOn` would be very welcome.
-AFAICT, the only slighlty challenging part is rewriting a lemma in [ImplicitFunction](./SardMoreira/ImplicitFunction.lean).
-
 ## Implicit function theorem
 
 In [ImplicitFunction](./SardMoreira/ImplicitFunction.lean), I define [`implicitFunctionDataOfComplementedKerRange`](https://urkud.github.io/SardMoreira/docs/SardMoreira/ImplicitFunction.html#HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplementedKerRange)
