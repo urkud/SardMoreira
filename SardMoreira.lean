@@ -16,7 +16,6 @@ import SardMoreira.OuterMeasureDeriv
 import SardMoreira.ToMathlib.ContinuousLinearMap
 import SardMoreira.ToMathlib.PR31960
 import SardMoreira.ToMathlib.PR32186
-import SardMoreira.ToMathlib.PR32775
 import SardMoreira.ToMathlib.PR32986
 import SardMoreira.ToMathlib.PR32993
 import SardMoreira.ToMathlib.PR33029

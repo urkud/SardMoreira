@@ -81,3 +81,13 @@ theorem finrank_prod [StrongRankCondition R] (s : Submodule R M) (t : Submodule 
   simp [(s.prodEquiv t).finrank_eq]
 
 end Submodule
+
+theorem iteratedFDeriv_apply_congr_order {𝕜 E F G : Type*}
+    [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {k l : ℕ} (h : k = l) (f : E → F) (x : E) (m : Fin k → E) :
+    iteratedFDeriv 𝕜 k f x m = iteratedFDeriv 𝕜 l f x (m ∘ Fin.cast h.symm) := by
+  subst l
+  simp
