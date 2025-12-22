@@ -25,11 +25,6 @@ variable {E F G : Type*}
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G]
 
-theorem iteratedFDeriv_apply_congr_order {k l : ℕ} (h : k = l) (f : E → F) (x : E) (m : Fin k → E) :
-    iteratedFDeriv ℝ k f x m = iteratedFDeriv ℝ l f x (m ∘ Fin.cast h.symm) := by
-  subst l
-  simp
-
 @[mk_iff]
 structure ContDiffMoreiraHolderAt (k : ℕ) (α : I) (f : E → F) (a : E) : Prop where
   contDiffAt : ContDiffAt ℝ k f a
@@ -52,7 +47,7 @@ theorem continuousAt {k : ℕ} {α : I} {f : E → F} {a : E} (h : ContDiffMorei
 
 theorem differentiableAt {k : ℕ} {α : I} {f : E → F} {a : E} (h : ContDiffMoreiraHolderAt k α f a)
     (hk : k ≠ 0) : DifferentiableAt ℝ f a :=
-  h.contDiffAt.differentiableAt <| by norm_cast; omega
+  h.contDiffAt.differentiableAt <| mod_cast hk
 
 @[simp]
 theorem zero_exponent_iff {k : ℕ} {f : E → F} {a : E} :
@@ -346,5 +341,5 @@ theorem OpenPartialHomeomorph.contDiffMoreiraHolderAt_symm [CompleteSpace E] {k 
               |>.norm |>.isBoundedUnder_le
           · exact fun _ ↦ isBoundedUnder_const
           · refine fun i ↦ hfderiv_isBigO.trans (.trans (.trans ?_ hsymm_isBigO.norm_right) hrpow)
-            exact hf.contDiffAt.fderiv_right (mod_cast hk₁) |>.differentiableAt le_rfl
+            exact hf.contDiffAt.fderiv_right (mod_cast hk₁) |>.differentiableAt one_ne_zero
               |>.isBigO_sub |>.comp_tendsto <| f.continuousAt_symm ha

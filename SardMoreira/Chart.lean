@@ -167,8 +167,7 @@ def chartImplicitData (f : E × F → ℝ) (a : E × F)
     ImplicitFunctionData ℝ (E × F) ℝ (E × LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)) where
   leftFun := f
   leftDeriv := fderiv ℝ f a
-  hasStrictFDerivAt_leftFun := hfa.contDiffAt.hasStrictFDerivAt <| by
-    simpa only [Nat.one_le_cast, Nat.one_le_iff_ne_zero]
+  hasStrictFDerivAt_leftFun := hfa.contDiffAt.hasStrictFDerivAt <| mod_cast hk
   rightFun := _
   rightDeriv := .prodMap (.id _ _) (Submodule.ClosedComplemented.of_finiteDimensional _).choose
   hasStrictFDerivAt_rightFun := ContinuousLinearMap.hasStrictFDerivAt _

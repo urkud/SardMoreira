@@ -274,7 +274,7 @@ theorem OpenPartialHomeomorph.iteratedFDeriv_symm_eq_rec [CompleteSpace E]
   · specialize hf' hi₀
     rcases hf' with ⟨f', hf'⟩
     replace hf' : HasFDerivAt f (f' : E →L[𝕜] F) (f.symm y) :=
-      hf' ▸ (hf.of_le hi |>.differentiableAt <| mod_cast hi₀).hasFDerivAt
+      hf' ▸ (hf.of_le hi |>.differentiableAt <| mod_cast hi₀.ne').hasFDerivAt
     have H₁ : f.source ∈ 𝓝 (f.symm y) := f.open_source.mem_nhds <| f.symm_mapsTo hy
     have H₂ : ContDiffAt 𝕜 n f.symm (f (f.symm y)) := by
       rw [f.rightInvOn hy]
