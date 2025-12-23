@@ -36,69 +36,6 @@ theorem fderiv_curry {𝕜 : Type*} {E F G : Type*}
     fderiv 𝕜 (curry f a) b = fderiv 𝕜 f (a, b) ∘L .inr 𝕜 E F :=
   fderiv_comp_prodMk hdf
 
-namespace ImplicitFunctionData
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
-
-theorem isInvertible_fderiv_prodFun (φ : ImplicitFunctionData 𝕜 E F G) :
-    (fderiv 𝕜 φ.prodFun φ.pt).IsInvertible := by
-  rw [φ.hasStrictFDerivAt.hasFDerivAt.fderiv]
-  exact ContinuousLinearMap.isInvertible_equiv
-
-theorem differentiableAt_implicitFunction (φ : ImplicitFunctionData 𝕜 E F G) :
-    DifferentiableAt 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) :=
-  φ.hasStrictFDerivAt.to_localInverse.comp (φ.rightFun φ.pt)
-    ((hasStrictFDerivAt_const _ _).prodMk (hasStrictFDerivAt_id _))
-    |>.hasFDerivAt |>.differentiableAt
-
-theorem fderiv_implicitFunction_apply_eq_iff (φ : ImplicitFunctionData 𝕜 E F G) {x : G} {y : E} :
-    fderiv 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) x = y ↔
-      φ.leftDeriv y = 0 ∧ φ.rightDeriv y = x := by
-  unfold implicitFunction Function.curry toOpenPartialHomeomorph
-  simp only [← HasStrictFDerivAt.localInverse_def]
-  rw [φ.hasStrictFDerivAt.to_localInverse.comp (φ.rightFun φ.pt)
-    ((hasStrictFDerivAt_const _ _).prodMk (hasStrictFDerivAt_id _)) |>.hasFDerivAt |>.fderiv]
-  simp [ContinuousLinearEquiv.symm_apply_eq, @eq_comm _ (φ.leftDeriv _),
-    @eq_comm _ (φ.rightDeriv _)]
-
-@[simp]
-theorem leftDeriv_fderiv_implicitFunction (φ : ImplicitFunctionData 𝕜 E F G) (x : G) :
-    φ.leftDeriv (fderiv 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) x) = 0 := by
-  exact φ.fderiv_implicitFunction_apply_eq_iff.mp rfl |>.left
-
-@[simp]
-theorem rightDeriv_fderiv_implicitFunction (φ : ImplicitFunctionData 𝕜 E F G) (x : G) :
-    φ.rightDeriv (fderiv 𝕜 (φ.implicitFunction (φ.leftFun φ.pt)) (φ.rightFun φ.pt) x) = x := by
-  exact φ.fderiv_implicitFunction_apply_eq_iff.mp rfl |>.right
-
-theorem map_implicitFunction_nhdsWithin_preimage (φ : ImplicitFunctionData 𝕜 E F G)
-    (s : Set E) :
-    (𝓝[φ.implicitFunction (φ.leftFun φ.pt) ⁻¹' s] (φ.rightFun φ.pt)).map
-      (φ.implicitFunction (φ.leftFun φ.pt)) = 𝓝[s ∩ φ.leftFun ⁻¹' {φ.leftFun φ.pt}] φ.pt := by
-  have H : φ.implicitFunction (φ.leftFun φ.pt) =
-      φ.toOpenPartialHomeomorph.symm ∘ (φ.leftFun φ.pt, ·) := rfl
-  rw [H, ← Filter.map_map, (isInducing_prodMkRight _).map_nhdsWithin_eq, ← singleton_prod,
-    OpenPartialHomeomorph.map_nhdsWithin_eq, ← prodFun_apply, ← toOpenPartialHomeomorph_coe,
-    φ.toOpenPartialHomeomorph.leftInvOn φ.pt_mem_toOpenPartialHomeomorph_source,
-    OpenPartialHomeomorph.image_source_inter_eq']
-  · conv_rhs =>
-      rw [← φ.toOpenPartialHomeomorph.nhdsWithin_source_inter
-        φ.pt_mem_toOpenPartialHomeomorph_source]
-    congr 1
-    ext x
-    suffices x ∈ φ.toOpenPartialHomeomorph.source → φ.leftFun x = φ.leftFun φ.pt →
-        (φ.toOpenPartialHomeomorph.symm (φ.leftFun φ.pt, φ.rightFun x) ∈ s ↔ x ∈ s) by
-      simpa [@and_comm (_ = _)]
-    intro hxs hx_eq
-    rw [← hx_eq, ← prodFun_apply, ← toOpenPartialHomeomorph_coe,
-      φ.toOpenPartialHomeomorph.leftInvOn hxs]
-  · exact φ.toOpenPartialHomeomorph.mapsTo φ.pt_mem_toOpenPartialHomeomorph_source
-
-end ImplicitFunctionData
-
 @[simp]
 theorem ContinuousLinearMap.range_eq_bot {R M N : Type*} [Semiring R]
     [AddCommMonoid M] [Module R M] [TopologicalSpace M]
