@@ -13,17 +13,17 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 
 @[irreducible, simps +simpRhs pt]
 def implicitFunctionDataOfComplementedKerRange (f : E → F) (f' : E →L[𝕜] F) {a : E}
-    (hf : HasStrictFDerivAt f f' a) (hker : (LinearMap.ker f').ClosedComplemented)
-    (hrange : (LinearMap.range f').ClosedComplemented) :
+    (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
+    (hrange : f'.range.ClosedComplemented) :
     have := hrange.isClosed.completeSpace_coe
-    ImplicitFunctionData 𝕜 E (LinearMap.range f') (LinearMap.ker f') := by
+    ImplicitFunctionData 𝕜 E f'.range f'.ker := by
   haveI := hrange.isClosed.completeSpace_coe
   have hrange_apply (x) : hrange.choose (f' x) = ⟨f' x, by simp⟩ :=
     hrange.choose_spec ⟨f' x, by simp⟩
-  have hker_eq : LinearMap.ker (hrange.choose ∘L f') = LinearMap.ker f' := by
+  have hker_eq : (hrange.choose ∘L f').ker = f'.ker := by
     ext x
     simp_all
-  have hrange_eq : LinearMap.range (hrange.choose ∘L f') = ⊤ := by
+  have hrange_eq : (hrange.choose ∘L f').range = ⊤ := by
     rw [LinearMap.range_eq_top]
     rintro ⟨_, x, rfl⟩
     use x
@@ -41,24 +41,24 @@ def implicitFunctionDataOfComplementedKerRange (f : E → F) (f' : E →L[𝕜] 
     using LinearMap.isCompl_of_proj hker.choose_spec
 
 def implicitToOpenPartialHomeomorphOfComplementedKerRange (f : E → F) (f' : E →L[𝕜] F) {a : E}
-    (hf : HasStrictFDerivAt f f' a) (hker : (LinearMap.ker f').ClosedComplemented)
-    (hrange : (LinearMap.range f').ClosedComplemented) :
-    OpenPartialHomeomorph E (LinearMap.range f' × LinearMap.ker f') :=
+    (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
+    (hrange : f'.range.ClosedComplemented) :
+    OpenPartialHomeomorph E (f'.range × f'.ker) :=
   have := hrange.isClosed.completeSpace_coe
   (hf.implicitFunctionDataOfComplementedKerRange f f' hker hrange).toOpenPartialHomeomorph
 
 @[simp]
 theorem mem_implicitToOpenPartialHomeomorphOfComplementedKerRange_source
     {f : E → F} {f' : E →L[𝕜] F} {a : E}
-    (hf : HasStrictFDerivAt f f' a) (hker : (LinearMap.ker f').ClosedComplemented)
-    (hrange : (LinearMap.range f').ClosedComplemented) :
+    (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
+    (hrange : f'.range.ClosedComplemented) :
     a ∈ (hf.implicitToOpenPartialHomeomorphOfComplementedKerRange f f' hker hrange).source := by
   convert ImplicitFunctionData.pt_mem_toOpenPartialHomeomorph_source _
   simp
 
 theorem implicitToOpenPartialHomeomorphOfComplementedKerRange_apply {f : E → F} {f' : E →L[𝕜] F}
-    {a : E} (hf : HasStrictFDerivAt f f' a) (hker : (LinearMap.ker f').ClosedComplemented)
-    (hrange : (LinearMap.range f').ClosedComplemented) (x : E) :
+    {a : E} (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
+    (hrange : f'.range.ClosedComplemented) (x : E) :
     implicitToOpenPartialHomeomorphOfComplementedKerRange f f' hf hker hrange x =
       (hrange.choose (f x), hker.choose x) := by
   -- `simp [implicitToOpenPartialHomeomorphOfComplementedKerRange,
@@ -68,16 +68,16 @@ theorem implicitToOpenPartialHomeomorphOfComplementedKerRange_apply {f : E → F
     Function.comp_apply, ImplicitFunctionData.toOpenPartialHomeomorph_apply]
 
 theorem coe_implicitToOpenPartialHomeomorphOfComplementedKerRange {f : E → F} {f' : E →L[𝕜] F}
-    {a : E} (hf : HasStrictFDerivAt f f' a) (hker : (LinearMap.ker f').ClosedComplemented)
-    (hrange : (LinearMap.range f').ClosedComplemented) :
+    {a : E} (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
+    (hrange : f'.range.ClosedComplemented) :
     implicitToOpenPartialHomeomorphOfComplementedKerRange f f' hf hker hrange =
       fun x ↦ (hrange.choose (f x), hker.choose x) :=
   funext <| implicitToOpenPartialHomeomorphOfComplementedKerRange_apply hf hker hrange
 
 @[simp]
 theorem implicitToOpenPartialHomeomorphOfComplementedKerRange_apply_fst {f : E → F} {f' : E →L[𝕜] F}
-    {a : E} (hf : HasStrictFDerivAt f f' a) (hker : (LinearMap.ker f').ClosedComplemented)
-    (hrange : (LinearMap.range f').ClosedComplemented) (x : E) :
+    {a : E} (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
+    (hrange : f'.range.ClosedComplemented) (x : E) :
     (implicitToOpenPartialHomeomorphOfComplementedKerRange f f' hf hker hrange x).fst =
       hrange.choose (f x) := by
   simp [implicitToOpenPartialHomeomorphOfComplementedKerRange_apply]

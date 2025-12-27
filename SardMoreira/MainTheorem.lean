@@ -18,7 +18,7 @@ protected noncomputable def ContinuousLinearMap.finrank {R M N : Type*} [Semirin
     [AddCommMonoid M] [Module R M] [TopologicalSpace M]
     [AddCommMonoid N] [Module R N] [TopologicalSpace N]
     (f : M →L[R] N) : ℕ :=
-  Module.finrank R (LinearMap.range f)
+  Module.finrank R f.range
 
 theorem ContinuousLinearMap.finrank_comp_eq_left_of_surjective {R M N P : Type*} [Semiring R]
     [AddCommMonoid M] [Module R M] [TopologicalSpace M]
@@ -27,7 +27,7 @@ theorem ContinuousLinearMap.finrank_comp_eq_left_of_surjective {R M N P : Type*}
     (g : N →L[R] P) {f : M →L[R] N} (hf : Function.Surjective f) :
     (g ∘L f).finrank = g.finrank := by
   -- Since $f$ is surjective, the image of $g \circ f$ is the same as the image of $g$.
-  have h_range : LinearMap.range (g.comp f) = LinearMap.range g :=
+  have h_range : (g.comp f).range = g.range :=
     SetLike.coe_injective <| hf.range_comp g
   rw [ContinuousLinearMap.finrank, ContinuousLinearMap.finrank, h_range]
 
@@ -38,7 +38,7 @@ theorem ContinuousLinearMap.finrank_comp_eq_right_of_injective {R M N P : Type*}
     {g : N →L[R] P} (hg : Function.Injective g) (f : M →L[R] N) :
     (g ∘L f).finrank = f.finrank := by
   -- Since $g$ is injective, the range of $g \circ f$ is isomorphic to the range of $f$.
-  have h_iso : LinearMap.range (g.comp f) ≃ₗ[R] LinearMap.range f := by
+  have h_iso : (g.comp f).range ≃ₗ[R] f.range := by
     symm;
     refine' { Equiv.ofBijective ( fun x => ⟨ g x, by aesop ⟩ ) ⟨ fun x y hxy => _, fun x => _ ⟩ with .. } <;> aesop;
   exact h_iso.finrank_eq
@@ -508,12 +508,14 @@ theorem hausdorffMeasure_image_piProd_fst_null_of_finrank_eq
     [MeasurableSpace E] [BorelSpace E] [MeasurableSpace G] [BorelSpace G]
     [Nontrivial F] [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
     {f : E × F → G} {s : Set (E × F)} (hf : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x) (hk : k ≠ 0)
-    (hs : ∀ x ∈ s, dim (LinearMap.range <| fderiv ℝ (Pi.prod Prod.fst f) x) = dim E) :
+    (hs : ∀ x ∈ s, dim (fderiv ℝ (Pi.prod Prod.fst f) x).range = dim E) :
     μH[sardMoreiraBound (dim E + dim F) k α (dim E)]
       (Pi.prod Prod.fst f '' s) = 0 := by
   apply hausdorffMeasure_image_piProd_fst_null_of_fderiv_comp_inr_zero hf hk
   intro x hx
-  rw [← ContinuousLinearMap.finrank_range_prod_fst_iff_comp_inr_eq_zero, ← hs x hx]
+  rw [← ContinuousLinearMap.coe_inj, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_inr,
+    ContinuousLinearMap.coe_zero, ← LinearMap.finrank_range_prod_fst_iff_comp_inr_eq_zero,
+    ← hs x hx]
   suffices fderiv ℝ (Pi.prod Prod.fst f) x = .prod (.fst ℝ E F) (fderiv ℝ f x) by
     -- TODO: introduce&use `ContinuousLinearMap.rank`/`ContinuousLinearMap.finrank`?
     generalize H : fderiv ℝ (Pi.prod Prod.fst f) x = f'
@@ -540,9 +542,9 @@ theorem hausdorffMeasure_image_nhdsWithin_null_of_finrank_eq
         (fderiv ℝ eDom a).IsInvertible ∧
         (∀ x ∈ s, ContDiffMoreiraHolderAt k α eDom x) ∧
         (∀ x, (eDom x).1 = (eCod (f x)).1) := by
-    have hker : (LinearMap.ker (fderiv ℝ f a)).ClosedComplemented := .of_finiteDimensional _
-    have hrange : (LinearMap.range (fderiv ℝ f a)).ClosedComplemented := .of_finiteDimensional _
-    use LinearMap.ker (fderiv ℝ f a), LinearMap.range (fderiv ℝ f a), LinearMap.ker hrange.choose
+    have hker : (fderiv ℝ f a).ker.ClosedComplemented := .of_finiteDimensional _
+    have hrange : (fderiv ℝ f a).range.ClosedComplemented := .of_finiteDimensional _
+    use (fderiv ℝ f a).ker, (fderiv ℝ f a).range, hrange.choose.ker
     have hdf := (hf a ha).contDiffAt.hasStrictFDerivAt (by simpa [Nat.one_le_iff_ne_zero])
     set eDom := hdf.implicitToOpenPartialHomeomorphOfComplementedKerRange _ _ hker hrange
     refine ⟨eDom,
@@ -604,7 +606,7 @@ theorem hausdorffMeasure_image_nhdsWithin_null_of_finrank_eq
 theorem hausdorffMeasure_image_null_of_finrank_eq [MeasurableSpace F] [BorelSpace F]
     [CompleteSpace F] (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s : Set E}
     (hf : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x)
-    (hs : ∀ x ∈ s, dim (LinearMap.range <| fderiv ℝ f x) = p) :
+    (hs : ∀ x ∈ s, dim (fderiv ℝ f x).range = p) :
     μH[sardMoreiraBound (dim E) k α p] (f '' s) = 0 := by
   have : FiniteDimensional ℝ E := .of_finrank_pos (by grind)
   rw [← coe_toOuterMeasure, ← OuterMeasure.comap_apply]
@@ -618,7 +620,7 @@ theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
     [MeasurableSpace F] [BorelSpace F]
     (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s : Set E}
     (hf : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x)
-    (hs : ∀ x ∈ s, dim (LinearMap.range <| fderiv ℝ f x) ≤ p) :
+    (hs : ∀ x ∈ s, dim (fderiv ℝ f x).range ≤ p) :
     μH[sardMoreiraBound (dim E) k α p] (f '' s) = 0 := by
   wlog hF : CompleteSpace F generalizing F
   · borelize (Completion F)
@@ -631,17 +633,15 @@ theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
       · change dim (LinearMap.range ((fderiv ℝ e (f x)).toLinearMap ∘ₗ
           (fderiv ℝ f x).toLinearMap)) ≤ _
         rw [LinearMap.range_comp, ← LinearMap.range_domRestrict, LinearMap.finrank_range_of_inj]
-        · rfl
-        · simp [LinearMap.domRestrict, e, Function.Injective,
-            show fderiv ℝ (↑) (f x) = e.toContinuousLinearMap from e.toContinuousLinearMap.fderiv]
+        simp [LinearMap.domRestrict, e, Function.Injective,
+          show fderiv ℝ (↑) (f x) = e.toContinuousLinearMap from e.toContinuousLinearMap.fderiv]
       · exact e.toContinuousLinearMap.differentiableAt
       · exact (hf x hx).differentiableAt hk
     · infer_instance
     · left; positivity
   -- Apply the Moreira2001 theorem to each of the sets where the rank is exactly `p' ≤ p`.
   have h_apply : ∀ p' ≤ p,
-      μH[sardMoreiraBound (dim E) k α p']
-        (f '' {x ∈ s | dim (LinearMap.range (fderiv ℝ f x)) = p'}) = 0 := by
+      μH[sardMoreiraBound (dim E) k α p'] (f '' {x ∈ s | dim (fderiv ℝ f x).range = p'}) = 0 := by
     intro p' hp'
     apply Moreira2001.hausdorffMeasure_image_null_of_finrank_eq
     · grind
@@ -650,8 +650,7 @@ theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
     · simp
   -- Since $s$ is the union of the sets where the rank is exactly $p'$ for $p' \leq p$,
   -- we can use the countable subadditivity of the Hausdorff measure.
-  have h_union :
-      f '' s = ⋃ p' ≤ p, f '' {x ∈ s | dim (LinearMap.range (fderiv ℝ f x)) = p'} := by
+  have h_union : f '' s = ⋃ p' ≤ p, f '' {x ∈ s | dim (fderiv ℝ f x).range = p'} := by
     ext y
     simp only [Set.mem_image, Set.mem_iUnion, Set.mem_setOf_eq, exists_prop]
     exact ⟨fun ⟨x, hx, hx'⟩ ↦ ⟨_, hs x hx, x, ⟨hx, rfl⟩, hx'⟩,
@@ -665,7 +664,7 @@ theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
 theorem dimH_image_le_sardMoreiraBound_of_finrank_le
     (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s : Set E}
     (hf : ∀ x ∈ s, ContDiffMoreiraHolderAt k α f x)
-    (hs : ∀ x ∈ s, dim (LinearMap.range <| fderiv ℝ f x) ≤ p) :
+    (hs : ∀ x ∈ s, dim (fderiv ℝ f x).range ≤ p) :
     dimH (f '' s) ≤ sardMoreiraBound (dim E) k α p := by
   borelize F
   apply dimH_le_of_hausdorffMeasure_ne_top
