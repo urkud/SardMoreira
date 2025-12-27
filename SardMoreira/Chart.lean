@@ -37,54 +37,14 @@ theorem fderiv_curry {𝕜 : Type*} {E F G : Type*}
   fderiv_comp_prodMk hdf
 
 @[simp]
-theorem ContinuousLinearMap.range_eq_bot {R M N : Type*} [Semiring R]
-    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
-    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
-    {f : M →L[R] N} :
-    LinearMap.range f = ⊥ ↔ f = 0 :=
-  (f : M →ₗ[R] N).range_eq_bot.trans <| by norm_cast -- TODO: make `simp` solve it too
-
-@[simp]
-theorem ContinuousLinearMap.ker_prodMap {R M N M' N' : Type*} [Semiring R]
-    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
-    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
-    [AddCommMonoid M'] [Module R M'] [TopologicalSpace M']
-    [AddCommMonoid N'] [Module R N'] [TopologicalSpace N']
-    (f : M →L[R] N) (g : M' →L[R] N') :
-    LinearMap.ker (f.prodMap g) = (LinearMap.ker f).prod (LinearMap.ker g) := by
+theorem LinearMap.range_prodMap {R M N M' N' : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N]
+    [AddCommMonoid M'] [Module R M']
+    [AddCommMonoid N'] [Module R N']
+    (f : M →ₗ[R] N) (g : M' →ₗ[R] N') :
+    (f.prodMap g).range = f.range.prod g.range := by
   ext ⟨_, _⟩; simp
-
-@[simp]
-theorem ContinuousLinearMap.range_prodMap {R M N M' N' : Type*} [Semiring R]
-    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
-    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
-    [AddCommMonoid M'] [Module R M'] [TopologicalSpace M']
-    [AddCommMonoid N'] [Module R N'] [TopologicalSpace N']
-    (f : M →L[R] N) (g : M' →L[R] N') :
-    LinearMap.range (f.prodMap g) = (LinearMap.range f).prod (LinearMap.range g) := by
-  ext ⟨_, _⟩; simp
-
-@[simp]
-theorem ContinuousLinearMap.finrank_range_add_finrank_ker {R M N : Type*} [DivisionRing R]
-    [AddCommGroup M] [Module R M] [TopologicalSpace M] [FiniteDimensional R M]
-    [AddCommGroup N] [Module R N] [TopologicalSpace N]
-    (f : M →L[R] N) :
-    Module.finrank R (LinearMap.range f) + Module.finrank R (LinearMap.ker f) =
-      Module.finrank R M :=
-  f.toLinearMap.finrank_range_add_finrank_ker
-
-@[simp]
-theorem ContinuousLinearMap.range_id {R M : Type*} [Semiring R]
-    [AddCommMonoid M] [Module R M] [TopologicalSpace M] :
-    LinearMap.range (ContinuousLinearMap.id R M) = ⊤ := by
-  ext; simp
-
-@[simp]
-theorem ContinuousLinearMap.snd_comp_inr {R M N : Type*} [Semiring R]
-    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
-    [AddCommMonoid N] [Module R N] [TopologicalSpace N] :
-    snd R M N ∘L inr R M N = .id R N :=
-  rfl
 
 namespace Moreira2001
 
@@ -101,7 +61,7 @@ variable {E : Type u} {F : Type v} {G : Type w}
 @[irreducible]
 def chartImplicitData (f : E × F → ℝ) (a : E × F)
     (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
-    ImplicitFunctionData ℝ (E × F) ℝ (E × LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)) where
+    ImplicitFunctionData ℝ (E × F) ℝ (E × (fderiv ℝ f a ∘L .inr ℝ E F).ker) where
   leftFun := f
   leftDeriv := fderiv ℝ f a
   hasStrictFDerivAt_leftFun := hfa.contDiffAt.hasStrictFDerivAt <| mod_cast hk
@@ -111,33 +71,31 @@ def chartImplicitData (f : E × F → ℝ) (a : E × F)
   pt := a
   range_leftDeriv := by
     refine IsSimpleOrder.eq_bot_or_eq_top _ |>.resolve_left ?_
-    rw [ContinuousLinearMap.range_eq_bot]
+    rw [LinearMap.range_eq_bot, ← ContinuousLinearMap.coe_zero, ContinuousLinearMap.coe_inj]
     contrapose! hdf
     rw [hdf, ContinuousLinearMap.zero_comp]
   range_rightDeriv := by
-    have : LinearMap.range (Submodule.ClosedComplemented.of_finiteDimensional <|
-        LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)).choose = ⊤ :=
-      LinearMap.range_eq_of_proj (Exists.choose_spec (_ : Submodule.ClosedComplemented _))
-    rw [ContinuousLinearMap.range_prodMap, this]
+    have : (Submodule.ClosedComplemented.of_finiteDimensional <|
+        (fderiv ℝ f a ∘L .inr ℝ E F).ker).choose.range = ⊤ := by
+      apply LinearMap.range_eq_of_proj
+      exact Exists.choose_spec (_ : Submodule.ClosedComplemented _)
+    rw [ContinuousLinearMap.coe_prodMap, LinearMap.range_prodMap, this]
     simp
   isCompl_ker := by
-    have H : (LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F)).ClosedComplemented :=
+    have H : (fderiv ℝ f a ∘L .inr ℝ E F).ker.ClosedComplemented :=
       .of_finiteDimensional _
     constructor
     · suffices ∀ x y, fderiv ℝ f a (x, y) = 0 → x = 0 → H.choose y = 0 → y = 0 by
-        simpa +contextual only [Subtype.forall, LinearMap.mem_ker, ContinuousLinearMap.coe_comp',
-          comp_apply, ContinuousLinearMap.inr_apply, ContinuousLinearMap.ker_prodMap,
-          Submodule.disjoint_def, Submodule.mem_prod, ContinuousLinearMap.coe_id', id_eq, and_imp,
-          Prod.forall, Prod.mk_eq_zero, true_and]
+        simpa +contextual [Submodule.disjoint_def]
       rintro _ y hdf rfl hy
-      lift y to LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F) using by simp [hdf]
+      lift y to (fderiv ℝ f a ∘L .inr ℝ E F).ker using by simp [hdf]
       simpa only [H.choose_spec, ZeroMemClass.coe_eq_zero] using hy
     · rw [Submodule.codisjoint_iff_exists_add_eq]
       rintro ⟨x, y⟩
       obtain ⟨z, hz⟩ : ∃ z : F, fderiv ℝ f a (x, z) = 0 := by
-        have : LinearMap.range (fderiv ℝ f a ∘L .inr ℝ _ _) = ⊤ := by
+        have : (fderiv ℝ f a ∘L .inr ℝ _ _).range = ⊤ := by
           refine IsSimpleOrder.eq_bot_or_eq_top _ |>.resolve_left ?_
-          rwa [ContinuousLinearMap.range_eq_bot]
+          rwa [LinearMap.range_eq_bot, ← ContinuousLinearMap.coe_zero, ContinuousLinearMap.coe_inj]
         rw [Submodule.eq_top_iff'] at this
         refine this (-fderiv ℝ f a (x, 0)) |>.imp fun z hz ↦ ?_
         rw [← (x, z).fst_add_snd, map_add]
@@ -147,7 +105,8 @@ def chartImplicitData (f : E × F → ℝ) (a : E × F)
         with ⟨w, t, hw, ht, hsub⟩
       refine ⟨(x, w + z), (0, t), ?ker, by simpa using ht, ?add⟩
       case ker =>
-        rwa [← zero_add x, ← Prod.mk_add_mk, LinearMap.mem_ker, map_add, hz, add_zero]
+        rwa [← zero_add x, ← Prod.mk_add_mk, LinearMap.mem_ker, map_add,
+          ContinuousLinearMap.coe_coe, hz, add_zero]
       case add =>
         rw [Prod.mk_add_mk, add_zero, add_right_comm w z t, hsub, sub_add_cancel]
 
@@ -180,12 +139,12 @@ theorem chartImplicitData_rightDeriv_apply_ker {f : E × F → ℝ} {a : E × F}
     (x : E) {y : F} (hy : fderiv ℝ f a (0, y) = 0) :
     (chartImplicitData f a hfa hk hdf).rightDeriv (x, y) = (x, ⟨y, by simpa⟩) := by
   simpa [chartImplicitData] using
-    Submodule.ClosedComplemented.of_finiteDimensional (LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F))
+    Submodule.ClosedComplemented.of_finiteDimensional (fderiv ℝ f a ∘L .inr ℝ E F).ker
       |>.choose_spec ⟨y, by simpa⟩
 
 theorem fderiv_implicitFunction_chartImplicitData_apply_mk_zero {f : E × F → ℝ} {a : E × F}
     (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0)
-    (y : LinearMap.ker ((fderiv ℝ f a).comp (ContinuousLinearMap.inr ℝ E F))) :
+    (y : (fderiv ℝ f a ∘L ContinuousLinearMap.inr ℝ E F).ker) :
     fderiv ℝ ((chartImplicitData f a hfa hk hdf).implicitFunction (f a))
       ((chartImplicitData f a hfa hk hdf).rightFun a) (0, y) = (0, y.1) := by
   convert (chartImplicitData f a hfa hk hdf).fderiv_implicitFunction_apply_eq_iff.mpr _
@@ -204,7 +163,8 @@ theorem fderiv_implicitFunction_chartImplicitData_comp_inr {f : E × F → ℝ} 
       ((chartImplicitData f a hfa hk hdf).rightFun a) ∘L .inr ℝ E _ =
       .inr ℝ E F ∘L Submodule.subtypeL _ := by
   ext1 x
-  simp [fderiv_implicitFunction_chartImplicitData_apply_mk_zero]
+  have := fderiv_implicitFunction_chartImplicitData_apply_mk_zero hfa hk hdf x
+  simp_all -- Need a `simp_all` because `simp` simplifies in the type of `x`
 
 theorem fst_implicitFunction_chartImplicitData_eventuallyEq {f : E × F → ℝ} {a : E × F}
     (hfa : ContDiffMoreiraHolderAt k α f a) (hk : k ≠ 0) (hdf : fderiv ℝ f a ∘L .inr ℝ E F ≠ 0) :
@@ -384,8 +344,8 @@ theorem exists_dim_lt_map_nhdsWithin_eq (hs : ¬IsLargeAt k α s a)
     rw [this.fderiv_eq]
     have : fderiv ℝ g x = _ :=
       ψ.toOpenPartialHomeomorph.hasFDerivAt_symm_inverse (hU_target x hxU) (hUinv x hxU)
-      |>.comp x (ContinuousLinearMap.inr ℝ ℝ
-        (E × LinearMap.ker (fderiv ℝ f a ∘L .inr ℝ E F))).hasFDerivAt |>.fderiv
+      |>.comp x
+        (ContinuousLinearMap.inr ℝ ℝ (E × (fderiv ℝ f a ∘L .inr ℝ E F).ker)).hasFDerivAt |>.fderiv
     rw [this, ContinuousLinearMap.coe_comp']
     apply Injective.comp
     · exact (hUinv _ hxU).inverse.injective

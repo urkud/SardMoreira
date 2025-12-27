@@ -43,20 +43,3 @@ theorem finrank_range_prod_fst_iff_comp_inr_eq_zero (f : E × F →ₗ[ℝ] G) :
   simp [finrank_range_prod_fst, range_eq_bot]
 
 end LinearMap
-
-namespace ContinuousLinearMap
-
-variable [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace G]
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
-
-theorem finrank_range_prod_fst (f : E × F →L[ℝ] G) :
-    finrank ℝ (LinearMap.range <| (fst ℝ E F).prod f) =
-      Module.finrank ℝ E + finrank ℝ (LinearMap.range <| f ∘L inr ℝ E F) :=
-  (f : E × F →ₗ[ℝ] G).finrank_range_prod_fst
-
-theorem finrank_range_prod_fst_iff_comp_inr_eq_zero (f : E × F →L[ℝ] G) :
-    finrank ℝ (LinearMap.range ((fst ℝ E F).prod f)) = finrank ℝ E ↔ f ∘L inr ℝ E F = 0 :=
-  (f : E × F →ₗ[ℝ] G).finrank_range_prod_fst_iff_comp_inr_eq_zero.trans <|
-    ContinuousLinearMap.coe_inj (f := f ∘L inr ℝ E F) (g := 0)
-
-end ContinuousLinearMap
