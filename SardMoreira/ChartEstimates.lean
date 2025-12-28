@@ -45,7 +45,7 @@ theorem eventually_differentiableAt_comp {f : E × F → G} {ψ : Chart 1 α s} 
 theorem fderiv₂_comp_eventuallyEq {f : E × F → G} (ψ : Chart 1 α s) {x : E × ψ.Dom} (hx : x ∈ ψ.set)
     (hfk : ContDiffAt ℝ k f (ψ x)) (hk : k ≠ 0) :
     (fderiv ℝ fun y ↦ f (ψ (x.1, y))) =ᶠ[𝓝 x.2] fun y ↦
-      (fderiv ℝ f (ψ (x.1, y)) ∘L .inr ℝ E F) ∘L (fderiv ℝ (fun y ↦ (ψ (x.1, y)).2) y) := by
+      (fderiv ℝ (fun z ↦ f (x.1, z)) (ψ (x.1, y)).2) ∘L (fderiv ℝ (fun y ↦ (ψ (x.1, y)).2) y) := by
   have hdf : ∀ᶠ y in 𝓝 x.2, DifferentiableAt ℝ f (ψ (x.1, y)) := by
     have : ContinuousAt (fun y ↦ ψ (x.1, y)) x.2 := by
       have := ψ.continuousAt hx
@@ -56,33 +56,30 @@ theorem fderiv₂_comp_eventuallyEq {f : E × F → G} (ψ : Chart 1 α s) {x : 
     have : ContinuousAt (x.1, ·) x.2 := by fun_prop
     exact this.eventually <| ψ.eventually_differentiableAt hx (by simp)
   filter_upwards [hdf, hdψ] with y hfy hψy
-  rw [← fderiv_comp_prodMk', ← fderiv_comp (f := fun y ↦ (ψ (x.1, y)).2)]
-  · simp [Function.comp_def]
-  · simp only [Chart.fst_apply]
-    rw [← Chart.prodMk_fst_snd_apply] at hfy
+  convert fderiv_comp (g := fun z ↦ f (x.1, z)) (f := fun y ↦ (ψ (x.1, y)).2) y _ _
+  · simp
+  · rw [← (ψ _).eta, ψ.fst_apply] at hfy
     fun_prop
   · fun_prop
-  · simpa using hfy
 
 theorem step_aux {f : E × F → G} (ψ : Chart 1 α s) {x : E × ψ.Dom} (hx : x ∈ ψ.set)
     (hfk : ContDiffAt ℝ k f (ψ x)) (hk : k ≠ 0) :
     (fderiv ℝ fun y ↦ f (ψ (x.1, y))) =O[𝓝 x.2]
-      fun y ↦ (fderiv ℝ f (ψ (x.1, y)) ∘L .inr ℝ E F) := by
+      fun y ↦ fderiv ℝ (fun z ↦ f (x.1, z)) (ψ (x.1, y)).2 := by
   calc
-    _ =ᶠ[𝓝 x.2] (fun y ↦ (fderiv ℝ f (ψ (x.1, y)) ∘L .inr ℝ E F) ∘L
-                  fderiv ℝ (fun y ↦ (ψ (x.1, y)).2) y) := by
+    _ =ᶠ[𝓝 x.2] fun y ↦ (fderiv ℝ (fun z ↦ f (x.1, z)) (ψ (x.1, y)).2) ∘L
+                  fderiv ℝ (fun y ↦ (ψ (x.1, y)).2) y := by
       apply ψ.fderiv₂_comp_eventuallyEq hx hfk hk
-    _ =O[𝓝 x.2] fun y ↦ ‖fderiv ℝ f (ψ (x.1, y)) ∘L .inr ℝ E F‖ *
+    _ =O[𝓝 x.2] fun y ↦ ‖fderiv ℝ (fun z ↦ f (x.1, z)) (ψ (x.1, y)).2‖ *
                   ‖fderiv ℝ (fun z ↦ (ψ (x.1, z)).2) y‖ := by
       refine .of_norm_le fun _ ↦ ContinuousLinearMap.opNorm_comp_le _ _
-    _ =O[𝓝 x.2] fun y ↦ (fderiv ℝ f (ψ (x.1, y)) ∘L .inr ℝ E F) := by
+    _ =O[𝓝 x.2] fun y ↦ fderiv ℝ (fun z ↦ f (x.1, z)) (ψ (x.1, y)).2 := by
       have : ContinuousAt (fderiv ℝ (fun z ↦ (ψ (x.1, z)).2)) x.2 := by
         refine ContDiffAt.continuousAt_fderiv ?_ (n := 1) (by simp)
         have := ψ.contDiffMoreiraHolderAt hx |>.contDiffAt |>.of_le (m := 1) (by simp)
         fun_prop
       refine (isBigO_refl _ _).mul (this.isBigO_one ℝ).norm_left |>.trans ?_
       simp [isBigO_refl]
-
 
 end Chart
 
@@ -130,12 +127,14 @@ theorem isBigO_main_aux
     have hψ_tendsto : Tendsto ψ (𝓝[ψ.set] (φ x)) (𝓝[s] (ψ (φ x))) :=
       .inf (ψ.continuousAt (φ.mapsTo hx).1) ψ.mapsTo.tendsto
     have hkey :
-        (fun y ↦ fderiv ℝ (f ∘ ψ) (φ (x.1, y)) ∘L .inr ℝ E ψ.Dom) =O[𝓝 x.2]
+        (fun y ↦ fderiv ℝ (fun c ↦ f (ψ (x.1, c))) (φ (x.1, y)).2) =O[𝓝 x.2]
           (fun y ↦ ‖y - x.2‖ ^ (k + α : ℝ)) := by
-      refine ihk (f := fun z ↦ fderiv ℝ (f ∘ ψ) z ∘L .inr ℝ _ _) hφ hx ?_ ?_
+      convert ihk (f := fun z ↦ fderiv ℝ (fun c ↦ f (ψ (z.1, c))) z.2) hφ hx ?_ ?_
+      · simp
       · filter_upwards [eventually_mem_nhdsWithin,
           (hψ_tendsto.eventually hfk).filter_mono (nhdsWithin_mono _ (sep_subset _ _))]
           with y hy hfy
+
         refine (hfy.comp ?_ k.succ_ne_zero).fderiv le_rfl |>.continuousLinearMap_comp
           (.precomp _ (.inr ℝ E ψ.Dom))
         exact ψ.contDiffMoreiraHolderAt hy.1
@@ -145,7 +144,7 @@ theorem isBigO_main_aux
         replace hf₀ := hψ_tendsto.eventually hf₀
         rw [eventually_nhdsWithin_iff, ← eventually_eventually_nhds] at hf₀
         filter_upwards [hfk, hf₀] with y hy_contDiff hy₀ hy_mem
-        apply hy_mem.2.fderiv_comp_inr_eq_zero
+        apply hy_mem.2.fderiv_comp_prodMk_eq_zero (f := f ∘ ψ)
         · rw [eventually_nhdsWithin_iff]
           filter_upwards [hy_contDiff] with z hz hz_mem
           exact .comp (hz hz_mem) (ψ.contDiffMoreiraHolderAt hz_mem) k.succ_ne_zero
@@ -204,21 +203,20 @@ theorem isBigO_main_inr
 theorem isBigO_main_sub_of_fderiv_zero_right
     (hψ : ψ ∈ (main k α s).charts) (hx : x ∈ ψ.set)
     (hfk : ∀ᶠ y in 𝓝[s] (ψ x), ContDiffMoreiraHolderAt (k + 1) α f y)
-    (hf₀ : (fderiv ℝ f · ∘L .inr ℝ E F) =ᶠ[𝓝[s] (ψ x)] 0) :
+    (hf₀ : (fun a ↦ fderiv ℝ (fun y ↦ f (a.1, y)) a.2) =ᶠ[𝓝[s] (ψ x)] 0) :
     (fun y ↦ f (ψ (x.1, y)) - f (ψ x)) =O[𝓝 x.2] (fun y ↦ ‖y - x.2‖ ^ (k + 1 + α : ℝ)) := by
   rw [add_right_comm]
   apply sub_isBigO_norm_rpow_add_one_of_fderiv (f := fun y ↦ f (ψ (x.1, y)))
   · exact add_nonneg k.cast_nonneg α.2.1
   · exact ψ.eventually_differentiableAt_comp hx hfk (by simp)
   · have hcontDiff := (hfk.self_of_nhdsWithin (ψ.mapsTo hx)).contDiffAt
-    refine .trans ?_ (isBigO_main_inr hψ hx (hfk.mono fun y hy ↦ ?_) hf₀)
-    apply ψ.step_aux hx hcontDiff (by simp)
-    exact (hy.fderiv le_rfl).continuousLinearMap_comp (.precomp _ (.inr ℝ E F))
+    refine .trans ?_ (isBigO_main_inr hψ hx (hfk.mono fun y hy ↦ hy.fderiv₂ k.lt_add_one) hf₀)
+    simpa using ψ.step_aux hx hcontDiff <| by simp
 
 theorem isLittleO_main_sub_of_fderiv_zero_right
     (hψ : ψ ∈ (main k α s).charts) (hx : x ∈ ψ.set)
     (hfk : ∀ᶠ y in 𝓝[s] (ψ x), ContDiffMoreiraHolderAt (k + 1) α f y)
-    (hf₀ : (fderiv ℝ f · ∘L .inr ℝ E F) =ᶠ[𝓝[s] (ψ x)] 0)
+    (hf₀ : (fun a ↦ fderiv ℝ (fun y ↦ f (a.1, y)) a.2) =ᶠ[𝓝[s] (ψ x)] 0)
     (hdensity : Tendsto (fun r ↦
       μH[dim ψ.Dom] ({y | (x.1, y) ∈ closure ψ.set} ∩ closedBall x.2 r) /
         μH[↑(dim ψ.Dom)] (closedBall x.2 r))
@@ -232,9 +230,8 @@ theorem isLittleO_main_sub_of_fderiv_zero_right
     (f := fun y ↦ f (ψ (x.1, y))) (μ := μH[dim ψ.Dom]) (s := {y | (x.1, y) ∈ closure ψ.set})
   · exact add_nonneg k.cast_nonneg α.2.1
   · exact ψ.eventually_differentiableAt_comp hx hfk (by simp)
-  · refine .trans ?_ (isBigO_main_inr hψ hx (hfk.mono fun y hy ↦ ?_) hf₀)
-    apply ψ.step_aux hx hcontDiff (by simp)
-    exact (hy.fderiv le_rfl).continuousLinearMap_comp (.precomp _ (.inr ℝ E F))
+  · refine .trans ?_ (isBigO_main_inr hψ hx (hfk.mono fun y hy ↦ hy.fderiv₂ k.lt_add_one) hf₀)
+    simpa using ψ.step_aux hx hcontDiff (by simp)
   · replace hf₀ : ∀ᶠ y in 𝓝 x.2, (x.1, y) ∈ closure ψ.set →
         fderiv ℝ f (ψ (x.1, y)) ∘L .inr ℝ E F = 0 := by
       have H₁ : ∀ᶠ y in 𝓝 x.2, ContinuousAt (fderiv ℝ f · ∘L .inr ℝ E F) (ψ (x.1, y)) := by

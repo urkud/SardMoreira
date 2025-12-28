@@ -9,6 +9,22 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {f : E → F} {s : Set E}
 
+
+theorem fderiv_comp_prodMk
+    {f : E × F → G} {a : E} {b : F} (hdf : DifferentiableAt 𝕜 f (a, b)) :
+    fderiv 𝕜 (fun y ↦ f (a, y)) b = fderiv 𝕜 f (a, b) ∘L .inr 𝕜 E F :=
+  hdf.hasFDerivAt.comp b (.prodMk (hasFDerivAt_const _ _) (hasFDerivAt_id _)) |>.fderiv
+
+theorem fderiv_comp_prodMk'
+    {f : E × F → G} {a : E × F} (hdf : DifferentiableAt 𝕜 f a) :
+    fderiv 𝕜 (fun y ↦ f (a.fst, y)) a.snd = fderiv 𝕜 f a ∘L .inr 𝕜 E F :=
+  fderiv_comp_prodMk hdf
+
+theorem fderiv_curry
+    {f : E × F → G} {a : E} {b : F} (hdf : DifferentiableAt 𝕜 f (a, b)) :
+    fderiv 𝕜 (curry f a) b = fderiv 𝕜 f (a, b) ∘L .inr 𝕜 E F :=
+  fderiv_comp_prodMk hdf
+
 section NWithTopENat
 variable {n : WithTop ℕ∞} {k : ℕ} {a : E}
 

@@ -195,12 +195,12 @@ protected theorem const {k : ℕ} {α : I} {a : E} {b : F} :
   contDiffAt_const.contDiffMoreiraHolderAt (WithTop.coe_lt_top _) α
 
 protected theorem fderiv {f : E → F} {a : E} {k l : ℕ} {α : I}
-    (hf : ContDiffMoreiraHolderAt k α f a) (hl : l + 1 ≤ k) :
+    (hf : ContDiffMoreiraHolderAt k α f a) (hl : l < k) :
     ContDiffMoreiraHolderAt l α (fderiv ℝ f) a where
   contDiffAt := hf.contDiffAt.fderiv_right (mod_cast hl)
   isBigO := .of_norm_left <| by
     simpa [iteratedFDeriv_succ_eq_comp_right, Function.comp_def, ← dist_eq_norm_sub]
-      using hf.of_le hl |>.isBigO |>.norm_left
+      using hf.of_le (Nat.add_one_le_iff.mpr hl) |>.isBigO |>.norm_left
 
 protected theorem iteratedFDeriv {f : E → F} {a : E} {k l m : ℕ} {α : I}
     (hf : ContDiffMoreiraHolderAt k α f a) (hl : l + m ≤ k) :
@@ -213,7 +213,7 @@ protected theorem iteratedFDeriv {f : E → F} {a : E} {k l m : ℕ} {α : I}
     -- TODO: why `simp` fails to apply the lemma? Does it fail to unify some instances?
     -- Does it happen on the latest Mathlib?
     simp +unfoldPartialApp [iteratedFDeriv_succ_eq_comp_left]
-    convert (ihm hl).fderiv le_rfl using 0
+    convert (ihm hl).fderiv l.lt_add_one using 0
     convert LinearIsometryEquiv.contDiffMoreiraHolderAt_left_comp _ <;> rfl
 
 theorem congr_eventuallyEq {f g : E → F} {a : E} {k : ℕ} {α : I}
@@ -224,6 +224,19 @@ theorem congr_eventuallyEq {f g : E → F} {a : E} {k : ℕ} {α : I}
     refine EventuallyEq.trans_isBigO (.sub ?_ ?_) hf.isBigO
     · exact hfg.symm.iteratedFDeriv ℝ _
     · rw [hfg.symm.iteratedFDeriv ℝ _ |>.self_of_nhds]
+
+theorem clm_apply {f : E → F →L[ℝ] G} {g : E → F} {a : E} {k : ℕ} {α : I}
+    (hf : ContDiffMoreiraHolderAt k α f a) (hg : ContDiffMoreiraHolderAt k α g a) :
+    ContDiffMoreiraHolderAt k α (fun x ↦ f x (g x)) a :=
+  (contDiffAt_fst.clm_apply contDiffAt_snd).contDiffMoreiraHolderAt (WithTop.coe_lt_top _) _
+    |>.comp' (hf.prodMk hg) <| .inl (by fun_prop)
+
+theorem fderiv₂ {f : E × F → G} {a : E × F} {k l : ℕ} {α : I}
+    (hf : ContDiffMoreiraHolderAt k α f a) (hl : l < k) :
+    ContDiffMoreiraHolderAt l α (fun b ↦ fderiv ℝ (fun y ↦ f (b.1, y)) b.2) a := by
+  refine hf.fderiv hl |>.continuousLinearMap_comp (.precomp G (.inr ℝ E F)) |>.congr_eventuallyEq ?_
+  refine hf.contDiffAt.eventually (by simp) |>.mono fun x hx ↦ ?_
+  simp [fderiv_comp_prodMk' (hx.differentiableAt <| mod_cast Nat.ne_zero_of_lt hl)]
 
 end ContDiffMoreiraHolderAt
 
