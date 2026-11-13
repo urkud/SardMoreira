@@ -2,6 +2,7 @@ module
 
 public import SardMoreira.Chart
 public import SardMoreira.ChartEstimates
+public import SardMoreira.ConstantRank
 public import SardMoreira.ContDiff
 public import SardMoreira.ContDiffMoreiraHolder
 public import SardMoreira.ContinuousMultilinearMap

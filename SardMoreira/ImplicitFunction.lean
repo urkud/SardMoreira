@@ -2,6 +2,8 @@ module
 
 public import Mathlib.Analysis.Calculus.Implicit
 public import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
+public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.Topology.Algebra.Module.Complement
 
 /-!
@@ -294,5 +296,107 @@ theorem hasStrictFDerivAt_projectionOntoL_toOpenPartialHomeomorphRangeProdKer_sy
   simp
 
 end RangeProdKer
+
+end HasStrictFDerivAt
+
+/-!
+### Fredholm maps
+
+If `f'` comes with a `FredholmPackage`, then we can use the complements provided by the package.
+In this case, both `f'.ker` and the complement of `f'.range` are finite dimensional,
+so this chart reduces the equation `f x = b` near `a`
+to a finite dimensional equation (the *Lyapunov-Schmidt reduction*).
+-/
+
+namespace ContinuousLinearMap.FredholmPackage
+
+variable {u : E →L[𝕜] F} (pkg : u.FredholmPackage)
+
+theorem isTopCompl_range : u.range.IsTopCompl pkg.decCodom.X₀ :=
+  pkg.range_eq ▸ pkg.decCodom.isTopCompl
+
+theorem isTopCompl_ker : u.ker.IsTopCompl pkg.decDom.X₁ :=
+  pkg.ker_eq ▸ pkg.decDom.isTopCompl.symm
+
+include pkg in
+theorem finiteDimensional_ker : FiniteDimensional 𝕜 u.ker :=
+  pkg.ker_eq ▸ pkg.decDom.finite_X₀
+
+include pkg in
+theorem completeSpace_range [CompleteSpace F] : CompleteSpace u.range :=
+  (Submodule.IsTopCompl.isClosed' pkg.isTopCompl_range.symm).completeSpace_coe
+
+end ContinuousLinearMap.FredholmPackage
+
+namespace HasStrictFDerivAt
+
+variable [CompleteSpace E] [CompleteSpace F] {f : E → F} {f' : E →L[𝕜] F} {a : E}
+
+variable (f f') in
+/-- The chart `HasStrictFDerivAt.toOpenPartialHomeomorphRangeProdKer`
+built using the complements provided by a `FredholmPackage` of `f'`. -/
+def toOpenPartialHomeomorphOfFredholmPackage (hf : HasStrictFDerivAt f f' a)
+    (pkg : f'.FredholmPackage) : OpenPartialHomeomorph E (f'.range × f'.ker) :=
+  have := pkg.completeSpace_range
+  hf.toOpenPartialHomeomorphRangeProdKer f f' pkg.isTopCompl_range pkg.isTopCompl_ker
+
+theorem toOpenPartialHomeomorphOfFredholmPackage_eq (hf : HasStrictFDerivAt f f' a)
+    (pkg : f'.FredholmPackage) :
+    have := pkg.completeSpace_range
+    hf.toOpenPartialHomeomorphOfFredholmPackage f f' pkg =
+      hf.toOpenPartialHomeomorphRangeProdKer f f' pkg.isTopCompl_range pkg.isTopCompl_ker :=
+  rfl
+
+end HasStrictFDerivAt
+
+/-!
+### Immersion theorem
+
+If `f'` is injective and its range has a topological complement `C`,
+then near `a`, the map `f` is a local homeomorphism `e` to `f'.range`
+followed by the graph of a map `g : f'.range → C` with zero derivative at `e a`.
+-/
+
+namespace HasStrictFDerivAt
+
+variable [CompleteSpace E] {f : E → F} {f' : E →L[𝕜] F} {a : E}
+
+/-- **Immersion theorem**: if `f'` is injective and its range has a topological complement `C`,
+then the image of a neighborhood of `a` under `f` is the graph of a map `g : f'.range → C`
+with zero derivative at the image of `a`, parametrized by a local homeomorphism
+`e : E → f'.range`. -/
+theorem exists_eq_add_of_ker_eq_bot (hf : HasStrictFDerivAt f f' a) (hker : f'.ker = ⊥)
+    [CompleteSpace f'.range] {C : Submodule 𝕜 F} (hC : f'.range.IsTopCompl C) :
+    ∃ (e : OpenPartialHomeomorph E f'.range) (g : f'.range → C), a ∈ e.source ∧
+      e a = f'.range.projectionOntoL C hC (f a) ∧
+      HasStrictFDerivAt g (0 : f'.range →L[𝕜] C) (e a) ∧
+      ∀ x ∈ e.source, f x = e x + g (e x) := by
+  set P := f'.range.projectionOntoL C hC
+  set P' := C.projectionOntoL f'.range hC.symm
+  have hPQ := ContinuousLinearMap.isInvertible_projectionOntoL_comp_prod_projectionOntoL hC
+    (hker ▸ Submodule.isTopCompl_bot_top)
+  have hPf : (P ∘L f').ker = ⊥ ∧ (P ∘L f').range = ⊤ := by
+    obtain ⟨hr, -, hc⟩ := ContinuousLinearMap.isInvertible_prod_iff.1 hPQ
+    refine ⟨?_, hr⟩
+    have := hc.disjoint
+    rwa [Submodule.ker_projectionOntoL, disjoint_top] at this
+  set L := ContinuousLinearEquiv.ofBijective (P ∘L f') hPf.1 hPf.2
+  have hL : HasStrictFDerivAt (P ∘ f) (L : E →L[𝕜] f'.range) a :=
+    P.hasStrictFDerivAt.comp a hf
+  set e := hL.toOpenPartialHomeomorph (P ∘ f)
+  have hae : a ∈ e.source := hL.mem_toOpenPartialHomeomorph_source
+  refine ⟨e, fun y ↦ P' (f (e.symm y)), hae, rfl, ?_, fun x hx ↦ ?_⟩
+  · have h := P'.hasStrictFDerivAt.comp a hf
+    have hP'f : P' ∘L f' = 0 := by
+      ext x
+      simp [P']
+    rw [hP'f, ← e.left_inv hae] at h
+    have he := e.hasStrictFDerivAt_symm (e.map_source hae) (by rwa [e.left_inv hae])
+    simpa using h.comp _ he
+  · show f x = e x + P' (f (e.symm (e x)))
+    rw [e.left_inv hx]
+    have := (Submodule.prodEquivOfIsTopCompl _ _ hC).apply_symm_apply (f x)
+    rw [Submodule.prodEquivOfIsTopCompl_symm_apply, Submodule.prodEquivOfIsTopCompl_apply] at this
+    simpa [e, P, P'] using this.symm
 
 end HasStrictFDerivAt
