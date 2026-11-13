@@ -26,22 +26,37 @@ theorem LinearMap.range_prodMap {R M N M' N' : Type*} [Semiring R]
     (f.prodMap g).range = f.range.prod g.range := by
   ext ⟨_, _⟩; simp
 
-theorem Submodule.isCompl_bot_prod_right {R E F : Type*}
+theorem Submodule.disjoint_prod_right {R E F : Type*}
+    [Semiring R] [AddCommMonoid E] [Module R E] [AddCommMonoid F] [Module R F]
+    {p : Submodule R (E × F)} {q : Submodule R E} {r : Submodule R F}
+    (hq : Disjoint (p.map (.fst R E F)) q)
+    (hr : Disjoint (p.comap (.inr R E F)) r) :
+    Disjoint p (q.prod r) := by
+  simp only [disjoint_def, mem_map, mem_comap, mem_prod, LinearMap.fst_apply,
+    LinearMap.inr_apply] at *
+  rintro ⟨a, b⟩ habp ⟨haq, hbr⟩
+  obtain rfl : a = 0 := hq a ⟨(a, b), habp, rfl⟩ haq
+  simp [hr b habp hbr]
+
+theorem Submodule.codisjoint_prod_right {R E F : Type*}
     [Semiring R] [AddCommMonoid E] [Module R E] [AddCommGroup F] [Module R F]
-    (p : Submodule R (E × F)) (q : Submodule R F)
-    (hp_left : p.map (.fst R E F) = ⊤)
-    (hpq : IsCompl (p.comap (.inr R E F)) q) : IsCompl p (.prod ⊥ q) := by
-  constructor
-  · rcases hpq with ⟨hpq, -⟩
-    aesop (add simp Submodule.disjoint_def)
-  · rw [Submodule.codisjoint_iff_exists_add_eq]
-    replace hp_left : ∀ (x : E), ∃ y, (x, y) ∈ p := by simpa [Submodule.eq_top_iff'] using hp_left
-    rintro ⟨x, y⟩
-    rcases hp_left x with ⟨z, hz⟩
-    rcases Submodule.codisjoint_iff_exists_add_eq.mp hpq.2 (y - z) with ⟨w, t, hw, ht, hwt⟩
-    rw [Submodule.mem_comap, LinearMap.inr_apply] at hw
-    use (x, z) + (0, w), (0, t), add_mem hz hw
-    simp [ht, add_assoc, hwt]
+    {p : Submodule R (E × F)} {q : Submodule R E} {r : Submodule R F}
+    (hpq : Codisjoint (p.map (.fst R E F)) q) (hpr : Codisjoint (p.comap (.inr R E F)) r) :
+    Codisjoint p (q.prod r) := by
+  simp only [Submodule.codisjoint_iff_exists_add_eq, mem_map, mem_comap, mem_prod,
+    LinearMap.fst_apply, LinearMap.inr_apply] at *
+  rintro ⟨x, y⟩
+  rcases hpq x with ⟨_a, c, ⟨⟨a, b⟩, hab, rfl⟩, hcS, rfl⟩
+  rcases hpr (y - b) with ⟨d, e, hdp, heq, hde⟩
+  use (a, b) + (0, d), (c, e), add_mem hab hdp
+  simp [hcS, heq, add_assoc, hde]
+
+theorem Submodule.isCompl_prod_right {R E F : Type*}
+    [Semiring R] [AddCommMonoid E] [Module R E] [AddCommGroup F] [Module R F]
+    {p : Submodule R (E × F)} {q : Submodule R E} {r : Submodule R F}
+    (hpq : IsCompl (p.map (.fst R E F)) q) (hpr : IsCompl (p.comap (.inr R E F)) r) :
+    IsCompl p (q.prod r) :=
+  ⟨disjoint_prod_right hpq.1 hpr.1, codisjoint_prod_right hpq.2 hpr.2⟩
 
 theorem LinearMap.map_fst_ker_eq_top {R E F G : Type*}
     [Semiring R] [AddCommGroup E] [Module R E] [AddCommGroup F] [Module R F]
@@ -82,8 +97,9 @@ def ImplicitFunctionData.parametric {𝕜 E F G : Type*} [NontriviallyNormedFiel
     have H := congr($(fderiv_comp_prodMk' hfa.hasFDerivAt.differentiableAt).toLinearMap)
     push_cast at H
     suffices IsCompl (fderiv 𝕜 f a).ker (.prod ⊥ projKer.ker) by simpa [LinearMap.ker_prodMap]
-    apply Submodule.isCompl_bot_prod_right
-    · rw [LinearMap.map_fst_ker_eq_top, ← H, hdf]
+    apply Submodule.isCompl_prod_right
+    · convert isCompl_top_bot
+      rw [LinearMap.map_fst_ker_eq_top, ← H, hdf]
       apply le_top
     · simpa [H] using projKer.isCompl_of_proj hprojKer
 
