@@ -1,9 +1,13 @@
-import Mathlib.Analysis.Calculus.DiffContOnCl
-import Mathlib.Analysis.Calculus.LineDeriv.Basic
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import SardMoreira.LebesgueDensity
-import SardMoreira.ContDiff
-import SardMoreira.ToMathlib.PR32186
+module
+
+public import Mathlib.Analysis.Calculus.DiffContOnCl
+public import Mathlib.Analysis.Calculus.LineDeriv.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
+public import SardMoreira.LebesgueDensity
+public import SardMoreira.ContDiff
+
+@[expose] public section
 
 open scoped Topology NNReal ENNReal unitInterval
 open Asymptotics Filter MeasureTheory AffineMap Set Metric
@@ -11,7 +15,7 @@ open Asymptotics Filter MeasureTheory AffineMap Set Metric
 theorem UniformSpace.Completion.hasFDerivAt_coe {𝕜 E : Type*}
     [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {a : E} :
     HasFDerivAt ((↑) : E → Completion E) (toComplL : E →L[𝕜] Completion E) a := by
-  simpa using (toComplL (𝕜 := 𝕜) (E := E)).hasFDerivAt
+  simpa using (toComplL (S := 𝕜) (α := E)).hasFDerivAt
 
 section NormedField
 
@@ -24,77 +28,6 @@ theorem openSegment_subset_ball_left {x y : E} (h : x ≠ y) :
   intro t ht
   rw [mem_ball, dist_lineMap_left, dist_eq_norm_sub', Real.norm_of_nonneg ht.1.le]
   exact mul_lt_of_lt_one_left (by simpa [sub_eq_zero, eq_comm] using h) ht.2
-
-lemma dist_le_mul_volume_of_norm_lineDeriv_le {f : E → F} {a b : E} {C : ℝ}
-    (hfc : ContinuousOn f (segment ℝ a b))
-    (hfd : ∀ t ∈ Ioo (0 : ℝ) 1, LineDifferentiableAt ℝ f (lineMap a b t) (b - a))
-    (hf' : ∀ᵐ t : ℝ, t ∈ Ioo (0 : ℝ) 1 → ‖lineDeriv ℝ f (lineMap a b t) (b - a)‖ ≤ C) :
-    ‖f b - f a‖ ≤
-      C * volume.real {t ∈ Ioo (0 : ℝ) 1 | lineDeriv ℝ f (lineMap a b t) (b - a) ≠ 0} := by
-  set g : ℝ → F := fun t ↦ f (lineMap a b t)
-  have hgc : ContinuousOn g (Icc 0 1) := by
-    refine hfc.comp ?_ ?_
-    · exact AffineMap.lineMap_continuous.continuousOn
-    · simp [segment_eq_image_lineMap, mapsTo_image]
-  have hdg (t : ℝ) (ht : t ∈ Ioo 0 1) : HasDerivAt g (lineDeriv ℝ f (lineMap a b t) (b - a)) t := by
-    have := (hfd t ht).hasLineDerivAt.scomp_of_eq (𝕜 := ℝ) t ((hasDerivAt_id t).sub_const t)
-    simpa [g, lineMap_apply_module', Function.comp_def, sub_smul, add_comm _ a] using this
-  suffices dist (g 0) (g 1) ≤ C * volume.real {t ∈ Ioo 0 1 | deriv g t ≠ 0} by
-    convert this using 1
-    · simp [g, dist_eq_norm_sub']
-    · congr 2 with t
-      simp +contextual [(hdg _ _).deriv]
-  apply dist_le_mul_volume_of_norm_deriv_le_of_le zero_le_one hgc
-  · exact fun t ht ↦ (hdg t ht).differentiableAt.differentiableWithinAt
-  · exact hf'.mono fun t ht ht_mem ↦ by simpa only [(hdg t ht_mem).deriv] using ht ht_mem
-
-lemma dist_le_mul_volume_of_norm_fderiv_le {f : E → F} {a b : E} {C : ℝ} {s : Set E}
-    (hs : IsOpen s) (hf : DiffContOnCl ℝ f s) (hab : openSegment ℝ a b ⊆ s)
-    (hC : ∀ x ∈ s, ‖fderiv ℝ f x‖ ≤ C) :
-    ‖f b - f a‖ ≤
-      C * ‖b - a‖ * volume.real {t ∈ Ioo (0 : ℝ) 1 | fderiv ℝ f (lineMap a b t) ≠ 0} := by
-  have hmem_s : ∀ t ∈ Ioo (0 : ℝ) 1, lineMap a b t ∈ s := fun t ht ↦
-    hab <| lineMap_mem_openSegment _ a b ht
-  have hC₀ : 0 ≤ C := (norm_nonneg _).trans <| hC _ <| hmem_s (1 / 2) (by norm_num)
-  have hfc : ContinuousOn f (segment ℝ a b) :=
-    hf.continuousOn.mono <| segment_subset_closure_openSegment.trans <| closure_mono hab
-  have hfd : ∀ t ∈ Ioo (0 : ℝ) 1, LineDifferentiableAt ℝ f (lineMap a b t) (b - a) := fun t ht ↦
-    (hf.differentiableAt hs <| hmem_s t ht).lineDifferentiableAt
-  have hfC : ∀ t ∈ Ioo (0 : ℝ) 1, ‖lineDeriv ℝ f (lineMap a b t) (b - a)‖ ≤ C * ‖b - a‖ := by
-    intro t ht
-    rw [DifferentiableAt.lineDeriv_eq_fderiv]
-    · exact ContinuousLinearMap.le_of_opNorm_le _ (hC _ <| hmem_s t ht) _
-    · exact hf.differentiableAt hs <| hmem_s t ht
-  refine dist_le_mul_volume_of_norm_lineDeriv_le hfc hfd (.of_forall hfC) |>.trans ?_
-  gcongr
-  · refine ne_top_of_le_ne_top ?_ (measure_mono inter_subset_left)
-    simp
-  · simp +contextual [(hf.differentiableAt hs <| hmem_s _ ‹_›).lineDeriv_eq_fderiv]
-
-theorem sub_isBigO_norm_rpow_add_one_of_fderiv {f : E → F} {a : E} {r : ℝ} (hr : 0 ≤ r)
-    (hdf : ∀ᶠ x in 𝓝 a, DifferentiableAt ℝ f x) (hderiv : fderiv ℝ f =O[𝓝 a] (‖· - a‖ ^ r)) :
-    (f · - f a) =O[𝓝 a] (‖· - a‖ ^ (r + 1)) := by
-  rcases hderiv.exists_pos with ⟨C, hC₀, hC⟩
-  rw [Asymptotics.IsBigOWith_def] at hC
-  rcases eventually_nhds_iff_ball.mp (hdf.and hC) with ⟨ε, hε₀, hε⟩
-  refine .of_bound C ?_
-  rw [eventually_nhds_iff_ball]
-  refine ⟨ε, hε₀, fun y hy ↦ ?_⟩
-  rw [Real.norm_of_nonneg (by positivity), Real.rpow_add_one' (by positivity) (by positivity),
-    ← mul_assoc]
-  have hsub : closedBall a ‖y - a‖ ⊆ ball a ε :=
-    closedBall_subset_ball (mem_ball_iff_norm.mp hy)
-  apply (convex_closedBall a ‖y - a‖).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
-  · exact fun z hz ↦ (hε z <| hsub hz).1
-  · intro z hz
-    grw [(hε z <| hsub hz).2, Real.norm_of_nonneg (by positivity), mem_closedBall_iff_norm.mp hz]
-  · simp
-  · simp [dist_eq_norm_sub]
-
-theorem isBigO_norm_rpow_add_one_of_fderiv_of_apply_eq_zero {f : E → F} {a : E} {r : ℝ} (hr : 0 ≤ r)
-    (hdf : ∀ᶠ x in 𝓝 a, DifferentiableAt ℝ f x) (hderiv : fderiv ℝ f =O[𝓝 a] (‖· - a‖ ^ r))
-    (hf₀ : f a = 0) : f =O[𝓝 a] (‖· - a‖ ^ (r + 1)) := by
-  simpa [hf₀] using sub_isBigO_norm_rpow_add_one_of_fderiv hr hdf hderiv
 
 open UniformSpace (Completion) in
 theorem sub_isLittleO_norm_rpow_add_one_of_fderiv_of_density_point [FiniteDimensional ℝ E]
@@ -136,7 +69,7 @@ theorem sub_isLittleO_norm_rpow_add_one_of_fderiv_of_density_point [FiniteDimens
       rw [EventuallyEq, eventually_nhdsWithin_iff] at hs
       rcases Metric.eventually_nhds_iff_ball.mp hs with ⟨r, hr₀, hr⟩
       filter_upwards [Ioo_mem_nhdsGT hr₀] with δ ⟨hδ₀, hδr⟩
-      rw [inter_assoc, Measure.measure_toMeasurable_inter_of_sFinite, ← inter_assoc,
+      rw [inter_assoc, Measure.measure_toMeasurable_inter_of_sfinite, ← inter_assoc,
         inter_right_comm, inter_eq_self_of_subset_left (_ : s ∩ _ ⊆ _)]
       · refine fun y hy ↦ hr _ (closedBall_subset_ball hδr hy.2) hy.1
       · exact (measurableSet_eq.preimage (measurable_fderiv _ _)).inter measurableSet_closedBall
@@ -159,7 +92,7 @@ theorem sub_isLittleO_norm_rpow_add_one_of_fderiv_of_density_point [FiniteDimens
     replace hr := ENNReal.mul_lt_of_lt_div hr
     have : μ (closedBall a r ∩ s) ≠ ∞ :=
       measure_ne_top_of_subset inter_subset_left measure_closedBall_lt_top.ne
-    rw [inter_comm, ← diff_eq, ← ENNReal.add_le_add_iff_left this, measure_inter_add_diff _ hsm,
+    rw [inter_comm, ← sdiff_eq, ← ENNReal.add_le_add_iff_left this, measure_inter_add_sdiff _ hsm,
       ← tsub_le_iff_right, inter_comm]
     rw [ENNReal.sub_mul, one_mul] at hr
     exacts [hr.le, fun _ _ ↦ measure_closedBall_lt_top.ne]
@@ -199,7 +132,7 @@ theorem sub_isLittleO_norm_rpow_add_one_of_fderiv_of_density_point [FiniteDimens
       push_cast
       field_simp
   have hza : ‖f z - f a‖ ≤ (c / 2) * ‖y - a‖ ^ (r + 1) := by
-    grw [dist_le_mul_volume_of_norm_fderiv_le (C := C * ‖y - a‖ ^ r) _ _
+    grw [norm_sub_le_mul_volume_of_norm_fderiv_le (C := C * ‖y - a‖ ^ r) _ _
       (openSegment_subset_ball_left _)]
     · have H :
           volume.real {t : ℝ | t ∈ Ioo 0 1 ∧ fderiv ℝ f ((lineMap a z) t) ≠ 0} < (c / C / 2) := by
@@ -215,7 +148,7 @@ theorem sub_isLittleO_norm_rpow_add_one_of_fderiv_of_density_point [FiniteDimens
           rw [mem_ball, dist_lineMap_left, Real.norm_of_nonneg ht₀.le, dist_comm, hz_mem]
           exact mul_lt_of_lt_one_left (by simpa [sub_eq_zero]) ht₁
         refine ⟨ht₀.le, ?_, this⟩
-        contrapose! ht
+        contrapose ht
         apply hdfs
         · grw [← hsub, ← ball_subset_closedBall]
           exact this

@@ -1,5 +1,9 @@
-import Mathlib.Topology.Order.LowerUpperTopology
-import Mathlib.Topology.Semicontinuity.Basic
+module
+
+public import Mathlib.Topology.Order.LowerUpperTopology
+public import Mathlib.Topology.Semicontinuity.Basic
+
+@[expose] public section
 
 open Set Filter Function TopologicalSpace
 

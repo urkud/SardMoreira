@@ -1,6 +1,10 @@
-import Mathlib.MeasureTheory.Covering.Besicovitch
-import Mathlib
-import SardMoreira.UnifDoublingCover
+module
+
+public import Mathlib.MeasureTheory.Covering.Besicovitch
+public import Mathlib
+public import SardMoreira.UnifDoublingCover
+
+@[expose] public section
 
 namespace MeasureTheory.Measure
 
@@ -9,12 +13,12 @@ open Metric Set Filter Fin MeasureTheory TopologicalSpace Besicovitch.TauPackage
 
 attribute [norm_cast] ENNReal.ofReal_coe_nnreal
 
-theorem EMetric.diam_metricClosedBall_le {X : Type*} [PseudoMetricSpace X]
-    (x : X) (r : ℝ) : EMetric.diam (Metric.closedBall x r) ≤ 2 * ENNReal.ofReal r := by
+theorem ediam_metricClosedBall_le {X : Type*} [PseudoMetricSpace X]
+    (x : X) (r : ℝ) : ediam (Metric.closedBall x r) ≤ 2 * ENNReal.ofReal r := by
   rcases lt_or_ge r 0 with hr | hr
   · simp [ENNReal.ofReal_of_nonpos hr.le, Metric.closedBall_of_neg hr]
   lift r to ℝ≥0 using hr
-  grw [← Metric.emetric_closedBall_nnreal, EMetric.diam_closedBall, ENNReal.ofReal_coe_nnreal]
+  grw [← Metric.closedEBall_coe, Metric.ediam_closedEBall_le, ENNReal.ofReal_coe_nnreal]
 
 universe u
 
@@ -38,7 +42,7 @@ instance [SecondCountableTopology α] [OpensMeasurableSpace α] [HasBesicovitchC
     (μ : Measure α) [SFinite μ] [μ.OuterRegular] : ClosedBallCoveringMeasure μ :=
   ⟨Besicovitch.exists_closedBall_covering_tsum_measure_le μ⟩
 
-open IsUnifLocDoublingMeasure in
+open _root_.IsUnifLocDoublingMeasure in
 instance instClosedBallCoveringMeasureOfIsUnifLocDoublingMeasure [BorelSpace α] [SecondCountableTopology α]
     (μ : Measure α) [IsLocallyFiniteMeasure μ] [IsUnifLocDoublingMeasure μ] :
     ClosedBallCoveringMeasure μ where
@@ -65,7 +69,7 @@ instance instClosedBallCoveringMeasureOfIsUnifLocDoublingMeasure [BorelSpace α]
           (lt_min (lt_min hε hδ₀) (scalingScaleOf_pos _ _)) with ⟨r, hrf, hr₀, hrε⟩
         rw [lt_min_iff, lt_min_iff] at hrε
         refine ⟨(x, r), ⟨hx, ⟨hrf, hr₀, hrε.2⟩, ?_⟩, hrε.1.1.le, rfl⟩
-        grw [hrε.1.2, hδU]
+        grw [hrε.1.2.le, hδU]
     rcases exists_closedBall_covering_tsum_measure_le_of_measure_zero μ (ENNReal.half_pos hε₀).ne'
       f _ hμ (fun x hx δ hδ ↦ hf x hx.1 δ hδ) with ⟨v, r', hvc, hv_sub, hrf, hs_sub, hv_tsum⟩
     set goodR : α → ℝ := Function.extend (fun x : u ↦ x.1.1) (fun cr ↦ cr.1.2) r'
@@ -109,13 +113,13 @@ instance instClosedBallCoveringMeasureOfIsUnifLocDoublingMeasure [BorelSpace α]
         rintro ⟨y, hy, rfl⟩
         refine (hv_sub hc).2 <| mem_iUnion₂_of_mem hy ?_
         simp [(hus hy).2.1.2.1.le]
-    · rw [tsum_congr_set_coe (fun x ↦ μ (closedBall x (goodR x))) Set.union_diff_self.symm]
-      grw [ENNReal.tsum_union_le (fun x ↦ μ (closedBall x (goodR x)))]
+    · rw [tsum_congr_set_coe (fun x ↦ μ (closedBall x (goodR x))) Set.union_sdiff_self.symm]
+      grw [tsum_union_le (fun x ↦ μ (closedBall x (goodR x)))]
       rw [tsum_image (fun x ↦ μ (closedBall x (goodR x))) hinj]
       simp only [hgoodR_fst_u _ (Subtype.prop _),
         fun x : ↑(v \ Prod.fst '' u) ↦ hgoodR_not_u x x.2.2]
       grw [← measure_biUnion huc hud (fun _ _ ↦ measurableSet_closedBall),
-        ENNReal.tsum_mono_subtype (fun x ↦ μ (closedBall x (r' x))) diff_subset, ← ε.add_halves,
+        tsum_mono_subtype (fun x ↦ μ (closedBall x (r' x))) sdiff_subset, ← ε.add_halves,
         ← add_assoc, hv_tsum, ← hμU]
       gcongr
       refine iUnion₂_subset fun x hx ↦ ?_
@@ -147,7 +151,7 @@ lemma outerMeasure_le_mul' {μ : Measure α} [ClosedBallCoveringMeasure μ]
       (nhdsGT_basis (0 : ℝ))).frequently_iff] at h
     rcases h x hx (ε, δ) ⟨hε, hδ⟩ with ⟨⟨ε', r⟩, ⟨⟨-, hε'⟩, hr⟩, hle⟩
     refine ⟨r, ?_, hr⟩
-    simp_all only [mem_setOf_eq]
+    simp_all only [mem_ofPred_eq]
     refine hle.trans ?_
     gcongr
   have := htc.to_subtype
@@ -191,16 +195,17 @@ lemma outerMeasure_null_of_forall_le_mul_ae_null {μ : Measure α} [SigmaFinite 
     (h : ∀ x ∈ s, ∃ᶠ εr : ℝ≥0∞ × ℝ in 𝓝[>] 0 ×ˢ 𝓝[>] 0,
       ν (s ∩ closedBall x εr.2) ≤ (C x + εr.1) * μ (closedBall x εr.2)) :
     ν s = 0 := by
-  grw [← nonpos_iff_eq_zero, measure_le_inter_add_diff (t := {x | C x = 0})]
+  grw [← nonpos_iff_eq_zero, measure_le_inter_add_sdiff (t := {x | C x = 0})]
   apply add_nonpos
   · calc
       ν (s ∩ {x | C x = 0}) ≤ 0 * μ (s ∩ {x | C x = 0}) := by
         refine outerMeasure_le_mul (by simp) fun x hx ↦ ?_
-        grw [inter_subset_left]
+        grw [inter_subset_left (s := s)]
         simpa [hx.2.out] using h x hx.1
       _ = 0 := zero_mul _
   · set t := s \ {x | C x = 0}
-    have hμt : μ t = 0 := by simpa [t, ae_iff] using hC
+    have hμt : μ t = 0 :=
+      measure_mono_null (fun x hx ↦ by simpa [t] using hx) (ae_iff.1 hC)
     calc
       ν t = ν (⋃ n : ℕ, {x ∈ t | C x ≤ n}) := by
         congr with x
@@ -212,7 +217,7 @@ lemma outerMeasure_null_of_forall_le_mul_ae_null {μ : Measure α} [SigmaFinite 
         · simp
         · intro x hx
           simp only [t]
-          grw [sep_subset, diff_subset, ← (mod_cast hx.2 : (C x : ℝ≥0∞) ≤ n)]
+          grw [sep_subset, sdiff_subset, ← (mod_cast hx.2 : (C x : ℝ≥0∞) ≤ n)]
           exact h x hx.1.1
       _ ≤ ∑' n : ℕ, n * μ t := by gcongr; apply Set.sep_subset
       _ ≤ 0 := by simp [hμt]
@@ -293,7 +298,7 @@ lemma hasudorffMeasure_image_le_mul' {X : Type*} [MetricSpace X] [MeasurableSpac
     exact hdimDom
   suffices ∀ d, 0 < d →
       OuterMeasure.mkMetric'.pre
-        (fun s ↦ EMetric.diam s ^ dimImg) d (f '' s) ≤ ((2 * C) ^ dimImg / μBall) * μ s by
+        (fun s ↦ ediam s ^ dimImg) d (f '' s) ≤ ((2 * C) ^ dimImg / μBall) * μ s by
     simpa only [hausdorffMeasure, ← toOuterMeasure_apply, mkMetric_toOuterMeasure,
       OuterMeasure.mkMetric, OuterMeasure.mkMetric', OuterMeasure.iSup_apply, iSup_le_iff]
   intro d hd
@@ -360,8 +365,8 @@ lemma hasudorffMeasure_image_le_mul' {X : Type*} [MetricSpace X] [MeasurableSpac
     have hmaps : MapsTo f (s ∩ closedBall x δ) (closedBall (f x) ((C + ε') * δ ^ holderExp)) := by
       intro y hy
       grw [mem_closedBall, hδCε y hy, mem_closedBall.mp hy.2]
-    have hdiam : EMetric.diam (f '' (s ∩ closedBall x δ)) ≤ 2 * (C + ε') * δ ^ holderExp := by
-      grw [hmaps.image_subset, EMetric.diam_metricClosedBall_le,
+    have hdiam : ediam (f '' (s ∩ closedBall x δ)) ≤ 2 * (C + ε') * δ ^ holderExp := by
+      grw [hmaps.image_subset, ediam_metricClosedBall_le,
         ← ENNReal.coe_rpow_of_nonneg _ (by positivity)]
       norm_cast
       rw [← mul_assoc]
@@ -394,7 +399,7 @@ lemma hasudorffMeasure_image_le_mul {X : Type*} [MetricSpace X] [MeasurableSpace
     · rw [image_singleton, ← closedBall_zero (x := a), ← NNReal.coe_zero, hμ_dim]
       rcases hdim.eq_or_lt with rfl | hdimImg_pos
       · simp [ENNReal.inv_mul_cancel, *]
-      · have := MeasureTheory.Measure.noAtoms_hausdorff X hdimImg_pos
+      · have := MeasureTheory.Measure.nullSingletonClass_hausdorff X hdimImg_pos
         simp
     · have := calc
         μBall + μBall = μ {a} + μ {b} := by

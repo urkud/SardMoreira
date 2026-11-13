@@ -1,4 +1,8 @@
-import Mathlib.Topology.NhdsWithin
+module
+
+public import Mathlib.Topology.NhdsWithin
+
+@[expose] public section
 
 open Filter
 open scoped Topology

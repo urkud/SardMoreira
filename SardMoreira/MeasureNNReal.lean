@@ -1,5 +1,9 @@
-import SardMoreira.MeasureComap
-import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+module
+
+public import SardMoreira.MeasureComap
+public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+
+@[expose] public section
 
 open scoped ENNReal NNReal Set.Notation Pointwise
 open MeasureTheory Filter Set Function Metric Topology

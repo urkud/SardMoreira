@@ -1,5 +1,9 @@
-import Mathlib
-import SardMoreira.ToMathlib.ContinuousLinearMap
+module
+
+public import Mathlib
+public import SardMoreira.ToMathlib.ContinuousLinearMap
+
+@[expose] public section
 
 open scoped Asymptotics BigOperators
 
@@ -69,7 +73,7 @@ theorem const_apply_sub_const_apply_isBigO (f : ContinuousMultilinearMap 𝕜 E 
     (fun a ↦ f (g₁ a) - f (g₂ a)) =O[l] B := by
   refine .trans (.of_norm_le fun _ ↦ norm_image_sub_le _ _ _) ?_
   simp only [← Asymptotics.isBigO_one_iff ℝ, ← Asymptotics.isBigO_pi] at *
-  simpa using hg₁.prod_left hg₂ |>.norm_left |>.pow (Fintype.card ι - 1)
+  simpa [Pi.sub_def] using hg₁.prod_left hg₂ |>.norm_left |>.pow (Fintype.card ι - 1)
     |>.const_mul_left (‖f‖ * Fintype.card ι) |>.mul hsub.norm_norm
 
 @[simp]

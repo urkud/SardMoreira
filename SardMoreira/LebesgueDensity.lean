@@ -1,19 +1,24 @@
-import SardMoreira.UpperLowerSemicontinuous
-import SardMoreira.NormedSpace
-import SardMoreira.MeasureComap
-import SardMoreira.MeasureBallSemicontinuous
-import SardMoreira.Topology
-import Mathlib.Data.Real.StarOrdered
-import Mathlib.LinearAlgebra.FreeModule.PID
-import Mathlib.MeasureTheory.Constructions.HaarToSphere
-import Mathlib.MeasureTheory.Covering.Besicovitch
-import Mathlib.RingTheory.SimpleRing.Principal
-import Mathlib.Topology.EMetricSpace.Paracompact
-import Mathlib.Topology.Separation.CompletelyRegular
-import Mathlib.Dynamics.Ergodic.Action.Regular
-import Mathlib.MeasureTheory.Constructions.Polish.Basic
-import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
-import Mathlib.MeasureTheory.Measure.Haar.Unique
+module
+
+public import SardMoreira.UpperLowerSemicontinuous
+public import SardMoreira.NormedSpace
+public import SardMoreira.MeasureComap
+public import SardMoreira.MeasureBallSemicontinuous
+public import SardMoreira.Topology
+public import Mathlib.Algebra.Order.Star.Real
+public import Mathlib.LinearAlgebra.FreeModule.PID
+public import Mathlib.MeasureTheory.Constructions.HaarToSphere
+public import Mathlib.MeasureTheory.Covering.Besicovitch
+public import Mathlib.RingTheory.SimpleRing.Principal
+public import Mathlib.Topology.EMetricSpace.Paracompact
+public import Mathlib.Topology.Separation.CompletelyRegular
+public import Mathlib.Dynamics.Ergodic.Action.Regular
+public import Mathlib.MeasureTheory.Constructions.Polish.Basic
+public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
+public import Mathlib.MeasureTheory.Measure.Haar.Unique
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+
+@[expose] public section
 
 open scoped ENNReal NNReal Set.Notation Pointwise
 open MeasureTheory Filter Set Function Metric Topology
@@ -34,25 +39,25 @@ protected theorem MeasureTheory.Measure.AbsolutelyContinuous.comap {α β : Type
     · exact hsm.nullMeasurableSet
     · exact fun t ht ↦ (hf.2 t ht).mono_ac h
     · exact hsm.nullMeasurableSet
-  · rw [Measure.comap, dif_neg]
+  · rw [Measure.comap, dite_eq_right]
     · exact .zero _
-    · contrapose! hf
+    · contrapose hf
       exact ⟨hf.1, hfν⟩
 
 theorem MeasurableEmbedding.quasiMeasurePreserving_iff_comap {α β : Type*}
     {_ : MeasurableSpace α} {_ : MeasurableSpace β} {e : α → β} (he : MeasurableEmbedding e)
     {μ : Measure α} {ν : Measure β} :
-    Measure.QuasiMeasurePreserving e μ ν ↔ μ ≪ .comap e ν := by
+    QuasiMeasurePreserving e μ ν ↔ μ ≪ .comap e ν := by
   constructor <;> intro h
   · rw [← he.comap_map μ]
     exact h.2.comap _ fun s hs ↦ (he.measurableSet_image.mpr hs).nullMeasurableSet
-  · use he.measurable
+  · use he.measurable.aemeasurable
     refine (h.map he.measurable).trans ?_
     rw [he.map_comap]
     exact ν.restrict_le_self.absolutelyContinuous
 
-theorem MeasureTheory.Measure.QuasiMeasurePreserving.subtypeVal_volumeIoiPow (n : ℕ) :
-    Measure.QuasiMeasurePreserving Subtype.val (.volumeIoiPow n) volume := by
+theorem MeasureTheory.QuasiMeasurePreserving.subtypeVal_volumeIoiPow (n : ℕ) :
+    QuasiMeasurePreserving Subtype.val (.volumeIoiPow n) volume := by
   rw [MeasurableEmbedding.quasiMeasurePreserving_iff_comap]
   exacts [absolutelyContinuous_volumeIoiPow_left n, .subtype_coe measurableSet_Ioi]
 
@@ -123,7 +128,7 @@ theorem exists_absolutelyContinuous_forall_pos_exists_lt_gt :
           simp [ENNReal.ofReal_div_of_pos, mul_div_assoc]
         _ ≤ _ := by
           rw [withDensity_apply _ measurableSet_Icc, ← setLIntegral_const]
-          refine setLIntegral_mono measurable_enorm ?_
+          refine setLIntegral_mono measurable_eNorm ?_
           rintro x ⟨hx, -⟩
           simpa [← NNReal.coe_le_coe] using hx.trans (le_abs_self x)
 
@@ -161,12 +166,12 @@ theorem MeasureTheory.Measure.AbsolutelyContinuous.exists_pos_forall_lt_imp_lt
   refine ⟨δ, hδ₀, fun s hs ↦ ?_⟩
   calc
     μ s = μ (s ∩ {x | C < μ.rnDeriv ν x}) + μ (s \ {x | C < μ.rnDeriv ν x}) := by
-      rw [measure_inter_add_diff]
+      rw [measure_inter_add_sdiff]
       apply measurableSet_lt <;> fun_prop
     _ < ε / 2 + C * δ := by
       have : μ (s \ {x | ↑C < μ.rnDeriv ν x}) ≤ ↑C * ↑δ := by
         grw [← setLIntegral_rnDeriv h, ← hs, ← setLIntegral_const]
-        refine (setLIntegral_mono measurable_const ?_).trans (lintegral_mono_set diff_subset)
+        refine (setLIntegral_mono measurable_const ?_).trans (lintegral_mono_set sdiff_subset)
         simp
       refine ENNReal.add_lt_add_of_lt_of_le ?_ ?_ this
       · refine ne_top_of_le_ne_top (by finiteness) this
@@ -217,7 +222,7 @@ theorem exists_pos_forall_measure_le_toSphere_ge_le
     refine lt_of_le_of_lt ?_ (hδ (Ioi (0 : ℝ) ↓∩ s) hsδ)
     rw [(MeasurableEmbedding.subtype_coe measurableSet_Ioi).comap_preimage, Subtype.range_val]
     apply measure_mono_ae
-    filter_upwards [Ioi_ae_eq_Ici.symm.le] with a ha hsa using ⟨hsa, ha (hs hsa)⟩
+    filter_upwards [Ioi_ae_eq_Ici.symm.subset] with a ha hsa using ⟨hsa, ha (hs hsa)⟩
   set T : Set E → Set (Metric.sphere (0 : E) 1) := fun s ↦
     {x | Measure.volumeIoiPow (Module.finrank ℝ E - 1)
       {t : Ioi (0 : ℝ) | ((homeomorphUnitSphereProd E).symm (x, t)).1 ∈ s} ≥ δ}
@@ -225,12 +230,11 @@ theorem exists_pos_forall_measure_le_toSphere_ge_le
       μ.toSphere {x | volume {t : ℝ | 0 ≤ t ∧ t • x.1 ∈ s} ≥ ε} ≤ μ.toSphere (T s)  := by
     refine fun s ↦ measure_mono fun x hx ↦ ?_
     simp only [T]
-    rw [mem_setOf_eq] at hx ⊢
+    rw [mem_ofPred_eq] at hx ⊢
     contrapose! hx
     apply hδ
     · exact fun _ ↦ And.left
-    · convert hx
-      ext t
+    · convert hx with t
       simp [t.2.out.le]
   obtain ⟨ε', hε'₀, hε'⟩ : ∃ ε' : ℝ≥0, 0 < ε' ∧ ε' < ε :=
     mod_cast ENNReal.lt_iff_exists_nnreal_btwn.mp (pos_iff_ne_zero.mpr hε)
@@ -239,7 +243,7 @@ theorem exists_pos_forall_measure_le_toSphere_ge_le
   wlog hsm : MeasurableSet s generalizing s
   · refine lt_of_le_of_lt ?_ (this (toMeasurable μ s) ?_ ?_)
     · refine measure_mono fun x hx ↦ ?_
-      rw [mem_setOf_eq] at hx ⊢
+      rw [mem_ofPred_eq] at hx ⊢
       exact le_trans hx <| measure_mono fun t ⟨ht₀, ht⟩ ↦ ⟨ht₀, subset_toMeasurable _ _ ht⟩
     · rwa [measure_toMeasurable]
     · measurability
@@ -261,7 +265,7 @@ theorem exists_pos_forall_measure_le_toSphere_ge_le
           refine MeasurableEquiv.measurable _ ?_
           exact hsm.preimage measurable_subtype_coe
         · intro x hx
-          simpa [T] using hx
+          exact hx
       · refine MeasurableEquiv.measurable _ ?_
         exact hsm.preimage measurable_subtype_coe
     _ ≤ μ s := by
@@ -287,15 +291,8 @@ theorem exists_pos_forall_measure_le_exists_mem_sphere_dist_lt_volume_smul_mem_l
     _ ≤ μ.toSphere {y : sphere (0 : E) 1 | volume {t : ℝ | 0 ≤ t ∧ t • y.1 ∈ s} ≥ min ↑δ ↑ε} := by
       gcongr μ.toSphere ?_
       intro y hy
-      rw [mem_setOf_eq]
+      rw [mem_ofPred_eq]
       exact (min_le_right _ _).trans <| hη _ y.2 hy
-
-@[simp]
-theorem addHaar_nnreal_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] {_ : MeasurableSpace E} [BorelSpace E]
-    (μ : Measure E) [μ.IsAddHaarMeasure] (c : ℝ≥0) (s : Set E) :
-    μ (c • s) = c ^ Module.finrank ℝ E * μ s := by
-  simp [NNReal.smul_def]
 
 theorem exists_pos_forall_measure_le_exists_mem_sphere_dist_lt_volume_lineMap_mem_lt
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -332,7 +329,7 @@ theorem exists_pos_forall_measure_le_exists_mem_sphere_dist_lt_volume_lineMap_me
         grw [hs]
         simp (disch := positivity) [ENNReal.coe_div, hμB']
       _ = (r : ℝ≥0∞)⁻¹ ^ d * (δ / μB * (c * (r ^ d * μB))) := by
-        simp only [Measure.smul_apply, Measure.nnreal_smul_coe_apply]
+        simp only [smul_apply, Measure.nnreal_smul_coe_apply]
         simp [Measure.addHaar.addHaar_ball_of_pos _ (r := r) hgt, d, ← hμB]
       _ = c * (r / r) ^ d * (μB / μB) * δ := by
         simp only [div_eq_mul_inv, mul_pow]
@@ -380,10 +377,9 @@ theorem eventually_forall_le_continuousWithinAt_Ici_measure_closedBall
     ∀ᶠ r : ℝ in 𝓝 0, ∀ ν ≤ μ, ContinuousWithinAt (ν <| closedBall x ·) (Set.Ici r) r := by
   rcases (μ.finiteAt_nhds x).exists_mem_basis nhds_basis_closedBall with ⟨ε, ε₀, hε⟩
   filter_upwards [eventually_lt_nhds ε₀] with r hr ν hν
-  rw [← continuousWithinAt_Ioi_iff_Ici, ContinuousWithinAt]
-  convert tendsto_measure_biInter_gt (by measurability) (by intros; gcongr)
+  rw [← continuousWithinAt_Ioi_iff_Ici, ContinuousWithinAt, ← biInter_gt_closedBall]
+  exact tendsto_measure_biInter_gt (by measurability) (by intros; gcongr)
     ⟨ε, hr, ((hν _).trans_lt hε).ne⟩
-  rw [biInter_gt_closedBall]
 
 theorem eventually_continuousWithinAt_Ici_measure_inter_closedBall_div
     {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]

@@ -3,13 +3,17 @@ Copyright (c) 2025 Yury G. Kudryashov. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Yury G. Kudryashov
 -/
-import Mathlib
+module
+
+public import Mathlib
 
 /-!
 # Auxiliary theorems about `ContinuousLinearMap`
 
 Mostly about `ContinuousLinearMap.IsInvertible` and `ContinuousLinearMap.inverse`.
 -/
+
+@[expose] public section
 
 open Filter Function Asymptotics Topology
 

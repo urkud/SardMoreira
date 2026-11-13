@@ -1,5 +1,9 @@
-import SardMoreira.ContDiffMoreiraHolder
-import SardMoreira.LinearAlgebra
+module
+
+public import SardMoreira.ContDiffMoreiraHolder
+public import SardMoreira.LinearAlgebra
+
+@[expose] public section
 
 noncomputable section
 
@@ -28,17 +32,19 @@ def implicitFunctionDataOfComplementedKerRange (f : E → F) (f' : E →L[𝕜] 
     rintro ⟨_, x, rfl⟩
     use x
     simp_all
-  let φ := implicitFunctionDataOfComplemented (hrange.choose ∘ f) (hrange.choose ∘L f')
-    (hrange.choose.hasStrictFDerivAt.comp a hf) hrange_eq (by rwa [hker_eq])
   refine
-    { __ := φ,
+    { leftFun := hrange.choose ∘ f
+      leftDeriv := hrange.choose ∘L f'
       rightFun := hker.choose
       rightDeriv := hker.choose
-      range_rightDeriv := LinearMap.range_eq_of_proj (Classical.choose_spec hker)
+      pt := a
+      hasStrictFDerivAt_leftFun := hrange.choose.hasStrictFDerivAt.comp a hf
       hasStrictFDerivAt_rightFun := hker.choose.hasStrictFDerivAt
+      range_leftDeriv := hrange_eq
+      range_rightDeriv := LinearMap.range_eq_of_proj (Classical.choose_spec hker)
       isCompl_ker := ?_ }
-  simpa only [φ, implicitFunctionDataOfComplemented, hker_eq]
-    using LinearMap.isCompl_of_proj hker.choose_spec
+  rw [hker_eq]
+  exact LinearMap.isCompl_of_proj hker.choose_spec
 
 def implicitToOpenPartialHomeomorphOfComplementedKerRange (f : E → F) (f' : E →L[𝕜] F) {a : E}
     (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
@@ -53,6 +59,7 @@ theorem mem_implicitToOpenPartialHomeomorphOfComplementedKerRange_source
     (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
     (hrange : f'.range.ClosedComplemented) :
     a ∈ (hf.implicitToOpenPartialHomeomorphOfComplementedKerRange f f' hker hrange).source := by
+  unfold implicitToOpenPartialHomeomorphOfComplementedKerRange
   convert ImplicitFunctionData.pt_mem_toOpenPartialHomeomorph_source _
   simp
 
@@ -64,8 +71,7 @@ theorem implicitToOpenPartialHomeomorphOfComplementedKerRange_apply {f : E → F
   -- `simp [implicitToOpenPartialHomeomorphOfComplementedKerRange,
   --  implicitFunctionDataOfComplementedKerRange]` works but it's much slower
   simp only [implicitToOpenPartialHomeomorphOfComplementedKerRange,
-    implicitFunctionDataOfComplementedKerRange, implicitFunctionDataOfComplemented,
-    Function.comp_apply, ImplicitFunctionData.toOpenPartialHomeomorph_apply]
+    implicitFunctionDataOfComplementedKerRange, Function.comp_apply, ImplicitFunctionData.toOpenPartialHomeomorph_apply]
 
 theorem coe_implicitToOpenPartialHomeomorphOfComplementedKerRange {f : E → F} {f' : E →L[𝕜] F}
     {a : E} (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
