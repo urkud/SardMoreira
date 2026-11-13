@@ -1,6 +1,7 @@
 module
 
 public import Mathlib
+public import SardMoreira.ContDiffMoreiraHolder
 public import SardMoreira.ImplicitFunction
 public import SardMoreira.LocalEstimates
 

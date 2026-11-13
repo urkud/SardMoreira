@@ -537,7 +537,7 @@ theorem hausdorffMeasure_image_piProd_fst_null_of_finrank_eq
   exact hf _ hx |>.differentiableAt hk
 
 theorem hausdorffMeasure_image_nhdsWithin_null_of_finrank_eq
-    [CompleteSpace F] [MeasurableSpace F] [BorelSpace F]
+    [MeasurableSpace F] [BorelSpace F]
     (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s : Set E}
     (hf : ∀ x ∈ s, ContDiffPointwiseHolderAt k α f x)
     (hs : ∀ x ∈ s, (fderiv ℝ f x).finrank = p) {a : E} (ha : a ∈ s) :
@@ -552,30 +552,22 @@ theorem hausdorffMeasure_image_nhdsWithin_null_of_finrank_eq
         (fderiv ℝ eDom a).IsInvertible ∧
         (∀ x ∈ s, ContDiffPointwiseHolderAt k α eDom x) ∧
         (∀ x, (eDom x).1 = (eCod (f x)).1) := by
-    have hker : (fderiv ℝ f a).ker.ClosedComplemented := .of_finiteDimensional _
-    have hrange : (fderiv ℝ f a).range.ClosedComplemented := .of_finiteDimensional _
-    use (fderiv ℝ f a).ker, (fderiv ℝ f a).range, hrange.choose.ker
     have hdf := (hf a ha).contDiffAt.hasStrictFDerivAt_fderiv (by simpa [Nat.one_le_iff_ne_zero])
-    set eDom := hdf.implicitToOpenPartialHomeomorphOfComplementedKerRange _ _ hker hrange
-    refine ⟨eDom,
-      .equivOfRightInverse hrange.choose (Submodule.subtypeL _) hrange.choose_spec,
-      inferInstance, inferInstance, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    have hC := (Submodule.ClosedComplemented.of_finiteDimensional
+      (fderiv ℝ f a).range).isTopCompl_complement
+    have hD := (Submodule.ClosedComplemented.of_finiteDimensional
+      (fderiv ℝ f a).ker).isTopCompl_complement
+    refine ⟨_, _, _, hdf.toOpenPartialHomeomorphRangeProdKer _ _ hC hD,
+      (Submodule.prodEquivOfIsTopCompl _ _ hC).symm, inferInstance, inferInstance, ?_, hs a ha,
+      by simp, hdf.isInvertible_fderiv_toOpenPartialHomeomorphRangeProdKer hC hD, ?_, ?_⟩
     · rw [← (fderiv ℝ f a).finrank_range_add_finrank_ker, ← hs a ha, ContinuousLinearMap.finrank,
         Nat.add_sub_cancel_left]
-    · exact hs a ha
-    · simp [eDom]
-    · have := hdf.implicitFunctionDataOfComplementedKerRange _ _ hker hrange
-        |>.isInvertible_fderiv_prodFun
-      rw [HasStrictFDerivAt.implicitFunctionDataOfComplementedKerRange_pt,
-        ← ImplicitFunctionData.toOpenPartialHomeomorph_coe] at this
-      exact this
     · intro x hx
-      rw [hdf.coe_implicitToOpenPartialHomeomorphOfComplementedKerRange hker hrange]
+      rw [HasStrictFDerivAt.coe_toOpenPartialHomeomorphRangeProdKer]
       exact .prodMk (.comp _ (ContinuousLinearMap.contDiffPointwiseHolderAt _) (hf x hx) hk)
         (ContinuousLinearMap.contDiffPointwiseHolderAt _)
     · intro x
-      simp only [eDom, HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplementedKerRange_apply_fst]
-      rfl
+      simp [Submodule.prodEquivOfIsTopCompl_symm_apply]
   have : Nontrivial Ker := by
     apply Module.nontrivial_of_finrank_pos (R := ℝ)
     grind
@@ -620,7 +612,7 @@ theorem hausdorffMeasure_image_nhdsWithin_null_of_finrank_eq
       eCod.symm_apply_apply]
 
 theorem hausdorffMeasure_image_null_of_finrank_eq [MeasurableSpace F] [BorelSpace F]
-    [CompleteSpace F] (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s : Set E}
+    (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s : Set E}
     (hf : ∀ x ∈ s, ContDiffPointwiseHolderAt k α f x)
     (hs : ∀ x ∈ s, dim (fderiv ℝ f x).range = p) :
     μH[sardMoreiraBound (dim E) k α p] (f '' s) = 0 := by
@@ -631,30 +623,12 @@ theorem hausdorffMeasure_image_null_of_finrank_eq [MeasurableSpace F] [BorelSpac
 
 end Moreira2001
 
-open UniformSpace in
 theorem hausdorffMeasure_sardMoreiraBound_image_null_of_finrank_le
     [MeasurableSpace F] [BorelSpace F]
     (hp_dom : p < dim E) (hk : k ≠ 0) {f : E → F} {s : Set E}
     (hf : ∀ x ∈ s, ContDiffPointwiseHolderAt k α f x)
     (hs : ∀ x ∈ s, dim (fderiv ℝ f x).range ≤ p) :
     μH[sardMoreiraBound (dim E) k α p] (f '' s) = 0 := by
-  wlog hF : CompleteSpace F generalizing F
-  · borelize (Completion F)
-    set e : F →ₗᵢ[ℝ] Completion F := Completion.toComplₗᵢ
-    rw [← e.isometry.hausdorffMeasure_image, Set.image_image]
-    apply this
-    · exact fun x hx ↦ (hf x hx).continuousLinearMap_comp e.toContinuousLinearMap
-    · intro x hx
-      grw [fderiv_fun_comp, ← hs x hx]
-      · change dim (LinearMap.range ((fderiv ℝ e (f x)).toLinearMap ∘ₗ
-          (fderiv ℝ f x).toLinearMap)) ≤ _
-        rw [LinearMap.range_comp, ← LinearMap.range_domRestrict, LinearMap.finrank_range_of_inj]
-        simp [LinearMap.domRestrict, e, Function.Injective,
-          show fderiv ℝ (↑) (f x) = e.toContinuousLinearMap from e.toContinuousLinearMap.fderiv]
-      · exact e.toContinuousLinearMap.differentiableAt
-      · exact (hf x hx).differentiableAt hk
-    · infer_instance
-    · left; positivity
   -- Apply the Moreira2001 theorem to each of the sets where the rank is exactly `p' ≤ p`.
   have h_apply : ∀ p' ≤ p,
       μH[sardMoreiraBound (dim E) k α p'] (f '' {x ∈ s | dim (fderiv ℝ f x).range = p'}) = 0 := by
