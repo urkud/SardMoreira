@@ -20,16 +20,19 @@ theorem rank_prod_fst (f : E × F →ₗ[K] G) :
     rank (prod (fst K E F) f) = (Module.rank K E).lift + (f ∘ₗ inr K E F).rank.lift := by
   -- The range of the product map is isomorphic
   -- to the direct sum of the ranges of the first projection and the function f.
-  have h_range : range (prod (fst K E F) f) ≃ₗ[K] E × range (f ∘ₗ (inr K E F)) := by
-    refine LinearEquiv.ofBijective ?_ ⟨?_, ?_⟩;
-    · refine prod (fst K _ _ ∘ₗ Submodule.subtype _)
+  have h_range : range (prod (fst K E F) f) ≃ₗ[K] E × range (f ∘ₗ inr K E F) := by
+    refine LinearEquiv.ofBijective ?map ⟨?inj, ?surj⟩;
+    case map =>
+      refine prod (fst K _ _ ∘ₗ Submodule.subtype _)
         (codRestrict _ ((snd _ _ _ - f ∘ₗ inl _ _ _ ∘ₗ fst _ _ _) ∘ₗ Submodule.subtype _) ?_)
       rintro ⟨_, ⟨x, y⟩, rfl⟩
       simp [← map_sub]
-    · rintro ⟨_, ⟨x, y⟩, rfl⟩ ⟨_, ⟨x', y'⟩, rfl⟩ h
+    case inj =>
+      rintro ⟨_, ⟨x, y⟩, rfl⟩ ⟨_, ⟨x', y'⟩, rfl⟩ h
       obtain rfl : x = x' := by simpa using congr($h |>.1)
       simp_all [← Subtype.val_inj]
-    · rintro ⟨x, _, y, rfl⟩
+    case surj =>
+      rintro ⟨x, _, y, rfl⟩
       refine ⟨⟨_, (x, y), rfl⟩, ?_⟩
       simp [← Subtype.val_inj, ← map_sub]
   simpa using h_range.lift_rank_eq
