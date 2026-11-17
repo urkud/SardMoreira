@@ -1,85 +1,402 @@
-import SardMoreira.ContDiffMoreiraHolder
-import SardMoreira.LinearAlgebra
+module
+
+public import Mathlib.Analysis.Calculus.Implicit
+public import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
+public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
+public import Mathlib.Topology.Algebra.Module.Complement
+
+/-!
+# Local normal form of a map with complemented kernel and range of the derivative
+
+Let `f : E → F` be a map that is strictly differentiable at `a` with derivative `f'`.
+Given continuous linear maps `P : F →L[𝕜] R` and `Q : E →L[𝕜] K`
+such that `(P ∘L f').prod Q : E →L[𝕜] R × K` is invertible,
+the map `x ↦ (P (f x), Q x)` is a local homeomorphism near `a`,
+see `HasStrictFDerivAt.toOpenPartialHomeomorphProd`.
+
+The main example is the case when `P` is a projection to the range of `f'`
+and `Q` is a projection to the kernel of `f'`,
+see `HasStrictFDerivAt.toOpenPartialHomeomorphRangeProdKer`.
+In this case, `f` written in this chart (in the domain)
+and the decomposition `F ≃ f'.range × C` (in the codomain)
+takes the form `(y, z) ↦ (y, g (y, z))`, where `g` has zero derivative at `(P (f a), Q a)`.
+
+This is the first step in the proofs of the constant rank theorem,
+the immersion theorem, and the Lyapunov-Schmidt reduction.
+
+Unlike `HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented`,
+we do not assume that `f'` is surjective.
+-/
+
+@[expose] public section
 
 noncomputable section
 
-open scoped Topology unitInterval
+open scoped Topology
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+namespace ContinuousLinearMap
+
+/-- A map `x ↦ (f x, g x)` is invertible iff `f` and `g` are surjective
+and their kernels are complementary subspaces. -/
+theorem isInvertible_prod_iff [CompleteSpace E] [CompleteSpace F] [CompleteSpace G]
+    {f : E →L[𝕜] F} {g : E →L[𝕜] G} :
+    (f.prod g).IsInvertible ↔ f.range = ⊤ ∧ g.range = ⊤ ∧ IsCompl f.ker g.ker := by
+  refine ⟨fun h ↦ ?_, fun ⟨hf, hg, hfg⟩ ↦ ⟨equivProdOfSurjectiveOfIsCompl f g hf hg hfg, rfl⟩⟩
+  have hb := h.bijective
+  refine ⟨LinearMap.range_eq_top.2 fun y ↦ ?_, LinearMap.range_eq_top.2 fun z ↦ ?_, ?_, ?_⟩
+  · obtain ⟨x, hx⟩ := hb.2 (y, 0)
+    exact ⟨x, congr_arg Prod.fst hx⟩
+  · obtain ⟨x, hx⟩ := hb.2 (0, z)
+    exact ⟨x, congr_arg Prod.snd hx⟩
+  · rw [Submodule.disjoint_def]
+    intro x hxf hxg
+    apply hb.1
+    simp_all
+  · rw [codisjoint_iff, Submodule.eq_top_iff']
+    intro x
+    obtain ⟨u, hu⟩ := hb.2 (f x, 0)
+    simp only [prod_apply, Prod.mk.injEq] at hu
+    exact Submodule.mem_sup.2 ⟨x - u, by simp [hu.1], u, by simp [hu.2], sub_add_cancel x u⟩
+
+/-- If `C` is a topological complement of the range of `f'`
+and `D` is a topological complement of its kernel,
+then the map `x ↦ (projection of f' x to f'.range along C, projection of x to f'.ker along D)`
+is invertible. -/
+theorem isInvertible_projectionOntoL_comp_prod_projectionOntoL [CompleteSpace E]
+    {f' : E →L[𝕜] F} [CompleteSpace f'.range] {C : Submodule 𝕜 F} {D : Submodule 𝕜 E}
+    (hC : f'.range.IsTopCompl C) (hD : f'.ker.IsTopCompl D) :
+    ((f'.range.projectionOntoL C hC ∘L f').prod (f'.ker.projectionOntoL D hD)).IsInvertible := by
+  have hker : (f'.range.projectionOntoL C hC ∘L f').ker = f'.ker := by
+    ext x
+    simp only [LinearMap.mem_ker, coe_coe, comp_apply, Submodule.projectionOntoL_apply_eq_zero_iff]
+    refine ⟨fun h ↦ Submodule.disjoint_def.1 hC.isCompl.disjoint _ ⟨x, rfl⟩ h, fun h ↦ ?_⟩
+    rw [h]
+    exact C.zero_mem
+  refine isInvertible_prod_iff.2 ⟨?_, Submodule.range_projectionOntoL _, ?_⟩
+  · rw [LinearMap.range_eq_top]
+    rintro ⟨_, x, rfl⟩
+    exact ⟨x, Submodule.projectionOntoL_apply_left hC ⟨f' x, _⟩⟩
+  · rw [hker, Submodule.ker_projectionOntoL]
+    exact hD.isCompl
+
+end ContinuousLinearMap
+
+namespace ImplicitFunctionData
+
+variable [CompleteSpace E] [CompleteSpace F] [CompleteSpace G]
+
+/-- Implicit function data given by two maps `f` and `g`
+with strict derivatives `f'` and `g'` at `a`
+such that `x ↦ (f' x, g' x)` is invertible. -/
+@[simps]
+def ofIsInvertible {f : E → F} {g : E → G} {f' : E →L[𝕜] F} {g' : E →L[𝕜] G} {a : E}
+    (hf : HasStrictFDerivAt f f' a) (hg : HasStrictFDerivAt g g' a)
+    (hfg : (f'.prod g').IsInvertible) : ImplicitFunctionData 𝕜 E F G where
+  leftFun := f
+  leftDeriv := f'
+  rightFun := g
+  rightDeriv := g'
+  pt := a
+  hasStrictFDerivAt_leftFun := hf
+  hasStrictFDerivAt_rightFun := hg
+  range_leftDeriv := (ContinuousLinearMap.isInvertible_prod_iff.1 hfg).1
+  range_rightDeriv := (ContinuousLinearMap.isInvertible_prod_iff.1 hfg).2.1
+  isCompl_ker := (ContinuousLinearMap.isInvertible_prod_iff.1 hfg).2.2
+
+end ImplicitFunctionData
 
 namespace HasStrictFDerivAt
 
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+variable [CompleteSpace E] {R K : Type*}
+  [NormedAddCommGroup R] [NormedSpace 𝕜 R] [CompleteSpace R]
+  [NormedAddCommGroup K] [NormedSpace 𝕜 K] [CompleteSpace K]
+  {f : E → F} {f' : E →L[𝕜] F} {a : E}
 
-@[irreducible, simps +simpRhs pt]
-def implicitFunctionDataOfComplementedKerRange (f : E → F) (f' : E →L[𝕜] F) {a : E}
-    (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
-    (hrange : f'.range.ClosedComplemented) :
-    have := hrange.isClosed.completeSpace_coe
-    ImplicitFunctionData 𝕜 E f'.range f'.ker := by
-  haveI := hrange.isClosed.completeSpace_coe
-  have hrange_apply (x) : hrange.choose (f' x) = ⟨f' x, by simp⟩ :=
-    hrange.choose_spec ⟨f' x, by simp⟩
-  have hker_eq : (hrange.choose ∘L f').ker = f'.ker := by
-    ext x
-    simp_all
-  have hrange_eq : (hrange.choose ∘L f').range = ⊤ := by
-    rw [LinearMap.range_eq_top]
-    rintro ⟨_, x, rfl⟩
-    use x
-    simp_all
-  let φ := implicitFunctionDataOfComplemented (hrange.choose ∘ f) (hrange.choose ∘L f')
-    (hrange.choose.hasStrictFDerivAt.comp a hf) hrange_eq (by rwa [hker_eq])
-  refine
-    { __ := φ,
-      rightFun := hker.choose
-      rightDeriv := hker.choose
-      range_rightDeriv := LinearMap.range_eq_of_proj (Classical.choose_spec hker)
-      hasStrictFDerivAt_rightFun := hker.choose.hasStrictFDerivAt
-      isCompl_ker := ?_ }
-  simpa only [φ, implicitFunctionDataOfComplemented, hker_eq]
-    using LinearMap.isCompl_of_proj hker.choose_spec
+section Prod
 
-def implicitToOpenPartialHomeomorphOfComplementedKerRange (f : E → F) (f' : E →L[𝕜] F) {a : E}
-    (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
-    (hrange : f'.range.ClosedComplemented) :
-    OpenPartialHomeomorph E (f'.range × f'.ker) :=
-  have := hrange.isClosed.completeSpace_coe
-  (hf.implicitFunctionDataOfComplementedKerRange f f' hker hrange).toOpenPartialHomeomorph
+variable (f f') in
+/-- Let `f : E → F` be a map with strict derivative `f'` at `a`.
+Let `P : F →L[𝕜] R` and `Q : E →L[𝕜] K` be continuous linear maps
+such that `x ↦ (P (f' x), Q x)` is invertible.
+Then `x ↦ (P (f x), Q x)` is an open partial homeomorphism near `a`.
+
+Typically, `P` is a projection to the range of `f'` and `Q` is a projection to its kernel,
+see `HasStrictFDerivAt.toOpenPartialHomeomorphRangeProdKer`. -/
+def toOpenPartialHomeomorphProd (hf : HasStrictFDerivAt f f' a) (P : F →L[𝕜] R) (Q : E →L[𝕜] K)
+    (hPQ : ((P ∘L f').prod Q).IsInvertible) : OpenPartialHomeomorph E (R × K) :=
+  (ImplicitFunctionData.ofIsInvertible (P.hasStrictFDerivAt.comp a hf) Q.hasStrictFDerivAt
+    hPQ).toOpenPartialHomeomorph
+
+variable (hf : HasStrictFDerivAt f f' a) (P : F →L[𝕜] R) (Q : E →L[𝕜] K)
+  (hPQ : ((P ∘L f').prod Q).IsInvertible)
 
 @[simp]
-theorem mem_implicitToOpenPartialHomeomorphOfComplementedKerRange_source
-    {f : E → F} {f' : E →L[𝕜] F} {a : E}
-    (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
-    (hrange : f'.range.ClosedComplemented) :
-    a ∈ (hf.implicitToOpenPartialHomeomorphOfComplementedKerRange f f' hker hrange).source := by
-  convert ImplicitFunctionData.pt_mem_toOpenPartialHomeomorph_source _
+theorem coe_toOpenPartialHomeomorphProd :
+    ⇑(hf.toOpenPartialHomeomorphProd f f' P Q hPQ) = fun x ↦ (P (f x), Q x) := by
+  ext x <;> simp [toOpenPartialHomeomorphProd]
+
+theorem toOpenPartialHomeomorphProd_apply (x : E) :
+    hf.toOpenPartialHomeomorphProd f f' P Q hPQ x = (P (f x), Q x) := by
   simp
 
-theorem implicitToOpenPartialHomeomorphOfComplementedKerRange_apply {f : E → F} {f' : E →L[𝕜] F}
-    {a : E} (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
-    (hrange : f'.range.ClosedComplemented) (x : E) :
-    implicitToOpenPartialHomeomorphOfComplementedKerRange f f' hf hker hrange x =
-      (hrange.choose (f x), hker.choose x) := by
-  -- `simp [implicitToOpenPartialHomeomorphOfComplementedKerRange,
-  --  implicitFunctionDataOfComplementedKerRange]` works but it's much slower
-  simp only [implicitToOpenPartialHomeomorphOfComplementedKerRange,
-    implicitFunctionDataOfComplementedKerRange, implicitFunctionDataOfComplemented,
-    Function.comp_apply, ImplicitFunctionData.toOpenPartialHomeomorph_apply]
-
-theorem coe_implicitToOpenPartialHomeomorphOfComplementedKerRange {f : E → F} {f' : E →L[𝕜] F}
-    {a : E} (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
-    (hrange : f'.range.ClosedComplemented) :
-    implicitToOpenPartialHomeomorphOfComplementedKerRange f f' hf hker hrange =
-      fun x ↦ (hrange.choose (f x), hker.choose x) :=
-  funext <| implicitToOpenPartialHomeomorphOfComplementedKerRange_apply hf hker hrange
+@[simp]
+theorem mem_toOpenPartialHomeomorphProd_source :
+    a ∈ (hf.toOpenPartialHomeomorphProd f f' P Q hPQ).source :=
+  ImplicitFunctionData.pt_mem_toOpenPartialHomeomorph_source _
 
 @[simp]
-theorem implicitToOpenPartialHomeomorphOfComplementedKerRange_apply_fst {f : E → F} {f' : E →L[𝕜] F}
-    {a : E} (hf : HasStrictFDerivAt f f' a) (hker : f'.ker.ClosedComplemented)
-    (hrange : f'.range.ClosedComplemented) (x : E) :
-    (implicitToOpenPartialHomeomorphOfComplementedKerRange f f' hf hker hrange x).fst =
-      hrange.choose (f x) := by
-  simp [implicitToOpenPartialHomeomorphOfComplementedKerRange_apply]
+theorem mem_toOpenPartialHomeomorphProd_target :
+    (P (f a), Q a) ∈ (hf.toOpenPartialHomeomorphProd f f' P Q hPQ).target := by
+  simpa using (hf.toOpenPartialHomeomorphProd f f' P Q hPQ).map_source <|
+    hf.mem_toOpenPartialHomeomorphProd_source P Q hPQ
+
+theorem toOpenPartialHomeomorphProd_symm_apply_self :
+    (hf.toOpenPartialHomeomorphProd f f' P Q hPQ).symm (P (f a), Q a) = a := by
+  simpa using (hf.toOpenPartialHomeomorphProd f f' P Q hPQ).left_inv <|
+    hf.mem_toOpenPartialHomeomorphProd_source P Q hPQ
+
+/-- In the chart `hf.toOpenPartialHomeomorphProd f f' P Q hPQ`,
+the map `P ∘ f` becomes the projection to the first coordinate. -/
+theorem apply_apply_toOpenPartialHomeomorphProd_symm {p : R × K}
+    (hp : p ∈ (hf.toOpenPartialHomeomorphProd f f' P Q hPQ).target) :
+    P (f ((hf.toOpenPartialHomeomorphProd f f' P Q hPQ).symm p)) = p.1 := by
+  simpa using congr_arg Prod.fst <| (hf.toOpenPartialHomeomorphProd f f' P Q hPQ).right_inv hp
+
+theorem apply_toOpenPartialHomeomorphProd_symm {p : R × K}
+    (hp : p ∈ (hf.toOpenPartialHomeomorphProd f f' P Q hPQ).target) :
+    Q ((hf.toOpenPartialHomeomorphProd f f' P Q hPQ).symm p) = p.2 := by
+  simpa using congr_arg Prod.snd <| (hf.toOpenPartialHomeomorphProd f f' P Q hPQ).right_inv hp
+
+theorem hasStrictFDerivAt_toOpenPartialHomeomorphProd :
+    HasStrictFDerivAt (hf.toOpenPartialHomeomorphProd f f' P Q hPQ) ((P ∘L f').prod Q) a := by
+  rw [coe_toOpenPartialHomeomorphProd]
+  exact (P.hasStrictFDerivAt.comp a hf).prodMk Q.hasStrictFDerivAt
+
+theorem isInvertible_fderiv_toOpenPartialHomeomorphProd :
+    (fderiv 𝕜 (hf.toOpenPartialHomeomorphProd f f' P Q hPQ) a).IsInvertible := by
+  rwa [(hf.hasStrictFDerivAt_toOpenPartialHomeomorphProd P Q hPQ).hasFDerivAt.fderiv]
+
+theorem hasStrictFDerivAt_toOpenPartialHomeomorphProd_symm :
+    HasStrictFDerivAt (hf.toOpenPartialHomeomorphProd f f' P Q hPQ).symm
+      ((P ∘L f').prod Q).inverse (P (f a), Q a) := by
+  rcases id hPQ with ⟨e, he⟩
+  rw [show ((P ∘L f').prod Q).inverse = e.symm by rw [← he, ContinuousLinearMap.inverse_equiv]]
+  apply OpenPartialHomeomorph.hasStrictFDerivAt_symm
+  · exact hf.mem_toOpenPartialHomeomorphProd_target P Q hPQ
+  · rw [toOpenPartialHomeomorphProd_symm_apply_self, he]
+    exact hf.hasStrictFDerivAt_toOpenPartialHomeomorphProd P Q hPQ
+
+/-- If `P' : F →L[𝕜] G` vanishes on the range of `f'`,
+then `P' ∘ f` written in the chart `hf.toOpenPartialHomeomorphProd f f' P Q hPQ`
+has zero strict derivative at the image of `a`.
+
+Typically, `P'` is the projection to a complement of the range of `f'`. -/
+theorem hasStrictFDerivAt_comp_toOpenPartialHomeomorphProd_symm (P' : F →L[𝕜] G)
+    (hP' : P' ∘L f' = 0) :
+    HasStrictFDerivAt (fun p ↦ P' (f ((hf.toOpenPartialHomeomorphProd f f' P Q hPQ).symm p)))
+      (0 : R × K →L[𝕜] G) (P (f a), Q a) := by
+  have h := P'.hasStrictFDerivAt.comp a hf
+  rw [hP', ← hf.toOpenPartialHomeomorphProd_symm_apply_self P Q hPQ] at h
+  simpa using h.comp _ (hf.hasStrictFDerivAt_toOpenPartialHomeomorphProd_symm P Q hPQ)
+
+end Prod
+
+section RangeProdKer
+
+variable [CompleteSpace f'.range] {C : Submodule 𝕜 F} {D : Submodule 𝕜 E}
+
+variable (f f') in
+/-- Let `f : E → F` be a map with strict derivative `f'` at `a`.
+Let `C` and `D` be topological complements of `f'.range` and `f'.ker`, respectively.
+Then `x ↦ (projection of f x to f'.range along C, projection of x to f'.ker along D)`
+is an open partial homeomorphism near `a`.
+
+In this chart, the map `f` takes the form `(y, z) ↦ y + g(y, z)`,
+where `g` takes values in `C` and has zero derivative at the image of `a`, see
+`HasStrictFDerivAt.prodEquivOfIsTopCompl_symm_apply_toOpenPartialHomeomorphRangeProdKer_symm`
+and `HasStrictFDerivAt.hasStrictFDerivAt_projectionOntoL_toOpenPartialHomeomorphRangeProdKer_symm`.
+-/
+def toOpenPartialHomeomorphRangeProdKer (hf : HasStrictFDerivAt f f' a)
+    (hC : f'.range.IsTopCompl C) (hD : f'.ker.IsTopCompl D) :
+    OpenPartialHomeomorph E (f'.range × f'.ker) :=
+  hf.toOpenPartialHomeomorphProd f f' (f'.range.projectionOntoL C hC)
+    (f'.ker.projectionOntoL D hD)
+    (ContinuousLinearMap.isInvertible_projectionOntoL_comp_prod_projectionOntoL hC hD)
+
+variable (hf : HasStrictFDerivAt f f' a) (hC : f'.range.IsTopCompl C) (hD : f'.ker.IsTopCompl D)
+
+theorem toOpenPartialHomeomorphRangeProdKer_eq_prod :
+    hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD =
+      hf.toOpenPartialHomeomorphProd f f' (f'.range.projectionOntoL C hC)
+        (f'.ker.projectionOntoL D hD)
+        (ContinuousLinearMap.isInvertible_projectionOntoL_comp_prod_projectionOntoL hC hD) :=
+  rfl
+
+@[simp]
+theorem coe_toOpenPartialHomeomorphRangeProdKer :
+    ⇑(hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD) =
+      fun x ↦ (f'.range.projectionOntoL C hC (f x), f'.ker.projectionOntoL D hD x) :=
+  hf.coe_toOpenPartialHomeomorphProd ..
+
+theorem toOpenPartialHomeomorphRangeProdKer_apply (x : E) :
+    hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD x =
+      (f'.range.projectionOntoL C hC (f x), f'.ker.projectionOntoL D hD x) := by
+  simp
+
+theorem toOpenPartialHomeomorphRangeProdKer_apply_fst (x : E) :
+    (hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD x).1 =
+      f'.range.projectionOntoL C hC (f x) := by
+  simp
+
+theorem toOpenPartialHomeomorphRangeProdKer_apply_snd (x : E) :
+    (hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD x).2 = f'.ker.projectionOntoL D hD x := by
+  simp
+
+@[simp]
+theorem mem_toOpenPartialHomeomorphRangeProdKer_source :
+    a ∈ (hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD).source :=
+  hf.mem_toOpenPartialHomeomorphProd_source ..
+
+theorem hasStrictFDerivAt_toOpenPartialHomeomorphRangeProdKer :
+    HasStrictFDerivAt (hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD)
+      ((f'.range.projectionOntoL C hC ∘L f').prod (f'.ker.projectionOntoL D hD)) a :=
+  hf.hasStrictFDerivAt_toOpenPartialHomeomorphProd ..
+
+theorem isInvertible_fderiv_toOpenPartialHomeomorphRangeProdKer :
+    (fderiv 𝕜 (hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD) a).IsInvertible :=
+  hf.isInvertible_fderiv_toOpenPartialHomeomorphProd ..
+
+/-- In the chart `hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD` in the domain
+and the decomposition `F ≃ f'.range × C` in the codomain,
+the first component of `f` is the identity map. -/
+theorem prodEquivOfIsTopCompl_symm_apply_toOpenPartialHomeomorphRangeProdKer_symm
+    {p : f'.range × f'.ker} (hp : p ∈ (hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD).target) :
+    (Submodule.prodEquivOfIsTopCompl _ _ hC).symm
+        (f ((hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD).symm p)) =
+      (p.1, C.projectionOntoL f'.range hC.symm
+        (f ((hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD).symm p))) := by
+  rw [Submodule.prodEquivOfIsTopCompl_symm_apply, Prod.mk.injEq]
+  exact ⟨hf.apply_apply_toOpenPartialHomeomorphProd_symm _ _ _ hp, rfl⟩
+
+/-- In the chart `hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD`,
+the projection of `f` to `C` along `f'.range` has zero strict derivative at the image of `a`. -/
+theorem hasStrictFDerivAt_projectionOntoL_toOpenPartialHomeomorphRangeProdKer_symm :
+    HasStrictFDerivAt (fun p ↦ C.projectionOntoL f'.range hC.symm
+        (f ((hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD).symm p)))
+      (0 : f'.range × f'.ker →L[𝕜] C) (hf.toOpenPartialHomeomorphRangeProdKer f f' hC hD a) := by
+  rw [coe_toOpenPartialHomeomorphRangeProdKer]
+  apply hasStrictFDerivAt_comp_toOpenPartialHomeomorphProd_symm
+  ext x
+  simp
+
+end RangeProdKer
+
+end HasStrictFDerivAt
+
+/-!
+### Fredholm maps
+
+If `f'` comes with a `FredholmPackage`, then we can use the complements provided by the package.
+In this case, both `f'.ker` and the complement of `f'.range` are finite dimensional,
+so this chart reduces the equation `f x = b` near `a`
+to a finite dimensional equation (the *Lyapunov-Schmidt reduction*).
+-/
+
+namespace ContinuousLinearMap.FredholmPackage
+
+variable {u : E →L[𝕜] F} (pkg : u.FredholmPackage)
+
+theorem isTopCompl_range : u.range.IsTopCompl pkg.decCodom.X₀ :=
+  pkg.range_eq ▸ pkg.decCodom.isTopCompl
+
+theorem isTopCompl_ker : u.ker.IsTopCompl pkg.decDom.X₁ :=
+  pkg.ker_eq ▸ pkg.decDom.isTopCompl.symm
+
+include pkg in
+theorem finiteDimensional_ker : FiniteDimensional 𝕜 u.ker :=
+  pkg.ker_eq ▸ pkg.decDom.finite_X₀
+
+include pkg in
+theorem completeSpace_range [CompleteSpace F] : CompleteSpace u.range :=
+  (Submodule.IsTopCompl.isClosed' pkg.isTopCompl_range.symm).completeSpace_coe
+
+end ContinuousLinearMap.FredholmPackage
+
+namespace HasStrictFDerivAt
+
+variable [CompleteSpace E] [CompleteSpace F] {f : E → F} {f' : E →L[𝕜] F} {a : E}
+
+variable (f f') in
+/-- The chart `HasStrictFDerivAt.toOpenPartialHomeomorphRangeProdKer`
+built using the complements provided by a `FredholmPackage` of `f'`. -/
+def toOpenPartialHomeomorphOfFredholmPackage (hf : HasStrictFDerivAt f f' a)
+    (pkg : f'.FredholmPackage) : OpenPartialHomeomorph E (f'.range × f'.ker) :=
+  have := pkg.completeSpace_range
+  hf.toOpenPartialHomeomorphRangeProdKer f f' pkg.isTopCompl_range pkg.isTopCompl_ker
+
+theorem toOpenPartialHomeomorphOfFredholmPackage_eq (hf : HasStrictFDerivAt f f' a)
+    (pkg : f'.FredholmPackage) :
+    have := pkg.completeSpace_range
+    hf.toOpenPartialHomeomorphOfFredholmPackage f f' pkg =
+      hf.toOpenPartialHomeomorphRangeProdKer f f' pkg.isTopCompl_range pkg.isTopCompl_ker :=
+  rfl
+
+end HasStrictFDerivAt
+
+/-!
+### Immersion theorem
+
+If `f'` is injective and its range has a topological complement `C`,
+then near `a`, the map `f` is a local homeomorphism `e` to `f'.range`
+followed by the graph of a map `g : f'.range → C` with zero derivative at `e a`.
+-/
+
+namespace HasStrictFDerivAt
+
+variable [CompleteSpace E] {f : E → F} {f' : E →L[𝕜] F} {a : E}
+
+/-- **Immersion theorem**: if `f'` is injective and its range has a topological complement `C`,
+then the image of a neighborhood of `a` under `f` is the graph of a map `g : f'.range → C`
+with zero derivative at the image of `a`, parametrized by a local homeomorphism
+`e : E → f'.range`. -/
+theorem exists_eq_add_of_ker_eq_bot (hf : HasStrictFDerivAt f f' a) (hker : f'.ker = ⊥)
+    [CompleteSpace f'.range] {C : Submodule 𝕜 F} (hC : f'.range.IsTopCompl C) :
+    ∃ (e : OpenPartialHomeomorph E f'.range) (g : f'.range → C), a ∈ e.source ∧
+      e a = f'.range.projectionOntoL C hC (f a) ∧
+      HasStrictFDerivAt g (0 : f'.range →L[𝕜] C) (e a) ∧
+      ∀ x ∈ e.source, f x = e x + g (e x) := by
+  set P := f'.range.projectionOntoL C hC
+  set P' := C.projectionOntoL f'.range hC.symm
+  have hPQ := ContinuousLinearMap.isInvertible_projectionOntoL_comp_prod_projectionOntoL hC
+    (hker ▸ Submodule.isTopCompl_bot_top)
+  have hPf : (P ∘L f').ker = ⊥ ∧ (P ∘L f').range = ⊤ := by
+    obtain ⟨hr, -, hc⟩ := ContinuousLinearMap.isInvertible_prod_iff.1 hPQ
+    refine ⟨?_, hr⟩
+    have := hc.disjoint
+    rwa [Submodule.ker_projectionOntoL, disjoint_top] at this
+  set L := ContinuousLinearEquiv.ofBijective (P ∘L f') hPf.1 hPf.2
+  have hL : HasStrictFDerivAt (P ∘ f) (L : E →L[𝕜] f'.range) a :=
+    P.hasStrictFDerivAt.comp a hf
+  set e := hL.toOpenPartialHomeomorph (P ∘ f)
+  have hae : a ∈ e.source := hL.mem_toOpenPartialHomeomorph_source
+  refine ⟨e, fun y ↦ P' (f (e.symm y)), hae, rfl, ?_, fun x hx ↦ ?_⟩
+  · have h := P'.hasStrictFDerivAt.comp a hf
+    have hP'f : P' ∘L f' = 0 := by
+      ext x
+      simp [P']
+    rw [hP'f, ← e.left_inv hae] at h
+    have he := e.hasStrictFDerivAt_symm (e.map_source hae) (by rwa [e.left_inv hae])
+    simpa using h.comp _ he
+  · show f x = e x + P' (f (e.symm (e x)))
+    rw [e.left_inv hx]
+    have := (Submodule.prodEquivOfIsTopCompl _ _ hC).apply_symm_apply (f x)
+    rw [Submodule.prodEquivOfIsTopCompl_symm_apply, Submodule.prodEquivOfIsTopCompl_apply] at this
+    simpa [e, P, P'] using this.symm
 
 end HasStrictFDerivAt

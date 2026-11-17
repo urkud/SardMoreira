@@ -1,8 +1,13 @@
-import Mathlib.Analysis.Normed.Order.Lattice
-import Mathlib.Data.Real.StarOrdered
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-import Mathlib.MeasureTheory.Measure.OpenPos
-import Mathlib.Topology.Order.LowerUpperTopology
+module
+
+public import Mathlib.Analysis.Normed.Order.Lattice
+public import Mathlib.Algebra.Order.Star.Real
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.Topology.Order.LowerUpperTopology
+public import Mathlib.Topology.Order.AtTopBotIxx
+
+@[expose] public section
 
 open MeasureTheory Topology Filter Set Metric
 open scoped NNReal
@@ -15,7 +20,8 @@ theorem MeasureTheory.tendsto_measure_biUnion_lt {α : Type*} {m : MeasurableSpa
   have : (atTop : Filter (Iio a)).IsCountablyGenerated := by
     rw [← comap_coe_Iio_nhdsLT]
     infer_instance
-  simp_rw [← map_coe_Iio_atTop, tendsto_map'_iff, ← mem_Iio, biUnion_eq_iUnion]
+  rw [← map_coe_Iio_atTop a]
+  simp_rw [tendsto_map'_iff, ← mem_Iio, biUnion_eq_iUnion]
   exact tendsto_measure_iUnion_atTop fun i j hle ↦ hm i j hle j.2
 
 theorem continuousWithinAt_Iio_measure_ball {X : Type*} [PseudoMetricSpace X]
@@ -41,7 +47,8 @@ theorem lowerSemicontinuous_measure_ball_toUpper_symm {X : Type*} [PseudoMetricS
   obtain ⟨r₂, hr₁r₂, hr₂r⟩ : ∃ r₂, r₁ < r₂ ∧ r₂ < r := exists_between hr₁
   have H : ∀ᶠ xr : X × WithUpper ℝ in 𝓝 (x, WithUpper.toUpper r),
       xr.1 ∈ ball x (r₂ - r₁) ∧ r₂ < WithUpper.toUpper.symm xr.2 :=
-    prod_mem_nhds (ball_mem_nhds _ (sub_pos.2 hr₁r₂)) (eventually_gt_nhds hr₂r)
+    (eventually_mem_set.2 <| ball_mem_nhds _ (sub_pos.2 hr₁r₂)).prod_nhds <|
+      IsUpper.tendsto_nhds_iff_lt.1 tendsto_id _ (WithUpper.toUpper_lt_toUpper.2 hr₂r)
   refine H.mono ?_
   simp only [Prod.forall, WithUpper.toUpper.surjective.forall, Equiv.symm_apply_apply, mem_ball]
   rintro y r' ⟨hy, hr'⟩

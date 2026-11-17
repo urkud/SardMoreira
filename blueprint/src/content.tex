@@ -198,7 +198,7 @@ In this section,
 
 \begin{definition}%
   \label{def:cdh-at}
-  \lean{ContDiffMoreiraHolderAt}
+  \lean{ContDiffPointwiseHolderAt}
   \leanok%
   We say that a map \(f\colon E\to F\) is \emph{\(C^{k+(\alpha)}\)} at a point \(a\),
   if it is \(C^{k}\) at \(a\) and \(D^{k}f(x) - D^{k}f(a) = O(\|x - a\|^{\alpha})\) as \(x\to a\).
@@ -207,7 +207,7 @@ In this section,
 Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoothness assumption.
 \begin{lemma}%
   \label{def:contdiffholder-imp-cdh-at}
-  \lean{ContDiffMoreiraHolderAt.of_contDiffOn_holderWith}
+  \lean{ContDiffPointwiseHolderAt.of_contDiffOn_holderOnWith}
   \leanok%
   \uses{def:cdh-at}
   If \(f\colon E \to F\) is \(C^{k+\alpha}\) on an open set \(U\),
@@ -221,7 +221,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 
 \begin{lemma}%
   \label{lem:cdh-at-zero}
-  \lean{ContDiffMoreiraHolderAt.zero_exponent_iff}
+  \lean{ContDiffPointwiseHolderAt.zero_exponent_iff}
   \leanok%
   \uses{def:cdh-at}
   A map \(f\colon E\to F\) is \(C^{k+(0)}\) at \(a\) iff it is \(C^{k}\) at \(a\).
@@ -238,7 +238,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-of-contDiffAt}
   \uses{def:cdh-at}
-  \lean{ContDiffAt.contDiffMoreiraHolderAt}
+  \lean{ContDiffAt.contDiffPointwiseHolderAt}
   \leanok%
   If \(f\colon E\to F\) is \(C^{l}\) at \(a\) with \(l > k\),
   then it is \(C^{k+(\alpha)}\) at \(a\).
@@ -253,7 +253,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-mono}
   \uses{def:cdh-at}
-  \lean{ContDiffMoreiraHolderAt.of_exponent_le, ContDiffMoreiraHolderAt.of_lt, ContDiffMoreiraHolderAt.of_toLex_le}
+  \lean{ContDiffPointwiseHolderAt.of_exponent_le, ContDiffPointwiseHolderAt.of_order_lt, ContDiffPointwiseHolderAt.of_toLex_le}
   \leanok%
   Let \(f\colon E\to F\) be a map which is \(C^{k+(\alpha)}\) at \(a\).
   Let \(l\) be a natural number and \(\beta \in [0, 1]\) be a real number.
@@ -276,7 +276,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-prodMk}
   \uses{def:cdh-at}
-  \lean{ContDiffMoreiraHolderAt.prodMk}
+  \lean{ContDiffPointwiseHolderAt.prodMk}
   \leanok%
   If \(f \colon E \to F\) and \(g \colon E \to G\) are \(C^{k+(\alpha)}\) at \(a \in E\),
   then \(x \mapsto (f(x), g(x))\) is \(C^{k+(\alpha)}\) at \(a\).
@@ -290,7 +290,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-clm-comp}
   \uses{def:cdh-at}
-  \lean{ContDiffMoreiraHolderAt.continuousLinearMap_comp}
+  \lean{ContDiffPointwiseHolderAt.continuousLinearMap_comp}
   \leanok%
   If \(f \colon E \to F\) is \(C^{k+(\alpha)}\) at \(a \in E\)
   and \(g \colon F \to G\) is a continuous linear map,
@@ -309,7 +309,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-fderiv}
   \uses{def:cdh-at}
-  \lean{ContDiffMoreiraHolderAt.fderiv}
+  \lean{ContDiffPointwiseHolderAt.fderiv}
   \leanok%
   If \(f \colon E \to F\) is \(C^{k+1+(\alpha)}\) at \(a \in E\),
   then \(Df\) is \(C^{k+(\alpha)}\) at \(a\).
@@ -323,7 +323,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{corollary}%
   \label{lem:cdh-at-iteratedFDeriv}
   \uses{def:cdh-at}
-  \lean{ContDiffMoreiraHolderAt.iteratedFDeriv}
+  \lean{ContDiffPointwiseHolderAt.iteratedFDeriv}
   \leanok%
   If \(f \colon E \to F\) is \(C^{k+l+(\alpha)}\) at \(a \in E\),
   then \(D^{k}f\) is \(C^{l+(\alpha)}\) at \(a\).
@@ -339,7 +339,7 @@ Note that this notion is weaker than a more commonly used \(C^{k+\alpha}\) smoot
 \begin{lemma}%
   \label{lem:cdh-at-comp}
   \uses{def:cdh-at}
-  \lean{ContDiffMoreiraHolderAt.comp}
+  \lean{ContDiffPointwiseHolderAt.comp}
   \leanok%
   Consider \(g\colon F \to G\), \(f\colon E \to F\), and \(a \in E\)
   such that \(g\) is \(C^{k+(\alpha)}\) at \(f(a)\) and \(f\) is \(C^{k+(\alpha)}\) at \(a\), where \(k > 0\) and \(\alpha \in [0, 1]\).

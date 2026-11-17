@@ -1,5 +1,9 @@
-import Mathlib
-import SardMoreira.ContDiff
+module
+
+public import Mathlib
+public import SardMoreira.ContDiff
+
+@[expose] public section
 
 open scoped Topology
 open Filter Set
@@ -23,7 +27,10 @@ theorem HasFDerivWithinAt.of_local_leftInverse {𝕜 E F : Type*}
   refine ((hf.isLittleO.comp_tendsto hg).symm.congr' (hfg.mono ?_) .rfl).trans_isBigO ?_
   · intro p hp
     simp [hp, hfg.self_of_nhdsWithin ha]
-  · refine ((hf.isBigO_sub_rev f'.antilipschitz).comp_tendsto hg).congr'
+  · have A := f'.isBigO_sub_rev (𝓝[s] (g a)) (g a)
+    have B : (fun x' ↦ f' (x' - g a)) =O[𝓝[s] g a] fun x ↦ f x - f (g a) :=
+      (hf.isLittleO.trans_isBigO A).right_isBigO_add.congr_right fun _ ↦ by simp
+    refine ((A.trans B).comp_tendsto hg).congr'
       (Eventually.of_forall fun _ => rfl) (hfg.mono ?_)
     rintro p hp
     simp only [(· ∘ ·), hp, hfg.self_of_nhdsWithin ha]
@@ -41,8 +48,8 @@ def Submodule.topContinuousEquiv {R M : Type*} [Semiring R] [AddCommMonoid M]
     [Module R M] [TopologicalSpace M] :
     (⊤ : Submodule R M) ≃L[R] M where
   toLinearEquiv := topEquiv
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
+  continuous_toFun := continuous_subtype_val
+  continuous_invFun := continuous_id.subtype_mk _
 
 theorem ContinuousLinearEquiv.map_nhdsWithin_eq {R M N : Type*} [Semiring R]
     [AddCommMonoid M] [Module R M] [TopologicalSpace M]
@@ -62,12 +69,6 @@ namespace Submodule
 
 variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   [AddCommMonoid N] [Module R N]
-
-def prodEquiv
-    (s : Submodule R M) (t : Submodule R N) : s.prod t ≃ₗ[R] s × t :=
-  { (Equiv.Set.prod (s : Set M) (t : Set N)) with
-    map_add' _ _ := rfl
-    map_smul' _ _ := rfl }
 
 @[simp]
 theorem rank_prod_eq_lift [StrongRankCondition R] (s : Submodule R M) (t : Submodule R N)
@@ -125,8 +126,8 @@ theorem iteratedFDerivWithin_comp_of_eventually
     with ⟨u, ⟨hau, hu⟩, hus, hfu, hgu⟩
   refine .symm <| (hgu.comp hfu (mapsTo_image _ _)).eq_iteratedFDerivWithin_of_uniqueDiffOn le_rfl
     hu (mem_of_mem_nhdsWithin ha hau) |>.trans ?_
-  refine iteratedFDerivWithin_congr_set (hus.eventuallyLE.antisymm ?_) _
-  exact set_eventuallyLE_iff_mem_inf_principal.mpr hau
+  refine iteratedFDerivWithin_congr_set (hus.eventuallySubset.antisymm ?_) _
+  exact eventuallySubset_iff_mem_inf_principal.mpr hau
 
 end ContDiff
 
@@ -169,7 +170,7 @@ theorem length_eq_one_iff (hn : n ≠ 0) : c.length = 1 ↔ c = single n hn := b
     rw [funext_iff, Fin.forall_fin_one]
     simpa using hsum
   obtain rfl : emb = fun _ ↦ id := by
-    rw [funext_iff, Fin.forall_fin_one, ← (emb_strictMono 0).range_inj strictMono_id]
+    rw [funext_iff, Fin.forall_fin_one, ← (emb_strictMono 0).range_inj_of_wellFoundedLT strictMono_id]
     simpa [eq_univ_iff_forall, Fin.exists_fin_one] using cover
   rfl
 

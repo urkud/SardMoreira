@@ -1,5 +1,9 @@
-import Mathlib
-import SardMoreira.ToMathlib.ContinuousLinearMap
+module
+
+public import Mathlib
+public import SardMoreira.ToMathlib.ContinuousLinearMap
+
+@[expose] public section
 
 open scoped unitInterval Topology NNReal Classical
 open Function Asymptotics Filter Set
@@ -8,6 +12,22 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {f : E → F} {s : Set E}
+
+
+theorem fderiv_comp_prodMk
+    {f : E × F → G} {a : E} {b : F} (hdf : DifferentiableAt 𝕜 f (a, b)) :
+    fderiv 𝕜 (fun y ↦ f (a, y)) b = fderiv 𝕜 f (a, b) ∘L .inr 𝕜 E F :=
+  hdf.hasFDerivAt.comp b (.prodMk (hasFDerivAt_const _ _) (hasFDerivAt_id _)) |>.fderiv
+
+theorem fderiv_comp_prodMk'
+    {f : E × F → G} {a : E × F} (hdf : DifferentiableAt 𝕜 f a) :
+    fderiv 𝕜 (fun y ↦ f (a.fst, y)) a.snd = fderiv 𝕜 f a ∘L .inr 𝕜 E F :=
+  fderiv_comp_prodMk hdf
+
+theorem fderiv_curry
+    {f : E × F → G} {a : E} {b : F} (hdf : DifferentiableAt 𝕜 f (a, b)) :
+    fderiv 𝕜 (curry f a) b = fderiv 𝕜 f (a, b) ∘L .inr 𝕜 E F :=
+  fderiv_comp_prodMk hdf
 
 section NWithTopENat
 variable {n : WithTop ℕ∞} {k : ℕ} {a : E}
@@ -56,7 +76,7 @@ theorem length_eq_iff : c.length = n ↔ c = atomic n := by
     suffices ∀ i, emb i 0 = i by
       ext i j : 2
       convert this i
-    rw [← funext_iff, ← StrictMono.range_inj, Surjective.range_eq, Surjective.range_eq]
+    rw [← funext_iff, ← StrictMono.range_inj_of_wellFoundedLT, Surjective.range_eq, Surjective.range_eq]
     exacts [surjective_id, Finite.surjective_of_injective parts_strictMono.injective,
       parts_strictMono, strictMono_id]
   rfl
@@ -90,7 +110,7 @@ theorem compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_isBigO
   refine .add ?_ ?_
   · simp only [← isBigO_one_iff ℝ, ← isBigO_pi] at *
     have H := ((hq₁_bdd.prod_left hq₂_bdd).norm_left.pow (c.length - 1)).mul hqB.norm_left
-    simpa [mul_assoc] using hp_bdd.norm_left.mul <| H.const_mul_left c.length
+    simpa [mul_assoc, Pi.sub_def] using hp_bdd.norm_left.mul <| H.const_mul_left c.length
   · have H₂ : ∀ i, (q₂ · i) =O[l] (1 : α → ℝ) := fun i ↦ (hq₂_bdd i).isBigO_one ℝ
     simpa using hpB.norm_left.mul <| .finsetProd fun i _ ↦ (H₂ i).norm_left
 
@@ -131,7 +151,7 @@ theorem ContinuousLinearMap.IsInvertible.hasFDerivAt {f : E → F} {x : E}
 theorem OpenPartialHomeomorph.hasFDerivAt_symm_inverse (f : OpenPartialHomeomorph E F) {y : F}
     (hy : y ∈ f.target) (hf' : (fderiv 𝕜 f (f.symm y)).IsInvertible) :
     HasFDerivAt f.symm (fderiv 𝕜 f (f.symm y)).inverse y := by
-  rw [ContinuousLinearMap.inverse, dif_pos hf']
+  rw [ContinuousLinearMap.inverse, dite_eq_left hf']
   exact hf'.hasFDerivAt.of_local_left_inverse (f.symm.continuousAt hy)
     <| f.eventually_right_inverse hy
 
@@ -181,7 +201,7 @@ theorem OpenPartialHomeomorph.iteratedFDeriv_symm_eq_rec [CompleteSpace E]
     rcases hf' with ⟨f', hf'⟩
     replace hf' : HasFDerivAt f (f' : E →L[𝕜] F) (f.symm y) :=
       hf' ▸ (hf.of_le hi |>.differentiableAt <| mod_cast hi₀.ne').hasFDerivAt
-    have H₁ : f.source ∈ 𝓝 (f.symm y) := f.open_source.mem_nhds <| f.symm_mapsTo hy
+    have H₁ : f.source ∈ 𝓝 (f.symm y) := f.open_source.mem_nhds <| f.mapsTo_symm hy
     have H₂ : ContDiffAt 𝕜 n f.symm (f (f.symm y)) := by
       rw [f.rightInvOn hy]
       exact f.contDiffAt_symm hy hf' hf
@@ -198,8 +218,12 @@ theorem OpenPartialHomeomorph.iteratedFDeriv_symm_eq_rec [CompleteSpace E]
       FormalMultilinearSeries.compAlongOrderedFinpartition]
     rw [Fintype.sum_eq_add_sum_compl (OrderedFinpartition.atomic i), Finset.compl_singleton]
     ext v
-    simp +unfoldPartialApp [OrderedFinpartition.applyOrderedFinpartition, ftaylorSeries, hf'.fderiv,
-      (f.hasFDerivAt_symm hy hf').fderiv, Function.comp_def]
+    simp +unfoldPartialApp [OrderedFinpartition.applyOrderedFinpartition, ftaylorSeries,
+      (f.hasFDerivAt_symm hy hf').fderiv]
+    change _ = iteratedFDeriv 𝕜 i f.symm y fun m ↦
+      iteratedFDeriv 𝕜 1 f (f.symm y) fun _ ↦ f'.symm (v m)
+    congr 1 with m
+    simp [iteratedFDeriv_one_apply, hf'.fderiv]
 
 theorem OpenPartialHomeomorph.iteratedFDeriv_symm_eq_taylorLeftInv [CompleteSpace E]
     (f : OpenPartialHomeomorph E F) {y : F} (hy : y ∈ f.target) (hf : ContDiffAt 𝕜 n f (f.symm y))

@@ -1,4 +1,8 @@
-import Mathlib.Analysis.Normed.Module.Basic
+module
+
+public import Mathlib.Analysis.Normed.Module.Basic
+
+@[expose] public section
 
 namespace NNReal
 
@@ -8,10 +12,10 @@ protected theorem norm_smul (a : ℝ≥0) (x : E) : ‖a • x‖ = a * ‖x‖ 
   simp [NNReal.smul_def, norm_smul]
 
 protected theorem nnnorm_smul (a : ℝ≥0) (x : E) : ‖a • x‖₊ = a * ‖x‖₊ := by
-  simp [NNReal.smul_def, nnnorm_smul]
+  simp [NNReal.smul_def, nnNorm_smul]
 
 protected theorem enorm_smul (a : ℝ≥0) (x : E) : ‖a • x‖ₑ = a * ‖x‖ₑ := by
-  simp [enorm_eq_nnnorm, NNReal.nnnorm_smul]
+  simp [eNorm_eq_nnNorm, NNReal.nnnorm_smul]
 
 protected theorem dist_smul (a : ℝ≥0) (x y : E) : dist (a • x) (a • y) = a * dist x y := by
   simp [NNReal.smul_def, dist_smul₀]

@@ -1,5 +1,9 @@
-import Mathlib.Analysis.Normed.Group.Basic
-import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
+module
+
+public import Mathlib.Analysis.Normed.Group.Basic
+public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
+
+@[expose] public section
 
 open scoped ENNReal NNReal Set.Notation Pointwise
 open MeasureTheory Filter Set Function Metric Topology
@@ -11,10 +15,11 @@ theorem _root_.MeasureTheory.nullMeasurableSet_sum {ι α : Type*} {_ : Measurab
     NullMeasurableSet s (.sum μ) ↔ ∀ i, NullMeasurableSet s (μ i) := by
   refine ⟨fun hs i ↦ hs.mono <| Measure.le_sum _ _, fun h ↦ ?_⟩
   use ⋂ i, toMeasurable (μ i) s, by measurability
-  rw [EventuallyEq, Measure.ae_sum_iff]
+  rw [eventuallyEqSet_iff, Measure.ae_sum_iff]
   intro i
-  refine (subset_iInter fun i ↦ subset_toMeasurable (μ i) s).eventuallyLE.antisymm ?_
-  exact (iInter_subset _ i).eventuallyLE.trans (h i).toMeasurable_ae_eq.le
+  rw [← eventuallyEqSet_iff]
+  refine (subset_iInter fun i ↦ subset_toMeasurable (μ i) s).eventuallySubset.antisymm ?_
+  exact (iInter_subset _ i).eventuallySubset.trans (h i).toMeasurable_ae_eq.subset
 
 instance {α β : Type*} {_ : MeasurableSpace α} {_ : MeasurableSpace β} (μ : Measure β) (f : α → β)
     [IsFiniteMeasure μ] : IsFiniteMeasure (μ.comap f) where
