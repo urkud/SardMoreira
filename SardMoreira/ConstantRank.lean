@@ -2,6 +2,7 @@ module
 
 public import SardMoreira.ContDiff
 public import SardMoreira.ImplicitFunction
+public import SardMoreira.ToMathlib.ImplicitParametric
 public import SardMoreira.LinearAlgebra
 
 /-!

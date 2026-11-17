@@ -9,8 +9,8 @@ autoImplicit = false
 
 [[require]]
 name = "mathlib"
-git = "https://github.com/urkud/mathlib4"
-rev = "implicit-param"
+scope = "leanprover-community"
+rev = "master"
 
 [[require]]
 name = "checkdecls"

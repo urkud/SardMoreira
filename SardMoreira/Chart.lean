@@ -3,6 +3,7 @@ module
 public import Mathlib
 public import SardMoreira.ContDiffMoreiraHolder
 public import SardMoreira.ImplicitFunction
+public import SardMoreira.ToMathlib.ImplicitParametric
 public import SardMoreira.LocalEstimates
 
 @[expose] public section
