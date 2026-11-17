@@ -4,7 +4,6 @@ public import SardMoreira.UpperLowerSemicontinuous
 public import SardMoreira.NormedSpace
 public import SardMoreira.MeasureComap
 public import SardMoreira.MeasureBallSemicontinuous
-public import SardMoreira.Topology
 public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
@@ -430,7 +429,7 @@ theorem IsDenseEmbedding.tendsto_nhdsWithin_preimage_iff_of_eventually_continuou
     rintro V ⟨hV, hVc⟩
     rw [← tendsto_map'_iff, he.isEmbedding.map_nhdsWithin_eq, image_preimage_eq_inter_range] at h
     replace h := h.eventually (eventually_mem_set.mpr hV)
-    rw [nhdsWithin_inter', eventually_inf_principal, ← eventually_nhdsWithin_nhds hs] at h
+    rw [nhdsWithin_inter', eventually_inf_principal, ← eventually_nhdsWithin_eventually_nhds_iff_of_isOpen hs] at h
     filter_upwards [hcont, h] with y hy₁ hy₂
     refine hVc.mem_of_frequently_of_tendsto ?_ hy₁
     refine .mp ?_ (eventually_nhdsWithin_of_eventually_nhds hy₂)

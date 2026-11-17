@@ -18,7 +18,6 @@ public import SardMoreira.NormedSpace
 public import SardMoreira.OuterMeasureDeriv
 public import SardMoreira.ToMathlib.ContinuousLinearMap
 public import SardMoreira.ToMathlib.ImplicitParametric
-public import SardMoreira.Topology
 public import SardMoreira.UnifDoublingCover
 public import SardMoreira.Unused
 public import SardMoreira.UpperLowerSemicontinuous
